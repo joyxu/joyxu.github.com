@@ -9,7 +9,8 @@ after_script:
 - git init
 - git config user.name "joyxu"
 - git config user.email "xuwei04@gmail.com"
-- git add .
+- ls -l
+- git add -A
 - git commit -m "Update - auto deploy by Travis CI."
 - git push --force --quiet "https://${GIT_AUTH_TOKEN}@${GITHUB_REF}" master:master
 branches:
