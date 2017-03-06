@@ -1,7 +1,7 @@
 ---
 title: 用jquery的ajax返回parseerror
 date: 2017-03-06 12:20:22
-tags:
+tags: javascript
 ---
 
 #jquery中使用ajax请求json页面，返回parseerror

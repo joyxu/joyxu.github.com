@@ -97,7 +97,7 @@ include:
 
 # 打赏:
 reward_comment: 知道是不会有人点的，但万一有人呢:)
-wechatpay: /images/wechatpay.png
+wechatpay: http://omeik3jj4.bkt.clouddn.com/IMG_4435.JPG
 #alipay: /path/to/alipay-reward-image
 
 
@@ -113,14 +113,14 @@ jiathis: true
 # 社交链接，将在侧栏中显示
 social:
   GitHub: https://github.com/joyxu
-  邮箱: xuwei04@gmail.com
+  #邮箱: xuwei04@gmail.com
   #DouBan: http://www.douban.com/people/darkforce/
   #ZhiHu: http://www.zhihu.com/people/hhstore
   # 等等
 
 
 # 站内搜索服务:
-swiftype_key: LvGMYBjz-8ZVB7BazNT_
+#swiftype_key: LvGMYBjz-8ZVB7BazNT_
 
 
 # Creative Commons 4.0 International License.
@@ -131,7 +131,7 @@ creative_commons: by-nc-sa
 
 # Google 站长工具验证，请选择 `HTML Meta` 验证方式
 # See: https://www.google.com/webmasters/
-google_site_verification: alDgEpeIzoLpI3vCAsOEfs6B1RFOuiKueg8-tTxG8xw
+#google_site_verification: alDgEpeIzoLpI3vCAsOEfs6B1RFOuiKueg8-tTxG8xw
 
 
 # Google 分析 ID
@@ -139,11 +139,12 @@ google_analytics:
 
 
 # 百度统计 ID，此 ID 是百度统计提供脚本中 hm.js? 后面那串字符，非百度统计帐号
-baidu_analytics: 50c15455e37f70aea674ff4a663eef27
+#baidu_analytics: 50c15455e37f70aea674ff4a663eef27
 
 # 站点起始时间
 since: 2017
 
+avatar: http://omeik3jj4.bkt.clouddn.com/index_header.jpg
 # =============================================================================
 # End NexT Theme configuration
 # =============================================================================
