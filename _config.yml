@@ -76,6 +76,7 @@ pagination_dir: page
 
 # Extensions
 ## Plugins: https://hexo.io/plugins/
+
 ## Themes: https://hexo.io/themes/
 theme: next
 
@@ -95,13 +96,13 @@ include:
   - .nojekyll
 
 # 打赏:
-reward_comment: 坚持原创技术分享，您的支持将鼓励我继续创作！
+reward_comment: 知道是不会有人点的，但万一有人呢:)
 wechatpay: /images/wechatpay.png
 #alipay: /path/to/alipay-reward-image
 
 
 # 多说帐号
-duoshuo_shortname: weixu_2008
+duoshuo_shortname: joyxu
 
 # DISQUS 帐号 （如果已经设置 多说 帐号，此选项将被跳过）
 disqus_shortname: your-disqus-shortname
