@@ -5,13 +5,13 @@ date: 2017-05-22 16:36:49
 tags: [Virtualization, Linux Kernel]
 ---
 
-#目的
+# 目的
 
 * 基于虚拟化理论要求，解释ARM VHE扩展
 * 基于虚拟化实现模型，解析KVM实现要点
 * 记录后续虚拟化的发展方向
 
-#虚拟化理论基础
+# 虚拟化理论基础
 
 根据[Popek and Goldberg virtualization requirements](https://en.wikipedia.org/wiki/Popek_and_Goldberg_virtualization_requirements)理论，
 实现虚拟化的一个充分条件是针对ＶＭＭ提供一套特权指令集来控制虚拟化资源，同时该理论也提供了一个简单的技术实现方案:trap-and-emulate。
@@ -19,9 +19,9 @@ tags: [Virtualization, Linux Kernel]
 
 todo: trap-and-emulate 架构图片
 
-#ARM VHE 扩展
+# ARM VHE 扩展
 
-##v8.1扩展
+## v8.1扩展
 * 增加EL2，新增HYP模式，在该模式下处理VMM相关特权指令控制虚拟化资源，新增HYP模式中断向量表(HVBAR)，CPU通过HVC或者SMC指令陷入HVC模式，并通过ERET返回EL1
 
 todo: Host HYP Guest 转换
@@ -36,25 +36,25 @@ todo: VA->IPA->PA转换图
 * 不支持nested
 * stage 2 页表类似LPAE
 
-##v8.3扩展
+## v8.3扩展
 
 * fdasfsa
 * fdsa范德萨
 
-#整体架构
+# 整体架构
 
 * VM lecture
 
-#技术选型
+# 技术选型
 
-##当前主流ARM虚拟化技术框架
+## 当前主流ARM虚拟化技术框架
 
 * KVM
 	* storage: qemu storage stack overview
 * Xen
 * Docker
 
-#后续技术深入方向
+# 后续技术深入方向
 
 	* network: hwanju io virtualzation
 	* gpu: hwanju io virtualization
@@ -63,14 +63,14 @@ todo: VA->IPA->PA转换图
 	* best for virtuazliation: IBM
 
 
-#依赖
+# 依赖
 
 * UEFI必须使能HYP模式，并让Linux kernel从HYP模式启动
 * 只支持4KB页表
 
-#方案评估策略
+# 方案评估策略
 
-#附录
+# 附录
 * network: macvlan
 * storage: device mapper
 * virtio: 
