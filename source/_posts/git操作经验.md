@@ -36,4 +36,5 @@ tags: git
 
 # git working flow对比
 
-[Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+* [A successful Git branching model](http://nvie.com/files/Git-branching-model.pdf)
+* [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
