@@ -6,6 +6,15 @@ tags: git
 
 有些git命令实在太长，且不太容易google到，就特地记录下放在这里吧。
 
+# 调试打印
+
+git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
+
+# 查看远程更新
+
+		git remote update
+		git status
+
 # 取远程仓库最新的tag
 
 		# Get new tags from the remote
