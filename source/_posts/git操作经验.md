@@ -47,3 +47,9 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 
 * [A successful Git branching model](http://nvie.com/files/Git-branching-model.pdf)
 * [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)
+
+# git 拆分子目录成为一个独立git仓库
+
+* 保留目标子目录的git commit history:  `git filter-branch --prune-empty --subdirectory-filter FOLDER-NAME  BRANCH-NAME`
+* 添加目标git repo: `git remote add xxx`
+* 提交到目标git repo: `git push xxx branch-name:master`
