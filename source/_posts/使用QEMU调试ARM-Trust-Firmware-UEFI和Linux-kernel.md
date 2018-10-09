@@ -118,3 +118,13 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 		-cpu host -enable-kvm
 
 另外由于KVM不支持secure扩展，所以KVM的情况下，只能和host共用一个ATF。
+
+
+#调试UEFI和kernel
+
+		qemu-system-aarch64 -smp 2 -m 1024 -machine virt,accel=kvm -cpu host \
+	        -bios ./QEMU_EFI.fd \
+	        -device virtio-blk-device,drive=image \
+		-drive if=none,id=image,file=./xenial-server-cloudimg-arm64-uefi1.img\
+		-nographic  \
+		-net none 
