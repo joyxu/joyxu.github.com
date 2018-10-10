@@ -127,4 +127,18 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 	        -device virtio-blk-device,drive=image \
 		-drive if=none,id=image,file=./xenial-server-cloudimg-arm64-uefi1.img\
 		-nographic  \
-		-net none 
+		-net none
+
+
+其中ubuntu带fat32分区的kernel　image可以从这里下载：http://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-arm64-uefi1.img
+
+替换其中的kernel的话，可以执行下面的命令，注意host kernel需要打开`CONFIG_BLK_DEV_NBD`选项
+
+		qemu-nbd -c /dev/nbd0 $guest
+		sleep 2
+		mount /dev/nbd0p1 /mnt/
+		mv /mnt/boot/vmlinuz-4.4.0-97-generic /mnt/boot/vmlinuz-4.4.0-97-generic.orig
+		mv Image /mnt/boot/vmlinuz-4.4.0-97-generic
+		umount /mnt
+		sync
+		qemu-nbd -d /dev/nbd0
