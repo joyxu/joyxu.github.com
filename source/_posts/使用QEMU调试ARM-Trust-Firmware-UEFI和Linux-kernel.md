@@ -142,3 +142,10 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 		umount /mnt
 		sync
 		qemu-nbd -d /dev/nbd0
+
+修改root账号密码的话，请参考:https://www.maketecheasier.com/reset-root-password-linux/
+
+* 进到Advanced options for ubuntu
+* 进到shell
+* mount -n -o remount,rw /
+* passwd root
