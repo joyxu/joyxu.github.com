@@ -28,34 +28,34 @@ kernel通过`virq`和`hw irq`联系起来，通过`virq`和`irq_desc`把`hw irq`
 
 基于4.10的代码，它们之前的关系如下：
 
-![ARM64中断子系统类图](http://omeik3jj4.bkt.clouddn.com/irq-classes.png)
+![ARM64中断子系统类图](/images/irq-classes.png)
 
 再不考虑多个中断控制器的情况下，物理关系如下：
 
-![单个中断控制器物理连接图](http://omeik3jj4.bkt.clouddn.com/irq_single.png)
+![单个中断控制器物理连接图](/images/irq_single.png)
 
 物理中断触发之后，处理逻辑如下：
 
-![中断处理逻辑图](http://omeik3jj4.bkt.clouddn.com/irq_desc.jpg)
+![中断处理逻辑图](/images/irq_desc.jpg)
 
 # 引入多个中断控制器（比如GPIO和多GIC）之后，处理逻辑如下：　
 
-![多中断处理逻辑图](http://omeik3jj4.bkt.clouddn.com/irq_multi.png)
-![多中断处理逻辑图2](http://omeik3jj4.bkt.clouddn.com/irq_stack.png)
+![多中断处理逻辑图](/images/irq_multi.png)
+![多中断处理逻辑图2](/images/irq_stack.png)
 
 # 引入MSI中断之后
 
-![msi中断处理逻辑图](http://omeik3jj4.bkt.clouddn.com/irq_msi.png)
+![msi中断处理逻辑图](/images/irq_msi.png)
 
 
 # 引入平台设备MSI中断之后
 
-![平台msi中断处理逻辑图](http://omeik3jj4.bkt.clouddn.com/irq_msi_bridge.png)
+![平台msi中断处理逻辑图](/images/irq_msi_bridge.png)
 
 # 现在的domain状态
 
-![domain图](http://omeik3jj4.bkt.clouddn.com/irq_complex.png)
+![domain图](/images/irq_complex.png)
 
 # SMMU处理的例子
 
-![smmu图](http://omeik3jj4.bkt.clouddn.com/irq_example.png)
+![smmu图](/images/irq_example.png)

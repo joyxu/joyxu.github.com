@@ -12,14 +12,14 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 下面是从[YVR18-108:Trusted Firmware for M technical deep dive](https://connect.linaro.org/resources/yvr18/yvr18-108/)材料中截取的关于ARMv8系统架构的一页。
 
-![ARMv8系统架构样例](http://omeik3jj4.bkt.clouddn.com/ATM-overall.png)
+![ARMv8系统架构样例](/images/ATM-overall.png)
 
 拿这一页举例子，只是想说在kernel跑起来之前，一般还有哪些步骤，
 当然每家的做法都不一样，这里只是以公版举例子。
 
 无图无真相，先把结果置顶：）
 
-![结果运行图](http://omeik3jj4.bkt.clouddn.com/qemu-arm64-a57-psci.gif)
+![结果运行图](/images/qemu-arm64-a57-psci.gif)
 
 #QEMU编译
 

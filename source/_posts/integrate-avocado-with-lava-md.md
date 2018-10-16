@@ -26,7 +26,7 @@ tags: [Virtualization, avocado, avocado-vt]
 * 甚至还有[开发计划](https://trello.com/b/WbqPNl2S/avocado)，简直良心极了!
 
 再看看它的宣讲，有水分但也实在。
-![why-avocado](http://omeik3jj4.bkt.clouddn.com/why-avocado.png)
+![why-avocado](/images/why-avocado.png)
 
 于是赶紧抓代码下来，在我们的单板开始实验了。
 
@@ -38,7 +38,7 @@ avocado-vt是avocado的一个专门针对虚拟化的插件，它可以控制qem
 还可以根据配置条件组合成不同配置的虚拟机，从虚拟化测试用例仓库按照配置提取并执行相应的测试用例。
 
 看看下面这个图，能这么组合参数的话，就知道用处有多大了：）
-![笛卡尔范例](http://omeik3jj4.bkt.clouddn.com/multiplexer.png)
+![笛卡尔范例](/images/multiplexer.png)
 
 # 如何集成到LAVA？
 既然avocado/avocado-vt可以单独作为一个应用执行的话，集成到LAVA就和集成普通的shell没什么区别了，

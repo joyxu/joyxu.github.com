@@ -97,8 +97,8 @@ include:
 
 # 打赏:
 reward_comment: 知道是不会有人点的，但万一有人呢:)
-wechatpay: http://omeik3jj4.bkt.clouddn.com/87314894.png
-alipay: http://omeik3jj4.bkt.clouddn.com/554361081.jpg
+wechatpay: /images/87314894.png
+alipay: /images/554361081.jpg
 
 # 多说帐号
 duoshuo_shortname: joyxu
@@ -143,7 +143,7 @@ google_analytics:
 # 站点起始时间
 since: 2017
 
-avatar: http://omeik3jj4.bkt.clouddn.com/index_header.jpg
+avatar: /images/index_header.jpg
 # =============================================================================
 # End NexT Theme configuration
 # =============================================================================
