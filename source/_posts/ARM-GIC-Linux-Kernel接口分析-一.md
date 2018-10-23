@@ -1,4 +1,4 @@
-title: 'ARM GIC Linux Kernel接口分析(一)#'
+title: 'ARM GIC Linux Kernel接口分析(一)'
 author: Joy Xu
 date: 2018-10-18 15:27:27
 tags: [Linxu Kernel, IRQ, 中断]
@@ -28,23 +28,26 @@ GICC主要管理中断处理控制、ack、deack、PE中断mask等。
 
 如果脱离kernel，GIC的配置主要围绕GIC和PE来配置:
 
-GICD:
+* GICD:
 
 	路由使能：GICD_CTLR ARE
 	分发使能：GICD_CTLR EnabledGrp0
 
-GICC：
+* GICC：
+
 	使能系统访问： ICC_SRE_ELn
 	优先级: ICC_PMR_EL1, ICC_BPRn_EL1
 	EOI模式： ICC_CTRL_EL1
 	中断使能: ICC_IGRPEN0_EL1
 
-PE:
+* PE:
+
 	中断向量设置: VBAR_EL1
 
-
-
 # Kernel中GIC使能
+
+
+## 初始化
 
 GIC首先是一个中断控制器，自然要实现`irq_chip`:`gic_eoimode1_chip`，
 同时也需要创建`irq_domain`来分配`irq_desc`，就要实现`irq_domain_ops`:`gic_irq_domain_ops`。
@@ -57,6 +60,7 @@ GIC首先是一个中断控制器，自然要实现`irq_chip`:`gic_eoimode1_chip
 
 
 ## 中断分配
+
 各种类型的中断分配在`gic_irq_domain.gic_irq_domain_alloc`中实现。
 这一块只是从ACPI表格、DTS表格读取hwirq配置和virq的关系而已。
 

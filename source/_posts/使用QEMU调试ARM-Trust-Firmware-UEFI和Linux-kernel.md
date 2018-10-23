@@ -8,7 +8,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 从整体上从动手角度介绍下ARMv8芯片上电后从EL3到EL1的过程，同时给自己留个记录。
 
 
-#ARMv8系统架构
+# ARMv8系统架构
 
 下面是从[YVR18-108:Trusted Firmware for M technical deep dive](https://connect.linaro.org/resources/yvr18/yvr18-108/)材料中截取的关于ARMv8系统架构的一页。
 
@@ -21,7 +21,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 ![结果运行图](/images/qemu-arm64-a57-psci.gif)
 
-#QEMU编译
+# QEMU编译
 
 		sudo apt-get build-dep qemu
 		git clone git://git.qemu.org/qemu.git qemu.git
@@ -29,7 +29,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 		./configure --target-list=aarch64-softmmu
 		make
 
-#ROOTFS编译
+# ROOTFS编译
 
 		git clone git://git.buildroot.net/buildroot buildroot.git
 		cd buildroot.git
@@ -37,7 +37,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 		make menuconfig
 
 
-#QEMU执行ARM64 VM
+# QEMU执行ARM64 VM
 
 		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
 		-nographic -smp 2 -m 2048 \
@@ -45,7 +45,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 	    	-initrd rootfs-arm64.cpio.gz \
 		-append "console=ttyAMA0"
 
-#ARM Trusted Firmware编译
+# ARM Trusted Firmware编译
 
 		git clone https://github.com/ARM-software/arm-trusted-firmware.git
 		cd arm-trusted-firmware.git
@@ -56,7 +56,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 		https://github.com/ARM-software/arm-trusted-firmware/commit/79627dc37259781e578c47e1e63856dd0424b2a2
 
-#执行ARM Trusted Firmware
+# 执行ARM Trusted Firmware
 
 可以按照这个网页来：
 
@@ -76,7 +76,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
        		-append "console=ttyAMA0,38400 earlycon root=/dev/vda2 no_console_suspend" \
 	        -d unimp -semihosting-config enable,target=native
 
-#UEFI编译
+# UEFI编译
 
 		git clone git://git.linaro.org/uefi/linaro-edk2.git
 		cd linaro-edk2.git
@@ -89,14 +89,14 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 		Build/ArmVirtQemu-AARCH64/DEBUG_GCC49/FV/QEMU_EFI.fd
 
-#Kernel编译
+# Kernel编译
 
 		git clone https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git linux.git
 		cd linux.git
 		ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make defconfig
 		ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make -j16
 
-#ACPI表格替换
+# ACPI表格替换
 
 		sudo apt-get install iasl
 		mkdir -p kernel/firmware/acpi
@@ -111,7 +111,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 请参考：
 		https://www.kernel.org/doc/Documentation/acpi/initrd_table_override.txt
 
-#Native ARM64
+# Native ARM64
 
 如果是在ARM64单板上直接执行的话，请在QEMU上把cpu换成以下参数
 
@@ -120,7 +120,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 另外由于KVM不支持secure扩展，所以KVM的情况下，只能和host共用一个ATF。
 
 
-#调试UEFI和kernel
+# 调试UEFI和kernel
 
 		qemu-system-aarch64 -smp 2 -m 1024 -machine virt,accel=kvm -cpu host \
 	        -bios ./QEMU_EFI.fd \
@@ -150,7 +150,7 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 * mount -n -o remount,rw /
 * passwd root
 
-##调试kernel
+## 调试kernel
 
 qemu命令行参数加上`-s`
 gdb执行后，先设置断点，再通过`target remote localhost:1234`挂上QEMU
@@ -158,6 +158,6 @@ gdb执行后，先设置断点，再通过`target remote localhost:1234`挂上QE
 如果需要调试guest kernel启动过程，请再加上`-S`，这样QEMU启动后会停止，
 再进入到QMEU控制台(ctrl+a+c)，让QEMU执行。
 
-##调试QEMU
+## 调试QEMU
 
 gdb qemu后，设置断点，再通过run加qemu运行参数。
