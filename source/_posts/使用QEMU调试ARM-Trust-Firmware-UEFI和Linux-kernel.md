@@ -42,7 +42,42 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
 		-nographic -smp 2 -m 2048 \
 		-kernel ./Image \
-	    	-initrd rootfs-arm64.cpio.gz \
+		-initrd rootfs-arm64.cpio.gz \
+		-append "console=ttyAMA0"
+
+## 增加网络支持
+
+如果只需要和主机能通信的网络：
+
+		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
+		-nographic -smp 2 -m 2048 \
+		-kernel ./Image \
+		-initrd rootfs-arm64.cpio.gz \
+		-netdev user,id=user0,hostfwd=tcp::5000-:22 \
+		-device virtio-net-device,netdev=user0 \
+		-append "console=ttyAMA0"
+
+之后可以在主机使用ssh root@127.0.0.1 -p 5000 登录虚拟机。
+
+如果需要和外网通信，建议使用macvtap。
+
+## 增加PCIe热插拔设备
+
+		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
+		-nographic -smp 2 -m 2048 \
+		-kernel ./Image \
+		-initrd rootfs-arm64.cpio.gz \
+		-device pcie-root-port,port=0x8,chassis=1,id=pci.1,bus=pcie.0,multifunction=on,addr=0x1 \
+		-device pcie-root-port,port=0x9,chassis=2,id=pci.2,bus=pcie.0,addr=0x1.0x1 \
+		-device pcie-root-port,port=0xa,chassis=3,id=pci.3,bus=pcie.0,addr=0x1.0x2 \
+		-device pcie-root-port,port=0xb,chassis=4,id=pci.4,bus=pcie.0,addr=0x1.0x3 \
+		-device pcie-root-port,port=0xc,chassis=5,id=pci.5,bus=pcie.0,addr=0x1.0x4 \
+		-device pcie-root-port,port=0xd,chassis=6,id=pci.6,bus=pcie.0,addr=0x1.0x5 \
+		-netdev user,id=user0,hostfwd=tcp::5000-:22 \
+		-device virtio-net-pci,netdev=user0,id=net,bus=pci.1,addr=0x0 \
+		-device qemu-xhci,p2=8,p3=8,id=usb,bus=pci.2,addr=0x0 \
+		-device virtio-scsi-pci,id=scsi0,bus=pci.3,addr=0x0 \
+		-device virtio-serial-pci,id=virtio-serial0,bus=pci.4,addr=0x0 \
 		-append "console=ttyAMA0"
 
 # ARM Trusted Firmware编译
