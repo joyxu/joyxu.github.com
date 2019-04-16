@@ -59,7 +59,21 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 之后可以在主机使用ssh root@127.0.0.1 -p 5000 登录虚拟机。
 
-如果需要和外网通信，建议使用macvtap。
+如果需要和外网通信，建议使用macvtap,具体命令如下：
+
+		ip link add link eth1 name macvtap0 type macvtap
+		ip link set macvtap0 up
+		ip link show macvtap0
+
+		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
+		-nographic -smp 2 -m 2048 \
+		-kernel ./Image \
+		-initrd rootfs-arm64.cpio.gz \
+		-net nic,model=virtio,macaddr=$(cat /sys/class/net/macvtap0/address) \
+		-net tap,fd=3 3<>/dev/tap$(cat /sys/class/net/macvtap0/ifindex) \
+		-append "console=ttyAMA0"
+
+		ip link del macvtap0
 
 ## 增加PCIe热插拔设备
 
