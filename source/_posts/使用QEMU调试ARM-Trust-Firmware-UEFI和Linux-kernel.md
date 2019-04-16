@@ -77,6 +77,8 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 ## 增加PCIe热插拔设备
 
+注意4.19内核以后，虚拟机如果使用dts方式启动，必须在命令行append中添加"pcie_ports=native"。
+
 		./aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 \
 		-nographic -smp 2 -m 2048 \
 		-kernel ./Image \
