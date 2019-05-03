@@ -44,6 +44,16 @@ apt-get install resolveconf && echo 'nameserver 8.8.8.8' > /etc/resolvconf/resol
 执行以下命令:
 		sudo apt install -y qemu-efi libvirt-clients libvirt-daemon-system bridge-utils virt-manager
 
+## host kernel配置
+
+		CONFIG_NETFILTER_XT_NAT=y
+		CONFIG_NF_NAT_MASQUERADE_IPV4=y
+		CONFIG_IP_NF_NAT=y
+		CONFIG_IP_NF_TARGET_MASQUERADE=y
+		CONFIG_IP_NF_TARGET_NETMAP=y
+		CONFIG_IP_NF_TARGET_REDIRECT=y
+		CONFIG_NF_NAT_MASQUERADE_IPV6=y
+
 
 ## avocado和avocado-vt安装
 
