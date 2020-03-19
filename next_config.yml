@@ -203,7 +203,7 @@ links_layout: block
 #links_layout: inline
 links:
   software dev leadership: http://adam.younglogic.com
-  kernel contribution:http://remword.com/kps_result/
+  kernel contribution: http://remword.com/kps_result/
 
 
 # ---------------------------------------------------------------
