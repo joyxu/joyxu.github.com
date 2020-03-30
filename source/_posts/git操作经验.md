@@ -15,6 +15,10 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 		git remote update
 		git status
 
+# 发送带cover letter的series
+
+		git send-email -7 --cover-letter --annotate --subject-prefix="PATCH v2" --to xxx@xxx.com
+
 # 取远程仓库最新的tag
 
 		# Get new tags from the remote
