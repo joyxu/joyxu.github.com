@@ -58,3 +58,21 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 * 保留目标子目录的git commit history:  `git filter-branch --prune-empty --subdirectory-filter FOLDER-NAME  BRANCH-NAME`
 * 添加目标git repo: `git remote add xxx`
 * 提交到目标git repo: `git push xxx branch-name:master`
+
+
+#git 拆分patch
+
+假设当前有几个改动需要重新拆分，简要的命令如下：
+
+		git reset --soft //reset到这几个改动之前的commit点
+		git checkout HEAD //按照提示，把这些改动恢复到unstaged
+		/*
+		 按照提示，选Y则把这部分改动合入，选N则放弃，选e则手动合入；
+		 手动情况下：
+			* 不想要的新增的，直接删掉
+			* 不想要的删除，把行首的-号去掉
+			* 想要的改动，保留行首符号
+		 */
+		git add -p
+		git commit -s -u //针对这部分，加上commit 消息
+		git rebase -i HEAD~2 //修改最近两次改动
