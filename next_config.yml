@@ -204,7 +204,7 @@ links_layout: block
 links:
   software dev leadership: http://adam.younglogic.com
   kernel contribution: http://remword.com/kps_result/
-
+  linux tracing: https://jvns.ca/blog/2017/07/05/linux-tracing-systems/
 
 # ---------------------------------------------------------------
 # Post Settings
