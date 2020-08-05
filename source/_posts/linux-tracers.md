@@ -16,45 +16,45 @@ eBPF，Systemtap，kprobe，FTrace和Perf等等，对于平时只用过perf的�
 2. 数据收集机制
 3. 前端工具
 
-#数据源
+# 数据源
 
-##probe
+## probe
 
 程序执行的时候，通过动态修改程序执行的汇编代码来获取程序运行的踪迹。典型的有
 kprobe和uprobe。
 
-##tracepoint
+## tracepoint
 
 事先在程序的源码中打桩，编译成二进制之后，通过过滤和开关或许程序运行的踪迹，
 比如kernel tracepoints。
 
-#数据收集机制
+# 数据收集机制
 
-##ftrace文件系统
+## ftrace文件系统
 
 通过读写/sys/kernel/debug/tracing文件系统获取trace数据
 
-##perf
+## perf
 
 通过perf_event_open系统调用从perf的ring buffer获取trace数据， 比如perf trace
 
-##eBFP
+## eBFP
 
 通过eBFP把自己写的eBPF程序通过probe机制注入kernel之后，在该程序中往eBFP映射的
 map，ftrace或者perf buffer中写数据。
 
-##systemtap
+## systemtap
 
 类似eBPF，通过probe方式注入自己写的程序之后，该程序通过relayfs往用户态传数据。
 
-#前端工具
+# 前端工具
 
-##perf
+## perf
 最常用的就是perf，比如perf trace
 
-##bcc
+## bcc
 配合eBPF使用
 
-#参考
+# 参考
 * [Linux tracing systems & how they fit together](https://jvns.ca/blog/2017/07/05/linux-tracing-systems/)
 * [Choosing a Linux Tracer 2015](http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html)
