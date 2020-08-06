@@ -26,7 +26,7 @@ MAC是链路层的协议，也可以表示IP，PHY是IP。
 MAC和PHY之间可以通过Serdes互联。
 
 一般在IP上，可以按照下面的方式互联：
-![IP互联](/images/_10g-ethernet.gif)
+![IP互联](/images/10g-ethernet.jpg)
 
 # Linux Kernel驱动
 
@@ -56,3 +56,5 @@ ethtool主要用来观察MAC，mii-tool基本已经不用，但是可以用它�
 * [Octal 10/100/1000BASE-T PHY and 100BASE-FX/1000BASE-X SerDes with SGMII MAC Interface](https://www.microsemi.com/product-directory/gigabit-ethernet-phys/3910-vsc8658)
 * [Tri-Mode Ethernet MAC v9.0](https://www.xilinx.com/support/documentation/ip_documentation/tri_mode_ethernet_mac/v9_0/pg051-tri-mode-eth-mac.pdf)
 * [以太网MAC和PHY之间的接口总结](https://www.eda365.com/thread-280766-1-1.html)
+* [GMII/SGMII和Serdes的区别和联系](https://twblogs.net/a/5c226f39bd9eee16b4a77e65)
+
