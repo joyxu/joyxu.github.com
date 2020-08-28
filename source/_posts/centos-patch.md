@@ -26,4 +26,6 @@ SRPM包归档：http://vault.centos.org/
 但是注意的是，里面是没有任何git信息的。
 另外还有一个有意思的是里面解压出来会有一个check-kabi的脚本。
 
+# 其它
 
+github上有人也做了一个自动提取centos源码的仓库:https://github.com/kernelim/linux
