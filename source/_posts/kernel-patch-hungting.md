@@ -27,11 +27,12 @@ tags: [Linxu Kernel]
 利用Coccinelle通过静态检查的方式，根据输出的提示，找bug, 从官网下载好之后，
 按照install说明进行编译安装后，直接进入到kernel目录，运行下面命令，之后根据提示
 找补丁：
+
 	sudo apt-get install -y coccinelle
 	make coccicheck MODE=report ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
 运行效果如下图：
-	![coccicheck效果图](.images/coccinelle.PNG)
+	![coccicheck效果图](/images/coccinelle.PNG)
 
 # 使用内核自带的检查
 
