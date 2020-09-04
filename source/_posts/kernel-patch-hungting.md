@@ -6,7 +6,21 @@ date: 2020-09-04 19:44:44
 tags: [Linxu Kernel]
 ---
 
-最近要冲linux的补丁数量了，写个总结，有哪些方法可以快速找到补丁：
+最近要冲linux的补丁数量了，写个总结，有哪些方法可以快速找到补丁。
+找到想改的补丁后，先在对应的[patchwork邮件列表](https://lore.kernel.org/patchwork/project/lkml/list/)中搜下，看看这个patch是否有其他人已经发出来了，避免做无用功。
+补丁做好之后，还是按照老步骤保证补丁质量：
+	
+	make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../kernel-dev.build -j32
+
+	git format-patch -1
+	./scripts/checkpatch.pl *.patch
+
+	git send-email \
+	--dry-run --annotate \
+	--cc-cmd="./scripts/get_maintainer.pl --norolestats" \
+	--to=xxx@xxx.com \
+	--cc=self@xxx.com \
+	xxx.patch
 
 # Coccinelle静态检查
 
@@ -17,7 +31,7 @@ tags: [Linxu Kernel]
 	make coccicheck MODE=report ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
 运行效果如下图：
-	[coccicheck效果图](.images/coccinelle.PNG)
+	![coccicheck效果图](.images/coccinelle.PNG)
 
 # 使用内核自带的检查
 
