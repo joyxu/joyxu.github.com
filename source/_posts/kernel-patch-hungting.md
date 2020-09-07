@@ -46,6 +46,17 @@ tags: [Linxu Kernel]
 
 访问https://syzkaller.appspot.com
 
+# Kernel Self Protection Project
+
+主页http://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project上有bug跟踪
+系统介绍，访问https://github.com/KSPP/linux/issues
+
+这个模块现在有专门的maintainer https://git.kernel.org/pub/scm/linux/kernel/git/gustavoars/linux.git/ 
+
+# ClangBuiltLinux静态检查
+
+访问https://github.com/ClangBuiltLinux/linux/issues
+
 # 参考
 
 * [Coccinelle介绍](https://kernel-recipes.org/en/2013/automating-source-code-evolutions-using-coccinelle/)
