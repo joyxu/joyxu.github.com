@@ -26,6 +26,12 @@ tags: [Linxu Kernel]
 
 	git log --pretty=oneline --abbrev-commit xxx.c
 
+添加的消息格式稍微修改下，再添加到git commit消息中，比如：
+
+	Fixes: 54a4f0239f2e ("KVM: MMU: make kvm_mmu_zap_page() return the number of pages it actually freed")
+
+详细步骤可以参考：https://www.kernel.org/doc/html/v5.9-rc5/process/submitting-patches.html
+
 # Coccinelle静态检查
 
 利用Coccinelle通过静态检查的方式，根据输出的提示，找bug, 从官网下载好之后，
