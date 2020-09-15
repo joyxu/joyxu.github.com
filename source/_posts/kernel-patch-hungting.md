@@ -22,6 +22,10 @@ tags: [Linxu Kernel]
 	--cc=self@xxx.com \
 	xxx.patch
 
+一般fix的patch ，还需要把下面的输出添加到patch的commit消息里面去：
+
+	git log --pretty=oneline --abbrev-commit xxx.c
+
 # Coccinelle静态检查
 
 利用Coccinelle通过静态检查的方式，根据输出的提示，找bug, 从官网下载好之后，
