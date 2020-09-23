@@ -11,7 +11,7 @@ IO机制一般分为4种：阻塞，非阻塞，同步和异步。
 这篇[文章](https://www.cnblogs.com/lovingprince/archive/2011/05/17/2166241.html)
 讲的很清楚，这几种IO的区别，借用下别人的图。
 
-![Linux IO区别](/Images/linux-io.gif)
+![Linux IO区别](/images/linux-io.gif)
 
 # linux poll
 
@@ -19,7 +19,7 @@ IO机制一般分为4种：阻塞，非阻塞，同步和异步。
 最好的办法还是要自己多上上手，另外整体上可以看看这篇[文章](https://www.oreilly.com/library/view/linux-device-drivers/0596000081/ch05s03.html)，
 越来越觉得能把文章写得精简而达意是门高深的技术了。同时借用下别人的图。
 
-![poll table entry and wait queue entry](/Images/poll-table.png)
+![poll table entry and wait queue entry](/images/poll-table.png)
 
 # 总结
 最后总结下，驱动里面需要加一个wait queue head，提供poll这个ops。
