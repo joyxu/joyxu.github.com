@@ -9,5 +9,6 @@ tags: [Linux Kernel]
 
 主要基于这个问答：
 https://stackoverflow.com/questions/15491751/real-life-use-cases-of-barriers-dsb-dmb-isb-in-arm 
+https://hackmd.io/@butastur/rkkQEGjUN
 
 
