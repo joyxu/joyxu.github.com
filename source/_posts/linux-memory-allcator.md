@@ -9,4 +9,5 @@ tags: [Linux Kernel]
 
 https://hammertux.github.io/slab-allcator
 https://blog.csdn.net/mrwangwang/article/details/38709813
+https://inst.eecs.berkeley.edu/~cs162/sp20/static/lectures/13.pdf
 
