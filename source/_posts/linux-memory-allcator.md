@@ -8,5 +8,5 @@ tags: [Linux Kernel]
 先立个Flag，给自己一个Todo :)
 
 https://hammertux.github.io/slab-allcator
-
+https://blog.csdn.net/mrwangwang/article/details/38709813
 
