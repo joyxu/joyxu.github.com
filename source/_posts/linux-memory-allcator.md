@@ -1,5 +1,5 @@
 ---
-title: ARM memory barrier学习
+title: linux memory management学习
 author: Joy Xu
 date: 2020-08-21 19:18
 tags: [Linux Kernel]
