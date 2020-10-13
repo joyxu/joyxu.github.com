@@ -202,6 +202,8 @@ links_title: Links
 links_layout: block
 #links_layout: inline
 links:
+  1#: http://makelinux.net/resources/
+  2#: https://www.cse.iitb.ac.in/~mythili/
   software dev leadership: http://adam.younglogic.com
   kernel contribution: http://remword.com/kps_result/
   linux tracing: https://jvns.ca/blog/2017/07/05/linux-tracing-systems/
