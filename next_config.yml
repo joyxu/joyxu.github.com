@@ -225,7 +225,8 @@ links:
   virt: http://oenhan.com/
   gdb: http://beej.us/guide/bggdb/
   性能调优: https://plantegg.github.io/
-
+  memory latency: http://www.qdpma.com/ServerSystems/MemoryLatencyII.html
+ 
 # ---------------------------------------------------------------
 # Post Settings
 # ---------------------------------------------------------------
