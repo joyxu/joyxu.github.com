@@ -13,3 +13,26 @@ https://inst.eecs.berkeley.edu/~cs162/sp20/static/lectures/13.pdf
 https://linuxplumbersconf.org/event/2/contributions/65/attachments/15/171/slides-expanded.pdf
 https://manybutfinite.com/post/how-the-kernel-manages-your-memory/
 https://www.cse.iitb.ac.in/~mythili/teaching/cs347_autumn2016/notes/07-memory.pdf
+
+
+# 名词解释
+
+high memory和low memory可以说是针对物理内存的概念，在以前的32位处理器中，kernel
+把virtual address space划分成2部分，3G用户空间和1G kernel空间，其中1G的kernel空
+间又分成两部分：
+* low memory: 低地址的896MB,总是映射到kernel address space。
+* high memory: 高地址的128MB,不总是映射到kernel address space，为了在32位系统中
+能访问更多的内存，比如64GB(36位)，kernel引入了PAE(page address extension)的概念，
+由于36超过32，所以有部分内存不是总被映射，这部分就叫做high memory。但在64位系统中，
+high memory也是可以被映射的，但是由于kernel对物理地址连续内存的偏好，以及使用
+限制（vmalloc指定GFP_HIGHMEM分配），high memory还是用的不多。 在用户态中，用户地址
+是需要显式映射的，通常high memory用于用户态。
+
+参考：
+[How Linux kernel decide to which memory zone to use](https://stackoverflow.com/questions/18061218/how-linux-kernel-decide-to-which-memory-zone-to-use)
+[Kernel addresses – concept of low and high memory](https://www.oreilly.com/library/view/linux-device-drivers/9781785280009/3ef362cb-6fc3-4089-b7ea-8df1ce77ca5a.xhtml)
+[kernel memory](http://iakovlev.org/index.html?m=1&p=1034)
+
+![Kernel addresses – concept of low and high memory](/images/kernel-high-low-memory.PNG)
+
+![zone info](/images/zone-info.PNG)
