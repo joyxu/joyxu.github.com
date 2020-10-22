@@ -1,5 +1,5 @@
 ---
-title: linux memory management学习
+title: linux memory management
 author: Joy Xu
 date: 2020-08-21 19:18
 tags: [Linux Kernel]
@@ -16,6 +16,8 @@ https://www.cse.iitb.ac.in/~mythili/teaching/cs347_autumn2016/notes/07-memory.pd
 
 
 # 名词解释
+
+## high memory & low memory
 
 high memory和low memory可以说是针对物理内存的概念，在以前的32位处理器中，kernel
 把virtual address space划分成2部分，3G用户空间和1G kernel空间，其中1G的kernel空
@@ -35,4 +37,17 @@ high memory也是可以被映射的，但是由于kernel对物理地址连续内
 
 ![Kernel addresses – concept of low and high memory](/images/kernel-high-low-memory.PNG)
 
+## zone
+
+kernel使用Zone来管理physical address space range.一般有zone_dma, zone_normal和
+zone_highmem，X86上zone的布局可以参考下图：
+
+![x86 zone info](/images/zone-types.jpg]
+
+在ARM64中，没有zone_highmem区域，具体代码参考[zone_type](https://elixir.bootlin.com/linux/latest/source/include/linux/mmzone.h#L345)。
+
 ![zone info](/images/zone-info.PNG)
+
+参考：
+[Linux内存管理zone_sizes_init](https://www.cnblogs.com/LoyenWang/p/11568481.html)
+[linux内核内存管理](https://blog.csdn.net/farmwang/article/details/66976818)
