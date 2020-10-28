@@ -75,7 +75,7 @@ linux中virtual address可以有三类：
 具体代码[VMEMMAP_START](https://elixir.bootlin.com/linux/latest/source/arch/arm64/include/asm/memory.h#L53)
 arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://elixir.bootlin.com/linux/latest/source/Documentation/arm64/memory.rst)
 
-![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png]
+![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png)
 
 ## linux mm scope
 
