@@ -46,7 +46,7 @@ high memory也是可以被映射的，但是由于kernel对物理地址连续内
 kernel使用Zone来管理physical address space range.一般有zone_dma, zone_normal和
 zone_highmem，X86上zone的布局可以参考下图：
 
-![x86 zone info](/images/zone-types.jpg]
+![x86 zone info](/images/zone-types.jpg)
 
 在ARM64中，没有zone_highmem区域，具体代码参考[zone_type](https://elixir.bootlin.com/linux/latest/source/include/linux/mmzone.h#L345)。
 
