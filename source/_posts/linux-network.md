@@ -10,4 +10,7 @@ tags: [网卡, Linux Kernel]
 https://cs.unh.edu/cnrg/people/gherrin/linux-net.html
 http://www.cs.columbia.edu/~nahum/w6998/lectures/vpk-columbia-nsdi-lsf.pdf
 https://cs.dartmouth.edu/~sergey/netreads/path-of-packet/
-
+https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/
+https://www.csee.umbc.edu/~jtang/archives/cs421.f18/lectures/L26Networking.pdf
+https://people.redhat.com/pladd/
+https://elinux.org/Networking_Presentations
