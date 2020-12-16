@@ -207,10 +207,12 @@ kernel一定要把KASLR Randomize the kernel memory sections选项关掉，
 或者在kernel的command line中添加"nokaslr"。
 
 qemu命令行参数加上`-s`
-gdb执行后，先设置断点，再通过`target remote localhost:1234`挂上QEMU
+gdb执行后，先设置断点，再通过`target remote localhost:1234`挂上QEMU。
 
 如果需要调试guest kernel启动过程，请再加上`-S`，这样QEMU启动后会停止，
 再进入到QMEU控制台(ctrl+a+c)，让QEMU执行。
+
+		gdb --tui vmlinux_file_path -d kernel_source_dir
 
 ## 调试QEMU
 
