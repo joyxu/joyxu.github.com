@@ -203,6 +203,9 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 ## 调试kernel
 
+kernel一定要把KASLR Randomize the kernel memory sections选项关掉，
+或者在kernel的command line中添加"nokaslr"。
+
 qemu命令行参数加上`-s`
 gdb执行后，先设置断点，再通过`target remote localhost:1234`挂上QEMU
 
