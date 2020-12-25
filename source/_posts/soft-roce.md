@@ -40,13 +40,14 @@ tags: [RoCE, Linux Kernel]
 
  虚拟机启动之后，运行以下命令：
 
- rdma link add rxe_eth0 type rxe netdev eth0
- rdma link
- mkdir -p /usr/local/etc/libibverbs.d/
- echo "driver rxe" > /usr/local/etc/libibverbs.d/rxe.driver
- ib_send_bw -d rxe_eth0 -n 5 -s 100 -Q 1 &
- ib_send_bw -d rxe_eth0 -n 5 -s 100 -Q 1 127.0.0.1
+	 rdma link add rxe_eth0 type rxe netdev eth0
+	 rdma link
+	 mkdir -p /usr/local/etc/libibverbs.d/
+	 echo "driver rxe" > /usr/local/etc/libibverbs.d/rxe.driver
+	 ib_send_bw -d rxe_eth0 -n 5 -s 100 -Q 1 &
+	 ib_send_bw -d rxe_eth0 -n 5 -s 100 -Q 1 127.0.0.1
 
 # 实例
 
 ![soft RDMA运行实例](/images/soft_rdma.gif)
+![soft RDMA调试实例](/images/soft_roce_debug.PNG)
