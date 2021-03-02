@@ -23,10 +23,11 @@ ARMv8架构中引入了很多Exception Level的概念，这里结合ARM的材料
 
 # QEMU编译
 
-		sudo apt-get build-dep qemu
+		sudo apt-get install build-dep qemu -y
+		sudo apt-get install libcap-ng-dev libattr1-dev -y //9p shared virtfs depened
 		git clone git://git.qemu.org/qemu.git qemu.git
 		cd qemu.git
-		./configure --target-list=aarch64-softmmu
+		./configure --target-list=aarch64-softmmu --enable-virtfs
 		make
 
 # ROOTFS编译
