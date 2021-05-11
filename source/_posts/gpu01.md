@@ -2,7 +2,7 @@
 title: Linux图形软件栈系列-01
 author: Joy Xu
 date: 2021-05-11 03:14:56
-tags: linux, gpu
+tags: [linux, gpu]
 ---
 
 # Linux类系统上的图形软件栈
