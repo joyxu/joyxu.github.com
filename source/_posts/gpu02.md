@@ -45,3 +45,4 @@ CPU和GPU通信主要有几下几种方式：
 
 [GPU Architecture Overview](https://insujang.github.io/2017-04-27/gpu-architecture-overview/)
 ["RDNA 1.0" Instruction Set Architecture](https://developer.amd.com/wp-content/resources/RDNA_Shader_ISA.pdf)
+[A deeper look into GPUs and the Linux Graphics Stack](https://phd.mupuf.org/files/toulibre2012_deeper_look.pdf)
