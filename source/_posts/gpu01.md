@@ -1,5 +1,5 @@
 ---
-title: Linux图形软件栈系列-01
+title: Linux GPU系列-01-图形软件栈
 author: Joy Xu
 date: 2021-05-11 03:14:56
 tags: [linux, gpu]
