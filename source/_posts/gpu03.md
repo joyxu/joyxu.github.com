@@ -31,7 +31,7 @@ Tile和Vertext、Fragement间的交互如下：
 
 ![Midgard的逻辑框图](/images/mali_midgard_blocks.png)
 
-![Midgard软件接口](/images/mali_midgard_jobs_interferce.png)
+![Midgard软件接口](/images/mali_midgard_jobs_interface.png)
 
 驱动把job提交给job manager，再由job manager分发给具体的硬件单元执行;job存在之前说的ring buffer中。
 job有几种类型：
@@ -42,7 +42,7 @@ job manager根据job类型分发：
 
 ![Midgard软件接口](/images/mali_midgard_job_dispatch.png)
 
-##结合OpenGL api观察整个流程
+## 结合OpenGL api观察整个流程
 
 ![Midgard软件接口](/images/mali_midgard_opengl.png)
 
