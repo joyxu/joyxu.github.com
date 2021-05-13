@@ -56,3 +56,7 @@ GPU的用户态驱动也是在MESA在实现，MESA会通过DRM动态库，把硬
 安卓的软件栈又稍稍不一样，安卓去掉了X11和Wayland，实现了自己的drm_hwcomposer和内存管理gralloc。
 
 第一篇就到这里，先把整体的架构把握住。
+
+# 参考
+[The Linux Graphics Stack](https://blog.mecheye.net/2012/06/the-linux-graphics-stack/)
+[Xplain](https://magcius.github.io/xplain/article/)
