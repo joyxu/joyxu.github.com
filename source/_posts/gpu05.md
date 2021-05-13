@@ -9,13 +9,13 @@ tags: [linux, gpu]
 而且Frame怎么画出来的，也是由用户设置state和调用draw call产生的。
 下图是从[DirectX Spec](https://microsoft.github.io/DirectX-Specs/d3d/CPUEfficiency.html)官网来的：
 
-[!DirectX workgroup](/images/d3d_workgroup.png)
+![DirectX workgroup](/images/d3d_workgroup.png)
 
 ## MESA
 
 [MESA源码](https://gitlab.freedesktop.org/mesa/mesa)里面有2套架构，现在驱动主要基于Gallium架构。
 
-[!MESA架构](/images/mesa_arch1.png)
+![MESA架构](/images/mesa_arch1.png)
 
 Gallium架构
 
