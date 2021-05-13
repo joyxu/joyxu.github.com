@@ -15,6 +15,8 @@ tags: [linux, gpu]
 如下图所示：
 ![GPU pipeline](/images/gpu_pipeline.png)
 
+![GPU pipeline2](/images/gpu_pipeline2.png)
+
 ## ARM MALI GPU工作流程
 
 由于MALI是基于TBR(Tiled based rendering)所以多一个Tiling或者binning的步骤。
@@ -78,3 +80,4 @@ OpenGL API主要组织好job所需的数据，为后续的shader core计算做�
 [Adreno GPU Architecture](https://blog.csdn.net/Q1302182594/article/details/82767719)
 [What exactly is a GPU binning pass](https://stackoverflow.com/questions/34196144/what-exactly-is-a-gpu-binning-pass)
 [What is a renderpass?](https://stackoverflow.com/questions/34382340/what-is-a-renderpass)
+[渲染流程](https://www.cnblogs.com/llstart-new0201/p/11949743.html)
