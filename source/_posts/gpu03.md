@@ -52,7 +52,17 @@ OpenGL API主要组织好job所需的数据，为后续的shader core计算做�
 ## 再补充些概念
 
 * binning pass:对于TBR来说，就是拆成primitive的过程
-* rendering pass：对每个primitive进行渲染着色的过程，一个rendering pass可以有多个sub pass
+* rendering pass：对每个primitive进行渲染着色的过程，一个rendering pass可以有多个sub pass，更精准的描述可以参考下面stackflow的答复
+
+	The term "render pass" is more nebulous. The most common meaning refers to multipass rendering techniques.
+	In multipass techniques, you render the same "object" multiple times, with each rendering of the object doing
+	a separate computation that gets accumulated into the final value. Each rendering of the object with a particular
+	set of state is called a "pass" or "render pass".
+
+	Note that a render pass is not necessarily a draw call. Objects could require multiple draw calls to render.
+	While this is typically slower than making a single draw call, it may be necessary for various reasons.
+
+* draw call：对应到Open GL里面gl*Draw*这样的API，这些API的调用触发vertex被渲染，但是同时针对一个vertex调用多次API，仍然是一个draw call。
 
 ![MALI PASS](/images/mali_pass.png)
 
@@ -67,3 +77,4 @@ OpenGL API主要组织好job所需的数据，为后续的shader core计算做�
 [Optimizing Roblox: Vulkan Best Practices for Mobile Developers](https://zeux.io/data/gdc2020_arm.pdf)
 [Adreno GPU Architecture](https://blog.csdn.net/Q1302182594/article/details/82767719)
 [What exactly is a GPU binning pass](https://stackoverflow.com/questions/34196144/what-exactly-is-a-gpu-binning-pass)
+[What is a renderpass?](https://stackoverflow.com/questions/34382340/what-is-a-renderpass)
