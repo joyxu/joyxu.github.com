@@ -6,6 +6,10 @@ tags: [linux, gpu]
 ---
 
 代码分析本应该自下而上的，但是GPU的主要驱动主要在用户态，所以这次从用户态先开始。
+而且Frame怎么画出来的，也是由用户设置state和调用draw call产生的。
+下图是从[DirectX Spec](https://microsoft.github.io/DirectX-Specs/d3d/CPUEfficiency.html)官网来的：
+
+[!DirectX workgroup](/images/d3d_workgroup.png)
 
 ## MESA
 
