@@ -11,17 +11,17 @@ tags: [linux, gpu]
 
 [MESA源码](https://gitlab.freedesktop.org/mesa/mesa)里面有2套架构，现在驱动主要基于Gallium架构。
 
-[MESA架构](/images/mesa_arch1.png)
+[!MESA架构](/images/mesa_arch1.png)
 
 Gallium架构
 
-[MESA Gallium架构](/images/mesa_arch2.png)
+![MESA Gallium架构](/images/mesa_arch2.png)
 
 MESA其实实现了很多API接口，不只是上图的OpenGL、GLX、还有OpenGL ES、OpenVG、OpenCL、VDPAU和OpenMAX等。
 
 当前MESA驱动实现状态大致如下:
 
-[MESA驱动状态](/images/mesa_arch3.png)
+![MESA驱动状态](/images/mesa_arch3.png)
 
 ## Gallium展开
 
