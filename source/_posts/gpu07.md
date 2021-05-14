@@ -16,6 +16,7 @@ tags: [linux, gpu]
 context可以认为是硬件的一个pipe line的实例，涉及到state的设置，fence等。
 另外让pipe loader选择我们新创建的pipe driver。
 
+![pipe screen/context/resource用法](/images/driver_pipeline.pg)
 
 ## 文件说明
 
