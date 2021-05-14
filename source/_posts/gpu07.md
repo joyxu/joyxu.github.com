@@ -149,3 +149,6 @@ job都是一批一批提交的，所以主要是panfrost_batch结构，一般属
 			...
 		}
 
+## winsys 接口
+
+`winsys/panfrost/drm`，只用对接drm，创建并返回pipe screen。
