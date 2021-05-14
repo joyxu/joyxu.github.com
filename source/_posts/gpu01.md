@@ -66,3 +66,4 @@ GPU的用户态驱动也是在MESA在实现，MESA会通过DRM动态库，把硬
 [Daniel Vetter](https://blog.ffwll.ch/archive/)
 [Graphics Presentations](https://elinux.org/Graphics_Presentations)
 [Open Source Graphics 101](https://elinux.org/images/4/42/Elce-2019-gfx-101-boris.pdf)
+[GPU on KVM](https://www.lse.epita.fr/lse-summer-week-2014/slides/lse-summer-week-2014-24-GPU%20on%20KVM.pdf)

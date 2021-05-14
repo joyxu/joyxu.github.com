@@ -67,3 +67,5 @@ state tracker也可以直接通过p_winsys和Winsys通信,一般GPU厂商也要�
 [MESA wiki不用翻墙](http://oer2go.org:81/wikipedia_en_all_novid_2017-08/A/Mesa_(computer_graphics).html)
 [The Linux graphics stack, Optimus and the Nouveau driver](http://phd.mupuf.org/files/kr2014.pdf)
 [Linux Graphics](https://wdv4758h.github.io/notes/graphics/introduction.html)
+[Gallium3D](https://akademy2008.kde.org/conference/slides/zack-akademy2008.pdf)
+[TG-Gallium Driver Stack](https://wiki.freedesktop.org/www/Software/gallium/gallium3d-xds2007.pdf)
