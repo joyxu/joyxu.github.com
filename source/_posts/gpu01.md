@@ -60,3 +60,4 @@ GPU的用户态驱动也是在MESA在实现，MESA会通过DRM动态库，把硬
 # 参考
 [The Linux Graphics Stack](https://blog.mecheye.net/2012/06/the-linux-graphics-stack/)
 [Xplain](https://magcius.github.io/xplain/article/)
+[4 years later](https://www.rojtberg.net/271/4-years-later/)
