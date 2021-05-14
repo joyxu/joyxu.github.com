@@ -81,3 +81,5 @@ OpenGL API主要组织好job所需的数据，为后续的shader core计算做�
 [What exactly is a GPU binning pass](https://stackoverflow.com/questions/34196144/what-exactly-is-a-gpu-binning-pass)
 [What is a renderpass?](https://stackoverflow.com/questions/34382340/what-is-a-renderpass)
 [渲染流程](https://www.cnblogs.com/llstart-new0201/p/11949743.html)
+[Unity - DrawCall, Batch, SetPassCall区别](https://blog.csdn.net/linjf520/article/details/113702206?spm=1001.2014.3001.5501)
+[Render Hell 2.0](http://simonschreibt.de/gat/renderhell/)
