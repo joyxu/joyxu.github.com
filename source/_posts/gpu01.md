@@ -61,3 +61,8 @@ GPU的用户态驱动也是在MESA在实现，MESA会通过DRM动态库，把硬
 [The Linux Graphics Stack](https://blog.mecheye.net/2012/06/the-linux-graphics-stack/)
 [Xplain](https://magcius.github.io/xplain/article/)
 [4 years later](https://www.rojtberg.net/271/4-years-later/)
+[Martin Peres](https://publications.mupuf.org/)
+[Linux graphic stack](https://www.studiopixl.com/2017-05-13/linux-graphic-stack-an-overview.html)
+[Daniel Vetter](https://blog.ffwll.ch/archive/)
+[Graphics Presentations](https://elinux.org/Graphics_Presentations)
+[Open Source Graphics 101](https://elinux.org/images/4/42/Elce-2019-gfx-101-boris.pdf)
