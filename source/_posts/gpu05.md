@@ -27,6 +27,8 @@ MESA其实实现了很多API接口，不只是上图的OpenGL、GLX、还有Open
 
 ![MESA驱动状态](/images/mesa_arch3.png)
 
+![MESA驱动状态2](/images/mesa_arch4.png)
+
 ## Gallium展开
 
 Gallium中主要包含下面几块：
