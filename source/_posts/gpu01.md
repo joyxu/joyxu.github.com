@@ -1,105 +1,48 @@
 ---
-title: Linux GPU系列-01-ARM MALI GPU工作流程介绍
+title: Linux GPU系列-01-GPU物理模型
 author: Joy Xu
-date: 2021-05-10 01:30:11
+date: 2021-05-09 08:18:04
 tags: [linux, gpu]
 ---
 
-先讲讲ARM MALI GPU的工作流程，为后续做下铺垫。
+接着上篇，这篇主要讲讲GPU的构成。
 
-## GPU工作流程-pipeline
+# GPU物理模型
 
-介绍GPU的工作流程，一般都是介绍GPU的pipeline，主要包括三部分：
-* Vertex处理，做MPV（Model，View， Project trasform）和Screen mapping坐标变换，clip裁剪
-* Rasterization处理，主要遍历三角形
-* Fragment处理，差值计算处理顶点颜色，纹理贴图等
+GPU通常是一个独立的PCIe卡，当然也可能集成到SoC中，但是仍然呈现为一个PCIe设备。
 
-整个流程如下图所示：
-![GPU pipeline](/images/gpu_pipeline.png)
+GPU的物理形态一般如下图：
 
-![GPU pipeline2](/images/gpu_pipeline2.png)
+![GPU卡](/images/gpu_card.png)
 
-## GPU内部组成
+具体到GPU的硬件单元的话，以AMD RDNA的卡为例，内部框图如下：
 
-为了完成上述流程，把GPU内部模块按照功能划分的话，如下图所示：
+![AMD RDNA GPU](/images/amd_gpu.png)
 
-![GPU_internal](/images/internal.png)
+如果我们把它抽象下，一般可以看成下面的模型：
 
-## CPU和GPU交互
+![GPU模型](/images/gpu_management_model.png)
 
-CPU和GPU交互内容如下，不同的GPU卡不完全相同，但是总体还是一致的。
+先说下几个基本概念
 
-![cpu_gpu_com1](/images/cpu_gpu_com1.png)
+## GPU context
+GPU context代表GPU当前状态，每个context有自己的page table，多个context可以同时共存
 
-![cpu_gpu_com2](/images/cpu_gpu_com2.png)
+## GPU Channel
+每个GPU context都有一个或者多个GPU Channel，CPU发给GPU的命令通过GPU Channel传递，
+一般GPU Channel是一个软件概念，通常是一个ring buffer
 
-![cpu_gpu_com3](/images/cpu_gpu_com3.png)
+## page table
+和CPU的page table功能一样，用于VA到PA的映射，访问GPU的地址空间
 
-## ARM MALI GPU工作流程
-
-由于MALI是基于TBR(Tiled based rendering)所以多一个Tiling或者binning的步骤。
-
-如下图
-
-![ARM T880 Tile](/images/t880_tile.png)
-
-Tile和Vertext、Fragement间的交互如下：
-
-![ARM T880 pipeline](/images/t880_pipeline.png)
-
-## ARM MALI Midgard硬件单元框架
-
-![Midgard的逻辑框图](/images/mali_midgard_blocks.png)
-
-![Midgard软件接口](/images/mali_midgard_jobs_interface.png)
-
-驱动把job提交给job manager，再由job manager分发给具体的硬件单元执行;job存在之前说的ring buffer中。
-job有几种类型：
-
-![Midgard软件接口](/images/mali_midgard_jobs.png)
-
-job manager根据job类型分发：
-
-![Midgard软件接口](/images/mali_midgard_job_dispatch.png)
-
-## 结合OpenGL api观察整个流程
-
-![Midgard软件接口](/images/mali_midgard_opengl.png)
-
-OpenGL API主要组织好job所需的数据，为后续的shader core计算做好准备。
-![Midgard软件接口](/images/mali_midgard_opengl_driver.png)
-
-## 再补充些概念
-
-* binning pass:对于TBR来说，就是拆成primitive的过程
-* rendering pass：对每个primitive进行渲染着色的过程，一个rendering pass可以有多个sub pass，更精准的描述可以参考下面stackflow的答复
-
-	The term "render pass" is more nebulous. The most common meaning refers to multipass rendering techniques.
-	In multipass techniques, you render the same "object" multiple times, with each rendering of the object doing
-	a separate computation that gets accumulated into the final value. Each rendering of the object with a particular
-	set of state is called a "pass" or "render pass".
-
-	Note that a render pass is not necessarily a draw call. Objects could require multiple draw calls to render.
-	While this is typically slower than making a single draw call, it may be necessary for various reasons.
-
-* draw call：对应到Open GL里面gl*Draw*这样的API，这些API的调用触发vertex被渲染，但是同时针对一个vertex调用多次API，仍然是一个draw call。
-
-![MALI PASS](/images/mali_pass.png)
-
-![QCOM Adreno PASS](/images/adreno_pass.png)
+CPU和GPU通信主要有几下几种方式：
+* 通过PCIe BAR空间映射出来的寄存器
+* 通过PCIe BAR空间把GPU的内存映射到CPU的地址空间中
+* 通过GPU的页表把CPU的系统内存映射到GPU的地址空间中
+* 通过MSI中断
 
 # 参考
 
-[Open Source Graphics 101](https://elinux.org/images/4/42/Elce-2019-gfx-101-boris.pdf)
-[Shader Learing Render Pipeline篇](https://hushengstudent.blog.csdn.net/article/details/59122183)
-[T880 Mobile GPU](https://pdfs.semanticscholar.org/6eea/4efe677304b6c77008e15d34ac39f1164e9e.pdf)
-[ARM Midgard Architecture](https://fileadmin.cs.lth.se/cs/Education/EDAN35/guestLectures/ARM-Mali.pdf)
-[The Bifrost GPU architecture and the ARM Mali-G71 GPU](https://old.hotchips.org/wp-content/uploads/hc_archives/hc28/HC28.22-Monday-Epub/HC28.22.10-GPU-HPC-Epub/HC28.22.110-Bifrost-JemDavies-ARM-v04-9.pdf)
-[Optimizing Roblox: Vulkan Best Practices for Mobile Developers](https://zeux.io/data/gdc2020_arm.pdf)
-[Adreno GPU Architecture](https://blog.csdn.net/Q1302182594/article/details/82767719)
-[What exactly is a GPU binning pass](https://stackoverflow.com/questions/34196144/what-exactly-is-a-gpu-binning-pass)
-[What is a renderpass?](https://stackoverflow.com/questions/34382340/what-is-a-renderpass)
-[渲染流程](https://www.cnblogs.com/llstart-new0201/p/11949743.html)
-[Unity - DrawCall, Batch, SetPassCall区别](https://blog.csdn.net/linjf520/article/details/113702206?spm=1001.2014.3001.5501)
-[Render Hell 2.0](http://simonschreibt.de/gat/renderhell/)
-[3D computer graphics](https://chamilo.grenoble-inp.fr/main/document/document.php?cidReq=ENSIMAG4MMG3D6&id=216740&)
+[GPU Architecture Overview](https://insujang.github.io/2017-04-27/gpu-architecture-overview/)
+["RDNA 1.0" Instruction Set Architecture](https://developer.amd.com/wp-content/resources/RDNA_Shader_ISA.pdf)
+[A deeper look into GPUs and the Linux Graphics Stack](https://phd.mupuf.org/files/toulibre2012_deeper_look.pdf)
