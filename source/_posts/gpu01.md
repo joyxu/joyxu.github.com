@@ -1,7 +1,7 @@
 ---
 title: Linux GPU系列-01-ARM MALI GPU工作流程介绍
 author: Joy Xu
-date: 2021-05-12 01:30:11
+date: 2021-05-10 01:30:11
 tags: [linux, gpu]
 ---
 

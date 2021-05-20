@@ -1,7 +1,7 @@
 ---
-title: Linux GPU系列-01-图形软件栈
+title: Linux GPU系列-03-图形软件栈
 author: Joy Xu
-date: 2021-05-11 03:14:56
+date: 2021-05-11 09:14:56
 tags: [linux, gpu]
 ---
 
