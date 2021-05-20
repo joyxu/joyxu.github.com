@@ -102,3 +102,4 @@ OpenGL API主要组织好job所需的数据，为后续的shader core计算做�
 [渲染流程](https://www.cnblogs.com/llstart-new0201/p/11949743.html)
 [Unity - DrawCall, Batch, SetPassCall区别](https://blog.csdn.net/linjf520/article/details/113702206?spm=1001.2014.3001.5501)
 [Render Hell 2.0](http://simonschreibt.de/gat/renderhell/)
+[3D computer graphics](https://chamilo.grenoble-inp.fr/main/document/document.php?cidReq=ENSIMAG4MMG3D6&id=216740&)
