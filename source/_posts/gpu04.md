@@ -106,3 +106,7 @@ tags: [linux, gpu]
 		  panfrost_job_hw_submit
 		    panfrost_job_write_affinity （设置job和core的亲和性）
 		      job_write （写job manager寄存器）
+
+
+## 参考
+[OpenGL44PipelineMap](https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGL44PipelineMap.pdf)
