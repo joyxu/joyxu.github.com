@@ -10,6 +10,13 @@ GPU驱动和其他设备驱动其实差异不大，主要就两个面：
 * 控制面：设置state，通过fence做同步等
 * 数据面：把数据从CPU搬到GPU，这里主要涉及到数据格式和数据layout，类似网卡的描述符，以及设备内存的管理。
 
+## high level
+
+![opengl_workflow](/images/opengl_workflow1.png)
+
+![opengl_workflow](/images/opengl_workflow2.png)
+
+![opengl_workflow](/images/opengl_workflow3.png)
 
 ## 数据面
 
@@ -58,3 +65,4 @@ Todo
 ## 参考
 
 [cpu-gpu](https://chamilo.grenoble-inp.fr/main/document/document.php?cidReq=ENSIMAG4MMG3D6&id_session=0&gidReq=0&gradebook=0&origin=&action=download&id=1109723)
+[OpenGL ES渲染管线流程图](https://blog.csdn.net/liuyizhou95/article/details/80199616)
