@@ -11,11 +11,15 @@ tags: [linux, gpu]
 
 GPU通常是一个独立的PCIe卡，当然也可能集成到SoC中，但是仍然呈现为一个PCIe设备。
 
-GPU的物理形态一般如下图：
+PCIe卡的物理形态一般如下图：
 
 ![GPU卡](/images/gpu_card.png)
 
-具体到GPU的硬件单元的话，以AMD RDNA的卡为例，内部框图如下：
+如果集成到SOC中的话，一般如下图：
+
+![GPU卡](/images/gpu_soc.jpg)
+
+打开看下内部单元的话，以AMD RDNA的卡为例，内部框图如下：
 
 ![AMD RDNA GPU](/images/amd_gpu.png)
 
@@ -46,3 +50,4 @@ CPU和GPU通信主要有几下几种方式：
 [GPU Architecture Overview](https://insujang.github.io/2017-04-27/gpu-architecture-overview/)
 ["RDNA 1.0" Instruction Set Architecture](https://developer.amd.com/wp-content/resources/RDNA_Shader_ISA.pdf)
 [A deeper look into GPUs and the Linux Graphics Stack](https://phd.mupuf.org/files/toulibre2012_deeper_look.pdf)
+[浅谈未来两年移动SoC GPU发展状况](https://zhuanlan.zhihu.com/p/76974828)
