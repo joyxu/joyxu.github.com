@@ -23,7 +23,7 @@ tags: [linux, gpu]
 
 为了完成上述流程，把GPU内部模块按照功能划分的话，如下图所示：
 
-![GPU_internal](/images/internal.png)
+![GPU_internal](/images/gpu_internal.png)
 
 ## CPU和GPU交互
 
