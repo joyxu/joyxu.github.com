@@ -7,6 +7,20 @@ tags: [linux, gpu]
 
 前面已经讲过了整个软件堆栈，MALI GPU工作流程，这次用一个简单的OpenGL的例子讲讲端到端的整体流程。
 
+## OpenGL简介
+
+OpenGL是非常接近GPU模型的API，整体类似一个状态机，对应到GPU的pipeline:
+
+![opengl statemachine](/images/opengl_statemachine1.png)
+
+![opengl statemachine](/images/opengl_statemachine2.png)
+
+OpenGL编程模型如下图
+
+![opengl model](/images/opengl_workflow.png)
+
+## 实际例子
+
 例子的[完整源码](https://github.com/joyxu/opengl-misc/blob/master/OpenGL/triangle/triangle.cpp)
 下面是关键片段的代码：
 
@@ -109,4 +123,9 @@ tags: [linux, gpu]
 
 
 ## 参考
+
+[Best practices for effective OpenGL programming](https://docs.huihoo.com/apple/wwdc/2010/session_414__opengl_essential_design_practices.pdf)
 [OpenGL44PipelineMap](https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGL44PipelineMap.pdf)
+[Computer Graphics](http://csc.villanova.edu/~mdamian/Past/csc8470sp15/notes/01-IntroductionNotes.pdf)
+[The OpenGL Programming Guide 9th Edition](http://www.opengl-redbook.com/)
+[ANATOMIE D'UN PROGRAMME OPENGL](http://www.ecole.ensicaen.fr/~simonl/files/OpenGL/Cours/Lesson1/#/6/1)
