@@ -28,6 +28,7 @@ high memory和low memory可以说是针对物理内存的概念，在以前的32
 间又分成两部分：
 * low memory: 低地址的896MB,总是映射到kernel address space。
 * high memory: 对于32位系统，1G以外的地址不是全部被映射的，这部分就叫high memory。
+
 为了kernel能访问更多的内存，比如64GB(36位)，kernel引入了PAE(page address extension)的概念，
 并预留了kernel address space高地址的104MB用做映射1G以外的内存。但在64位系统中，
 high memory也是可以被映射的，但是由于kernel对物理地址连续内存的偏好，以及使用
@@ -75,7 +76,17 @@ linux中virtual address可以有三类：
 具体代码[VMEMMAP_START](https://elixir.bootlin.com/linux/latest/source/arch/arm64/include/asm/memory.h#L53)
 arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://elixir.bootlin.com/linux/latest/source/Documentation/arm64/memory.rst)
 
-![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png)
+![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png)a
+
+## 综述
+
+![mem alloc hierarchy](/images/mem_alloc1.png)
+
+![mem alloc](/images/mem_alloc2.png)
+
+参考：
+
+* [Memory Subsystem and Data Types in the Linux Kernel]https://hps.vi4io.org/_media/teaching/wintersemester_2014_2015/kp-1415-memory-management.pdf)
 
 ## linux mm scope
 
