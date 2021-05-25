@@ -86,7 +86,7 @@ arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://el
 
 参考：
 
-* [Memory Subsystem and Data Types in the Linux Kernel]https://hps.vi4io.org/_media/teaching/wintersemester_2014_2015/kp-1415-memory-management.pdf)
+* [Memory Subsystem and Data Types in the Linux Kernel](https://hps.vi4io.org/_media/teaching/wintersemester_2014_2015/kp-1415-memory-management.pdf)
 
 ## linux mm scope
 
