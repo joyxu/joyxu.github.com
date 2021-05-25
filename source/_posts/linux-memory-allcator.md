@@ -84,6 +84,10 @@ arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://el
 
 ![mem alloc](/images/mem_alloc2.png)
 
+## 内存碎片演进简史
+
+[Linux Kernel vs. Memory Fragmentation](https://en.pingcap.com/blog/linux-kernel-vs-memory-fragmentation-1)
+
 参考：
 
 * [Memory Subsystem and Data Types in the Linux Kernel](https://hps.vi4io.org/_media/teaching/wintersemester_2014_2015/kp-1415-memory-management.pdf)
@@ -93,7 +97,7 @@ arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://el
 ![mm api scope](/images/mm-scope.PNG)
 
 参考：
-[ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
+[Arm64 Linux Kernel vs. Memory Fragmentation[ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
 [KASLR-MT: Kernel Address Space Layout Randomization for Multi-Tenant cloud systems](https://github.com/joyxu/archive/blob/master/document/linux/memory/kaslr-mt.pdf)
 [AArch64 Kernel Page Tables](https://wenboshen.org/posts/2018-09-09-page-table.html)
 [Tour de Linux memory management](https://github.com/joyxu/archive/blob/master/document/linux/memory/07_memory_management.pdf)
