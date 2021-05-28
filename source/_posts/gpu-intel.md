@@ -34,4 +34,8 @@ kernel的驱动代码已经支持了当前最新的GEN12，还不支持独立显
 * [Intel vulkan driver introduction](https://wenxiaoming.github.io/2020/06/28/Intel%20vulkan%20driver%20introduction/)
 * [Intel GPU 内存管理](http://liujunming.top/2019/07/16/Intel-GPU-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/)
 * [FFmpeg 在 Intel GPU 上的硬件加速与优化](https://toutiao.io/posts/w82yn0/preview)
-* [Global Graphics Translation Table](http://blog.sina.com.cn/s/blog_8df488680102vosk.html)
+* [Global Graphics Translation Table](http://blog.sina.com.cn/s/blog_8df488680102vosk.html)a
+* [GEM Overview](https://blog.ffwll.ch/2011/05/gem-overview.html)
+* [显卡内存管理机制及驱动实现Intel gma500为例](http://happyseeker.github.io/kernel/2016/07/22/memory-management-from-graphic-card-view.html)
+* [System address map initialization in x86/x64 architecture part 1: PCI-based systems](https://resources.infosecinstitute.com/topic/system-address-map-initialization-in-x86x64-architecture-part-1-pci-based-systems/)
+* [Linux graphic stack](https://www.studiopixl.com/2017-05-13/linux-graphic-stack-an-overview)
