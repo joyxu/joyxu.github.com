@@ -32,4 +32,8 @@ tags: [linux, gpu]
 为了减少和kernel态的交互，mesa panfrost代码中也实现了一个内存pool，详细代码在
 `src/panfrost/lib/pan_pool.c`中，使用最多的函数是panfrost_pool_alloc_aligned。
 
+## 参考
+
+* [linux DRM GEM 笔记](https://www.cnblogs.com/yaongtime/p/14418357.html)
+* [年子GPU闲谈](https://jizhuoran.gitbook.io/mali-gpu/）
 
