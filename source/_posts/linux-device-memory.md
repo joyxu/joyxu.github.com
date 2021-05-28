@@ -45,7 +45,8 @@ tags: [Linux Kernel]
 
 ## 参考
 
-* [Mastering the DMA and IOMMU APIs](https://elinux.org/images/4/49/20140429-dma.pdf]
+* [IOMMU的现状和发展](https://gitee.com/Kenneth-Lee-2012/MySummary/blob/master/%E8%BD%AF%E4%BB%B6%E6%9E%84%E6%9E%B6%E8%AE%BE%E8%AE%A1/IOMMU%E7%9A%84%E7%8E%B0%E7%8A%B6%E5%92%8C%E5%8F%91%E5%B1%95.rst)
+* [Mastering the DMA and IOMMU APIs](https://elinux.org/images/4/49/20140429-dma.pdf)
 * [Linux内存管理之CMA](https://www.cnblogs.com/LoyenWang/p/12182594.html)
 * [DMA](https://biscuitos.github.io/blog/DMA/)
 * [CMA](https://biscuitos.github.io/blog/CMA/)
