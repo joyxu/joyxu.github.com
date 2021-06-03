@@ -31,3 +31,5 @@ kernel的驱动代码已经支持到了AMD的Navi 1X(RDNA)系列，最新的Navi
 * [AMD GPU虚拟化的按需调度策略](https://navycloud.github.io/2018/07/27/on-demand-scheduling/)
 * [AMD显卡的硬件虚拟化核心功能---GPU抢占](https://navycloud.github.io/2017/08/05/gpu-preemption-in-virtualization/)
 * [AMD GPU任务调度（1）—— 用户态分析](https://blog.csdn.net/huang987246510/article/details/106658889)
+* [GPU初始化和启动流程（r600）](https://blog.csdn.net/jiangbo1017/article/details/51065118)
+* [Linux DRM (GPU drivers)](https://adrian.geek.nz/graphics_docs/DRM.html)

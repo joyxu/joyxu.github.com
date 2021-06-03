@@ -39,3 +39,4 @@ kernel的驱动代码已经支持了当前最新的GEN12，还不支持独立显
 * [显卡内存管理机制及驱动实现Intel gma500为例](http://happyseeker.github.io/kernel/2016/07/22/memory-management-from-graphic-card-view.html)
 * [System address map initialization in x86/x64 architecture part 1: PCI-based systems](https://resources.infosecinstitute.com/topic/system-address-map-initialization-in-x86x64-architecture-part-1-pci-based-systems/)
 * [Linux graphic stack](https://www.studiopixl.com/2017-05-13/linux-graphic-stack-an-overview)
+* [GPU存储体系-Integrated GPU](https://zhuanlan.zhihu.com/p/36030749)
