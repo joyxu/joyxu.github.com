@@ -16,6 +16,14 @@ AMD的GPU基本上都是独立显卡，自带显存，所以处理起来会比in
 
 ![amd gpu_workflow](/images/gpu_amd_workflow.png)
 
+## AMD GPU内存管理
+
+独显和集显最大的一个区别就是内存的管理，涉及到CPU访问GPU的显存，GPU访问系统内存，以及两个内存间的同步等问题，
+还包括基本的从哪里分配，释放和SWAP等等。
+
+
+
+
 ## 源码
 
 由于AMD有独立显存，所以会使用TTM作为GEM的后端管理显存。
