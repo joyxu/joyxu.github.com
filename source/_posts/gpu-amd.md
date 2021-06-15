@@ -21,7 +21,7 @@ AMD的GPU基本上都是独立显卡，自带显存，所以处理起来会比in
 独显和集显最大的一个区别就是内存的管理，涉及到CPU访问GPU的显存，GPU访问系统内存，以及两个内存间的同步等问题，
 还包括基本的从哪里分配，释放和SWAP等等。
 
-
+![amd gpu_mem](/images/gpu_amd_mem.png)
 
 
 ## 源码
@@ -41,3 +41,4 @@ kernel的驱动代码已经支持到了AMD的Navi 1X(RDNA)系列，最新的Navi
 * [AMD GPU任务调度（1）—— 用户态分析](https://blog.csdn.net/huang987246510/article/details/106658889)
 * [GPU初始化和启动流程（r600）](https://blog.csdn.net/jiangbo1017/article/details/51065118)
 * [Linux DRM (GPU drivers)](https://adrian.geek.nz/graphics_docs/DRM.html)
+* [AMD graphics](https://linuxreviews.org/AMD_graphics)
