@@ -9,7 +9,7 @@ tags: [linux, gpu]
 
 整个架构如下
 
-![mesa gpu compile arch](/images/gpu_mesa_comiple_arch.png)
+![mesa gpu compile arch](/images/gpu_mesa_compile_arch.png)
 
 如果是Vulkan，shader从SPIRV先编译成NIR，再编译成native。
 如果是OpenGL，则从GLSL先编译成NIR，再编译成native。
