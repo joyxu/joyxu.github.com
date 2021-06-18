@@ -31,10 +31,13 @@ NIR的处理积累了大量经验，包含SSA处理，控制流处理。
 
 ## 编译优化趋势
 
-2019年ACO提出来后，现在已经和入到MESA主线中，并且被AMD使用。
+2019年ACO(AMD compiler)被运营Steam的公司Valve(CS开发公司)提出来后，现在已经合入到MESA主线中，当前只支持AMD GPU。
+优化的维度主要从时间和帧率考虑，使用的测试脚本可以看参考连接。
+
 
 ## 参考
 
+* [A TRIP DOWN THE GPU COMPILER PIPELINE](https://gpuopen.com/wp-content/uploads/slides/GPUOpen_Let%E2%80%99sBuild2020_A%20Trip%20Down%20the%20GPU%20Compiler%20Pipeline.pdf)
 * [Embedded Graphics Drivers in Mesa](https://elinux.org/images/1/1f/Embedded-drivers-mesa.pdf)
 * [How to not write a back-end compiler](https://xdc2019.x.org/event/5/contributions/325/attachments/416/666/How_to_not_write_a_back-end_compiler.pdf)
 * [NIR: A new compiler IR for Mesa](http://www.jlekstrand.net/jason/projects/mesa/nir-notes/)
@@ -42,3 +45,10 @@ NIR的处理积累了大量经验，包含SSA处理，控制流处理。
 * [Optimizing shader assembly instruction on Mesa using shader-db](https://blogs.igalia.com/apinheiro/2015/09/optimizing-shader-assembly-instruction-on-mesa-using-shader-db/)
 * [Optimizing shader assembly instruction on Mesa using shader-db (II)](https://blogs.igalia.com/apinheiro/2015/09/optimizing-shader-assembly-instruction-on-mesa-using-shader-db-ii/)
 * [火焰图：全局视野的Linux性能剖析](https://segmentfault.com/a/1190000023103508)
+* [An introduction to Mesa’s GLSL compiler (I)](https://blogs.igalia.com/itoral/2015/03/03/an-introduction-to-mesas-glsl-compiler-i/)
+* [The Valve-funded shader compiler 'ACO' is being queued up for inclusion in Mesa directly (updated: merged)](https://www.gamingonlinux.com/2019/09/the-valve-funded-shader-compiler-aco-is-being-queued-up-for-inclusion-in-mesa-directly)
+* [ACO: A New Compiler Backend for RADV](https://lists.freedesktop.org/archives/mesa-dev/2019-July/221006.html)
+* [Implementing Optimizations in NIR](https://xdc2019.x.org/event/5/contributions/323/attachments/432/685/IanRomanick-XDC2019-Implementing-Optimizations-in-NIR.pdf)
+* [Lessons_from_Control_Flow_in_AMDGPU](https://llvm.org/devmtg/2020-09/slides/Hahnle-Evolving_convergent_Lessons_from_Control_Flow_in_AMDGPU.pdf)
+* [Optimizing i965 for the Future](https://xdc2018.x.org/slides/optimizing-i965-for-the-future.pdf)
+* [SHADERS IN RADEONSI DYNAMIC LINKING AND NIR IN RADEONSI DYNAMIC LINKING AND NIR](https://documents.pub/document/shaders-in-radeonsi-dynamic-linking-and-nir-in-radeonsi-dynamic-linking-and-nir.html)

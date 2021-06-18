@@ -71,3 +71,4 @@ state tracker也可以直接通过p_winsys和Winsys通信,一般GPU厂商也要�
 [Linux Graphics](https://wdv4758h.github.io/notes/graphics/introduction.html)
 [Gallium3D](https://akademy2008.kde.org/conference/slides/zack-akademy2008.pdf)
 [TG-Gallium Driver Stack](https://wiki.freedesktop.org/www/Software/gallium/gallium3d-xds2007.pdf)
+[Gallium3DComponents](https://www.freedesktop.org/software/gallium/GAOnlineWorkshop/Gallium3DComponents.pdf)
