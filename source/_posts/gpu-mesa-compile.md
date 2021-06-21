@@ -25,6 +25,11 @@ NIR的处理积累了大量经验，包含SSA处理，控制流处理。
 答案是NIR。
 2019年XDC上intel专家Jason Ekstrand特意强调intel花了4年时间把backend的优化又搬到NIR中来。
 
+## 调试方法
+
+* 参考[mesa 环境变量](https://docs.mesa3d.org/envvars.html), 比如加上`NIR_PRINT=1` 可以导出NIR到SSA的转换过程；
+加上"AMD_DEBUG=vs"，可以导出NIR到SSA，以及LLVM优化的过程。
+
 ## 编译性能优化
 
 * 最直观，看帧率和效果
