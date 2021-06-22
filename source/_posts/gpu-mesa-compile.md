@@ -16,6 +16,26 @@ tags: [linux, gpu]
 
 上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。
 
+## AMD指令转换流程
+
+NIR -> LLVM -> AMD GPU IR
+
+AMD直接修改了LLVM源码，具体参考[LLVM AMD GPU改动](https://github.com/llvm/llvm-project/tree/main/llvm/lib/Target/AMDGPU)
+
+
+## ARM Midgard/Bifrost转换流程
+
+NIR -> BIR
+
+MESA编译过程中会生成`bi_builder.h`，其中会定义从NIR到BIR指令的映射关系。代码流程如下：
+
+		bifrost_compile_shader_nir
+		  emit_cf_list
+		    emit_block
+		      bi_emit_instr
+		        bi_emit_alu
+			  bi_fma_to
+
 ## 为什么不直接编译成native ISA呢？
 
 NIR的处理积累了大量经验，包含SSA处理，控制流处理。
