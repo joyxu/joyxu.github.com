@@ -1,5 +1,5 @@
 ---
-title: GPU shader语言和opengl，vulkan学习资料
+title: GPU API学习资料
 author: Joy Xu
 date: 2021-07-05 21:09:15
 tags: [linux, gpu]
@@ -20,7 +20,7 @@ tags: [linux, gpu]
 * [vulkan tutorial](https://vulkan-tutorial.com/)
 * [Render graphs and Vulkan — a deep dive](https://themaister.net/blog/2017/08/15/render-graphs-and-vulkan-a-deep-dive/)
 * [V-EZ API Documentation](https://gpuopen-librariesandsdks.github.io/V-EZ/)
-* [Understanding Vulkan Objects](https://gpuopen.com/learn/understanding-vulkan-objects/)
+* [Understanding Vulkan Objects](https://gpuopen.com/learn/understanding-vulkan-objects/
 * [David-DiGioia vulkan-diagrams](https://github.com/David-DiGioia/vulkan-diagrams)
 * [API without Secrets: Introduction to Vulkan Part 6](https://software.intel.com/content/www/us/en/develop/articles/api-without-secrets-introduction-to-vulkan-part-6.html)
 * [Vulkan: Long way to access data](https://asawicki.info/news?x=tag&tag=graphics)
