@@ -15,6 +15,7 @@ tags: [linux, gpu]
 
 * [Vulkan: the essentials](https://developer.download.nvidia.cn/gameworks/events/GDC2016/Vulkan_Essentials_GDC16_tlorach.pdf)
 * [Getting Started with Vulkan](https://docs.imgtec.com/Introduction_to_APIs/Vulkan_HelloAPI_Guide/dita/topics/introduction.html)
+* [Introduction to Vulkan Render Passes](https://developer.samsung.com/galaxy-gamedev/resources/articles/renderpasses.html)
 * [vulkan guide](https://vkguide.dev/)
 * [vulkan tutorial](https://vulkan-tutorial.com/)
 * [Render graphs and Vulkan — a deep dive](https://themaister.net/blog/2017/08/15/render-graphs-and-vulkan-a-deep-dive/)
@@ -26,6 +27,9 @@ tags: [linux, gpu]
 
 ## shader
 
+基本上vulkan的渲染脚本语言是glslang，类似glsl，并不是直接用spir v来写。
+
+* [Introduction to SPIR-V Shaders - Khronos](https://cn.bing.com/search?q=introduction%20to%20spirv&qs=n&form=QBRE&sp=-1&pq=introduction%20to%20spirv&sc=8-21&sk=&cvid=1DE67AA6893C4AC49A242EB2D8AD767E)
 * [TyphoonLabs' OpenGL Shading Language tutorials](https://www.opengl.org/sdk/docs/tutorials/TyphoonLabs/)
 * [Intro to glsl](https://www.cs.cornell.edu/courses/cs4620/2015fa/lectures/18GLSLWeb.pdf)
 * [Shaders](https://processing.org/tutorials/pshader/)
