@@ -29,6 +29,7 @@ tags: [linux, gpu]
 
 基本上vulkan的渲染脚本语言是glslang，类似glsl，并不是直接用spir v来写。
 
+* [The Book of Shaders](https://thebookofshaders.com/)
 * [Introduction to SPIR-V Shaders - Khronos](https://cn.bing.com/search?q=introduction%20to%20spirv&qs=n&form=QBRE&sp=-1&pq=introduction%20to%20spirv&sc=8-21&sk=&cvid=1DE67AA6893C4AC49A242EB2D8AD767E)
 * [TyphoonLabs' OpenGL Shading Language tutorials](https://www.opengl.org/sdk/docs/tutorials/TyphoonLabs/)
 * [Intro to glsl](https://www.cs.cornell.edu/courses/cs4620/2015fa/lectures/18GLSLWeb.pdf)
