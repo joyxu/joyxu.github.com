@@ -35,6 +35,8 @@ tags: [linux, gpu]
 * [Intro to glsl](https://www.cs.cornell.edu/courses/cs4620/2015fa/lectures/18GLSLWeb.pdf)
 * [Shaders](https://processing.org/tutorials/pshader/)
 * [Graphics Programming OpenGL Shading Language (GLSL)](https://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/graphics_9_1_eng_web.html#1)
+* [一起学Unity Shader](https://blog.csdn.net/huutu/category_9265579.html?spm=1001.2014.3001.5482)
+* [this is game](http://www.thisisgame.com.cn/book/makegameengineatnight/)
 
 ## cloud
 
