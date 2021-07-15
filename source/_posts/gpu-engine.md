@@ -31,6 +31,10 @@ tags: [linux, gpu]
 其中和程序员关联比较大的是模型这块的工具，常用的模型工具有收费的Autodesk和免费的blender，目前还是Autodesk占主导地位。
 模型主要指静态模型，存储顶点数据，通常叫mesh，后缀一般是fbx，或者obj。
 
+结合Unreal和Adobe全家桶，流水线如下：
+
+![game engine pipeline](/images/unreal_workflow.png)
+
 ## 游戏引擎技术点
 
 主要包括以下几个方面：
