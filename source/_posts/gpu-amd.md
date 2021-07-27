@@ -42,3 +42,4 @@ kernel的驱动代码已经支持到了AMD的Navi 1X(RDNA)系列，最新的Navi
 * [GPU初始化和启动流程（r600）](https://blog.csdn.net/jiangbo1017/article/details/51065118)
 * [Linux DRM (GPU drivers)](https://adrian.geek.nz/graphics_docs/DRM.html)
 * [AMD graphics](https://linuxreviews.org/AMD_graphics)
+* [AMDGPU gentoo wiki](https://wiki.gentoo.org/wiki/AMDGPU)

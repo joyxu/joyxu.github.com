@@ -14,3 +14,4 @@ Renderdoc是最受欢迎的开源工具，不仅被大多数硬件厂商支持�
 
 * [Graphics Debugging using RenderDoc](https://matiaslavik.wordpress.com/2020/01/17/graphics-debugging-using-renderdoc/)
 * [Debugging Tools](https://www.khronos.org/opengl/wiki/Debugging_Tools)
+* [性能分析工具集](https://blog.csdn.net/linjf520/article/details/114688952?spm=1001.2014.3001.5501)
