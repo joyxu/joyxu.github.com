@@ -43,3 +43,4 @@ kernel的驱动代码已经支持到了AMD的Navi 1X(RDNA)系列，最新的Navi
 * [Linux DRM (GPU drivers)](https://adrian.geek.nz/graphics_docs/DRM.html)
 * [AMD graphics](https://linuxreviews.org/AMD_graphics)
 * [AMDGPU gentoo wiki](https://wiki.gentoo.org/wiki/AMDGPU)
+* [mesa comiple](https://linuxfromscratch.org/blfs/view/svn/x/mesa.html)
