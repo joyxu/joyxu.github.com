@@ -16,6 +16,41 @@ tags: [linux, gpu]
 
 上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。
 
+## GLSL转换成GLSL IR
+
+GLSL的shader的处理入口在`_mesa_glsl_compile_shader`中，shader的源码首先经过词法分析`src/compiler/glsl_lexer.ll`和
+语法分析`glsl_parser.yy`的通用Lex/Yacc处理，输出抽象语法树（AST），在经过`ast_to_hir.cpp`处理，转成GLSL IR。
+
+## GLSL IR处理
+
+GLSL IR在`ir.h`中定义了几个重要的类，一般分成指令类，条件控制类和函数类。
+
+* `exec_node`，基础类，作为最小的执行单元，包含前后指针，分别指向之前和之后的指令。
+* `ir_insturction`，所有指令的基础类
+* `ir_rvalue`，右侧赋值类，是表达式的几率
+* `ir_expression`，表达式
+* `ir_texture`，纹理
+* `ir_swizzle`，向量或者矩阵变换类
+* `ir_dereference`，用于访问存在在变量、数组和数据结构中的值
+* `ir_constant`，常所有基本类型的常量
+* `ir_variable`，变量
+* `ir_loop`，循环
+* `ir_if`，条件控制
+
+GLSL的IR调试一般通过`MESA_GLSL=dump`，比如 `MESA_GLSL=dump glmark2`。
+
+## GLSL IR lower处理
+
+lower处理都在`src/glsl/lower_*.cpp`文件中，主要作用是重写部分生成的IR。这个过程主要的动作就是遍历IR树，对于所有
+叶子节点一般都有`visit`函数，非叶子节点都有`vist_enter`和`visti_leave`函数。
+
+以`lower_instructions.cpp`为例，一般的优化过程都是用效率高的IR代替生成的IR。
+
+## GLSL IR转换成NIR
+
+这部分的处理在`st_link_nir`和`glsl_to_nir`中处理。之后通过`st_nir_opts`做lower的优化。
+
+
 ## AMD指令转换流程
 
 NIR -> LLVM -> AMD GPU IR
