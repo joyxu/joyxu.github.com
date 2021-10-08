@@ -23,8 +23,8 @@ Nvidia抓住了两次大的机遇，从而成为GPU的巨头。
 ### GPU硬件
 
 随着人们对美好生活的向往：），以及摩尔定律（算力的突飞猛进），过去需要大量算力的Ray tracing渲染技术重新被
-端了上来，2018年9月Nvidia推出第一代支持Ray Tracing的Turing架构GPU，到2020年的Ampere也就是第二代而已。而AMD
-于2020年11月才推出第一代支持Ray Tracing架构的RDNA2。
+端了上来，2018年9月Nvidia推出第一代支持Ray Tracing的Turing架构GPU，到2020年的Ampere也就是第二代而已。
+而AMD于2020年11月才推出第一代支持Ray Tracing架构的RDNA2。
 
 ### 图形API标准
 
@@ -34,13 +34,16 @@ OpenGL目前还看不到任何计划增加Ray Tracing。
 
 ### GPU软件
 
-当前支持Ray Tracing的软件方案基本都是各家的，并没有形成统一的框架，比如Nvidia的GeForce RTX、OPTIX，AMD的RadeonRays，
-intel的OSPRay、Embree技术，基本还是属于初期，百家争鸣的状态。
+当前支持Ray Tracing的软件方案基本都是各家的，并没有形成统一的框架，比如
+Nvidia的GeForce RTX、OPTIX，
+AMD的RadeonRays,
+intel的OSPRay、Embree技术，
+基本还是属于初期，百家争鸣的状态。
 
 ### 开源指令集架构
 
-2021年9月，RISC-V冻结了Vector Extension 1.0版本，ThinkSilicon已经基于RISC-V推出了量产的NEOX系列GPU；RV64X也基于上述扩展，
-提出了一套面向3D渲染和多媒体的指令集；另外，还有大量学术界做了相当多的探索和仿真平台。
+2021年9月，RISC-V冻结了Vector Extension 1.0版本，ThinkSilicon已经基于RISC-V推出了量产的NEOX系列GPU；
+RV64X也基于上述扩展，提出了一套面向3D渲染和多媒体的指令集；另外，还有大量学术界做了相当多的探索和仿真平台。
 
 ## 结论
 
