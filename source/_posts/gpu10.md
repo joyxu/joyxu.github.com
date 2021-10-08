@@ -16,8 +16,7 @@ tags: [linux, gpu]
 
 Nvidia抓住了两次大的机遇，从而成为GPU的巨头。
 第一次是1999年推出的第一个业界公认的GeForce 256，和微软推出的D3D API紧密合作，干掉3Dfx，从而垄断了大部分渲染市场，和ATI（AMD）平起平坐。
-第二次是2007年基于斯坦福大学的BrookGPU，重新定义支持异构计算的GPU，结合自家的CUDA软件解决方案，吃掉了大部分计算市场，这次ATI(AMD)起了个大早却赶了个晚集
-（ATI比Nvidia更早推出CTM异构计算框架）。
+第二次是2007年基于斯坦福大学的BrookGPU，重新定义支持异构计算的GPU，结合自家的CUDA软件解决方案，吃掉了大部分计算市场，这次ATI(AMD)起了个大早却赶了个晚集（ATI比Nvidia更早推出CTM异构计算框架）。
 
 ## 当前形势
 
@@ -27,7 +26,7 @@ Nvidia抓住了两次大的机遇，从而成为GPU的巨头。
 端了上来，2018年9月Nvidia推出第一代支持Ray Tracing的Turing架构GPU，到2020年的Ampere也就是第二代而已。而AMD
 于2020年11月才推出第一代支持Ray Tracing架构的RDNA2。
 
-### 标准
+### 图形API标准
 
 2018年10月，微软推出支持Ray Tracing（DirectX Ray Tracing）的D3D12。2020年5月才发布DXR Tier 1.1更新版本。
 2020年12月,GPU标准组织Khronos才推出正式地支持Ray Tracing的Vulkan 1.2版本SDK。
@@ -38,6 +37,11 @@ OpenGL目前还看不到任何计划增加Ray Tracing。
 当前支持Ray Tracing的软件方案基本都是各家的，并没有形成统一的框架，比如Nvidia的GeForce RTX、OPTIX，AMD的RadeonRays，
 intel的OSPRay、Embree技术，基本还是属于初期，百家争鸣的状态。
 
+### 开源指令集架构
+
+2021年9月，RISC-V冻结了Vector Extension 1.0版本，ThinkSilicon已经基于RISC-V推出了量产的NEOX系列GPU；RV64X也基于上述扩展，
+提出了一套面向3D渲染和多媒体的指令集；另外，还有大量学术界做了相当多的探索和仿真平台。
+
 ## 结论
 
-GPU Ray Tracing的渲染时代才刚刚到来，对于新加入的GPU厂商来说，这是当下最好的时机，不会太早，也不晚，刚刚好。
+GPU Ray Tracing的渲染时代才刚刚到来，RISC-V概念也刚刚兴起，对于新加入的GPU厂商来说，这是当下最好的时机，不会太早，也不晚，刚刚好。
