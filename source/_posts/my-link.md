@@ -16,3 +16,7 @@ tags: [Linxu Kernel]
 
 [Yi颗烂樱桃](https://www.owalle.com/)
 
+
+# GPU
+
+[Gerd Hoffmann](https://www.kraxel.org/blog/)
