@@ -20,3 +20,7 @@ tags: [Linxu Kernel]
 # GPU
 
 [Gerd Hoffmann](https://www.kraxel.org/blog/)
+
+# CPU 架构
+
+[Intel Xeon Processor Scalable Family Technical Overview](https://www.intel.com/content/www/us//en/developer/articles/technical/xeon-processor-scalable-family-technical-overview.html)

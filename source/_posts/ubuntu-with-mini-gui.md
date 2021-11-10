@@ -16,43 +16,42 @@ tags: [Ubuntu, 最小图形界面, MESA, piglit, Virtio GPU, GPU, QEMU, aarch64]
 
 我的系统是Ubuntu20.04的，为了方便共享host和guest，guest也选择Ubuntu20.04的base包。
 有两种方式生成base包：
+
 * 可以直接从`http://cdimage.ubuntu.com/ubuntu-base/releases/`里面下载
 * 或者通过qemu-debootstrap下载，如果host和guest是同一种arch，效果和debootstrap一样
 
-	sudo apt-get install debootstrap qemu-user-static schroot
-	dd if=/dev/zero of=./rootfs.img bs=1M count=4000
-	mke2fs -t ext4 ./rootfs.img
-	mkdir ./test
-	sudo mount -o loop ./rootfs.img ./test
+		sudo apt-get install debootstrap qemu-user-static schroot
+		dd if=/dev/zero of=./rootfs.img bs=1M count=4000
+		mke2fs -t ext4 ./rootfs.img
+		mkdir ./test
+		sudo mount -o loop ./rootfs.img ./test
 
-	#option 1
-	wget -c http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.3-base-arm64.tar.gz
-	sudo tar -xzvf ubuntu-base-20.04.3-base-arm64.tar.gz -C test/
-	sudo cp -a /usr/bin/qemu-aarch64-static test/usr/bin/
+		#option 1
+		wget -c http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04.3-base-arm64.tar.gz
+		sudo tar -xzvf ubuntu-base-20.04.3-base-arm64.tar.gz -C test/
+		sudo cp -a /usr/bin/qemu-aarch64-static test/usr/bin/
 
-	#option 2
-	cd test
-	sudo qemu-debootstrap --arch=arm64 --variant=minbase focal ./ http://mirrors.ustc.edu.cn/ubuntu-ports/
+		#option 2
+		cd test
+		sudo qemu-debootstrap --arch=arm64 --variant=minbase focal ./ http://mirrors.ustc.edu.cn/ubuntu-ports/
 
-	sudo cp /etc/apt/sources.list ./etc/apt/sources.list
-	cd ..
+		sudo cp /etc/apt/sources.list ./etc/apt/sources.list
+		cd ..
 
-	sudo chroot test/
+		sudo chroot test/
 
-	#change root passwd
-	passwd
-	
-	echo "nameserver xxxx" >> /etc/resolv.conf 
-	apt update
+		#change root passwd
+		passwd
+		
+		echo "nameserver xxxx" >> /etc/resolv.conf 
+		apt update
 
-	#install gui package
-	apt install --no-install-recommends xorg -y
-	apt install --no-install-recommends lightdm-gtk-greeter -y
-	apt install --no-install-recommends lightdm -y
-	apt install --no-install-recommends openbox -y
-	
-	exit
-	umount ./test
+		#install gui package
+		apt install xorg -y
+		apt install --no-install-recommends lightdm-gtk-greeter lightdm openbox mesa-utils vulkan-tools -y
+		
+		exit
+		umount ./test
 
 # QEMU虚拟机启动脚本
 
