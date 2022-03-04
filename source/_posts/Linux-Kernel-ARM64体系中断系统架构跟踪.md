@@ -37,7 +37,6 @@ kernel通过`virq`和`hw irq`联系起来，通过`virq`和`irq_desc`把`hw irq`
 物理中断触发之后，处理逻辑如下：
 
 ![中断处理逻辑图](/images/irq_desc.jpg)
-
 # 引入多个中断控制器（比如GPIO和多GIC）之后，处理逻辑如下：　
 
 ![多中断处理逻辑图](/images/irq_multi.png)
