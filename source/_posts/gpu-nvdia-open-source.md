@@ -1,8 +1,8 @@
 ---
-title: gpu-nvdia-open-source
+title: nvdia gpu开源驱动分析
 author: Joy Xu
 date: 2022-05-16 02:26:20
-tags:[linux, gpu, nvdia]
+tags:[linux, gpu]
 ---
 
 ## Nvdia GPU开源驱动
