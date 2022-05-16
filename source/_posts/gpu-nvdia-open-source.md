@@ -11,9 +11,9 @@ nvdia最近开源了 [GPU内核代码](https://github.com/NVIDIA/open-gpu-kernel
 不管怎么样，对我来说还是好消息。
 nvidia这次开源的代码量还是很大，放个细节，大家自己体会下
 
-[!整体代码量](/images/nvdia_code_sum.png)
+![整体代码量](/images/nvdia_code_sum.png)
 
-[!kernel-open下的代码量](/images/nvdia_code_sum2.png)
+![kernel-open下的代码量](/images/nvdia_code_sum2.png)
 
 一般GPU内核驱动主要做几个事情：
 
@@ -47,13 +47,13 @@ Nvdia驱动的编译方式和自带的README文件都不太友好，特别是交
 
 * 字符设备提供nv_fops，用来管理用户态的ioctl和mmap：
 
-[!字符设备ioctl](/images/nvdia_chardev_ioctl.png)
+![字符设备ioctl](/images/nvdia_chardev_ioctl.png)
 
-[!字符设备mmap](/images/nvdia_chardev_mmap.png)
+![字符设备mmap](/images/nvdia_chardev_mmap.png)
 
 * pci设备用来管理功耗nv_pm_ops和出错处理nv_pci_error_handlers
 
-[!pci ops](/images/nvdia_pcidev_ops.png)
+![pci ops](/images/nvdia_pcidev_ops.png)
 
 ### 中断
 
@@ -64,7 +64,7 @@ nvidia支持几种中断方式，本文只以msi/msix为例，入口在nv-msi.c�
 
 nvdia内存分按照以下三种形式划分：
 
-[!memory type](/images/nvdia_memory_type.png)
+![memory type](/images/nvdia_memory_type.png)
 
 
 nvdia的内存管理很复杂，把nvlink，nv switch, peertopeer、dmabuf等概念都给串了起来，后面单独用一篇文章分析。
@@ -81,7 +81,7 @@ nvdia的内存管理很复杂，把nvlink，nv switch, peertopeer、dmabuf等概
 
 nvidia的GPU虚拟化支持以下几种方式，当前主要以SRIOV为主：
 
-[!virtualization](/images/nvdia_vgpu_type.png)
+![virtualization](/images/nvdia_vgpu_type.png)
 
 由于nv-pci-table.c匹配了nvidia下所有gpu设备，因此vgpu 设备也会被匹配执行`nv_pci_probe`。
 但更细节的内容目前的代码还没有提供，比如`nvidia_vgpu_vfio_probe`等函数。
