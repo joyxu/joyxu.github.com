@@ -80,7 +80,7 @@ smmu和mmu一样，也是由多个页表，但是一般来讲smmu并不复用mmu
 有了iommu之后，dma地址也称为iova，也就是设备看到的va。整个逻辑类似`iova=iommu_alloc();iommu_map(domain,iova,pa)`。
 具体代码参考:
 
-* [海思qm驱动代码](https://elixir.bootlin.com/linux/latest/source/drivers/crypto/hisilicon/qm.c#L3100)
+* [qm驱动代码](https://elixir.bootlin.com/linux/latest/source/drivers/crypto/hisilicon/qm.c#L3100)
 * [用户态代码](https://github.com/Linaro/uadk)
 
 ## 用户态访问设备
