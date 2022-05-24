@@ -2,7 +2,7 @@
 title: linux device memory
 author: Joy Xu
 date: 2021-05-25 08:33:08
-tags: [Linux Kernel]
+tags: [linux]
 ---
 
 ## CPU如何访问设备的内存或者寄存器？
