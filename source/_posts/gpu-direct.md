@@ -43,7 +43,7 @@ GPUDirect要解决的第一个问题，是地址的问题，要保证设备之�
 
 ### 常规RDMA编程
 
-一般使用libibverbs这个库提供的API使用RDMA技术，基本分为以下几步：
+再解释GPUDirect RDMA之前，先回顾下普通的RDMA程序是怎么写的。一般使用libibverbs这个库提供的API使用RDMA技术，基本分为以下几步：
 
 	* Create an Infiniband context (struct ibv_context* ibv_open_device())
 	* Create a protection domain (struct ibv_pd* ibv_alloc_pd())
@@ -92,7 +92,45 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 
 ![nvidia_gpudirect3](/images/nvidia_gpudirect3.png)
 
+到这里，已经可以让RDMA网卡访问GPU的内存了，为了让GPU和网卡并行起来，CPU仍然扮演了厚重的调度角色，而且GPU空转时间比较长。
+
+![nvidia_gpudirect4](/images/nvidia_gpudirect4.png)
+
+有人想把控制面也offload一部分，于是乎GPUDirect Async概念被提了出来。
+
+![nvidia_gpudirect5](/images/nvidia_gpudirect5.png)
+
+具体的用户态代码参考[libgdsync](https://github.com/gpudirect/libgdsync/tree/master/src)
+
+#### GPUDirect Async
+
+整体的逻辑如下:
+
+![nvidia_gpudirect5](/images/nvidia_gpudirect5.png)
+
+依赖的软件如下：
+
+![nvidia_gpudirect6](/images/nvidia_gpudirect6.png)
+
+整体软件栈：
+
+![nvidia_gpudirect7](/images/nvidia_gpudirect7.png)
+
+#### Nvidia NCCL
+
+后来Nvidia基于上面互联通信这些技术，又提出了[NCCL概念](https://github.com/NVIDIA/nccl)。
+
+![nvidia_nccl](/images/nvidia_ncll.png)
+
 ## GPUDirect with NVME
+
+## Nvidia Magnum IO
+
+有了上面这些网络加速、IO加速技术之后，Nvidia更进一步提出了Magnum IO技术，把这些都打包在了一起。
+
+![nvidia_magnumio](/images/nvidia_magnumio.png)
+
+![nvidia_magnumio2](/images/nvidia_magnumio2.png)
 
 ## 参考
 
@@ -106,3 +144,4 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 * [Introduction to Programming Infiniband RDMA](https://insujang.github.io/2020-02-09/introduction-to-programming-infiniband/)
 * [OFVWG:GPUDirect and PeerDirect](https://downloads.openfabrics.org/ofv/ofv_presentation_GPU.pdf)
 * [RDMA over ML/DL and Big Data Frameworks](https://www.sc-asia.org/2018/wp-content/uploads/2018/03/1_1500_Ido_Shamay.pdf)
+* [Accelerating IO in the Modern Data Center: Magnum IO Architecture](https://developer.nvidia.com/blog/accelerating-io-in-the-modern-data-center-magnum-io-architecture/)
