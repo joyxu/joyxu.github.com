@@ -5,6 +5,8 @@ date: 2022-06-06 02:15:32
 tags: [linux, gpu, rdma]
 ---
 
+先强调一点，到现在没有任何技术是完全旁路了CPU，控制面上只是尽量让CPU少参与，而不是完全不参与。
+
 ## GPUDirect
 
 GPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepler这一代GPU微架构率先提出来。
