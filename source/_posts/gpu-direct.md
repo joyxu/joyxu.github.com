@@ -100,10 +100,6 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 
 有人想把控制面也offload一部分，于是乎GPUDirect Async概念被提了出来。
 
-![nvidia_gpudirect5](/images/nvidia_gpudirect5.png)
-
-具体的用户态代码参考[libgdsync](https://github.com/gpudirect/libgdsync/tree/master/src)
-
 #### GPUDirect Async
 
 整体的逻辑如下:
@@ -118,11 +114,13 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 
 ![nvidia_gpudirect7](/images/nvidia_gpudirect7.png)
 
+具体的用户态代码参考[libgdsync](https://github.com/gpudirect/libgdsync/tree/master/src)
+
 #### Nvidia NCCL
 
 后来Nvidia基于上面互联通信这些技术，又提出了[NCCL概念](https://github.com/NVIDIA/nccl)。
 
-![nvidia_nccl](/images/nvidia_ncll.png)
+![nvidia_nccl](/images/nvidia_nccl.png)
 
 ## GPUDirect with NVME
 
