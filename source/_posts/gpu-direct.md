@@ -122,7 +122,59 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 
 ![nvidia_nccl](/images/nvidia_nccl.png)
 
-## GPUDirect with NVME
+## GPUDirect Storage
+
+沿着RDMA的思路，在存储上，GPUDirect Storage概念也被提了出来。
+和传统存储相比，仍然是旁路CPU，具体如下:
+
+![gpudirect_storage](/images/gpudirect_storage.png)
+
+先还是回顾下linux kernel中普通存储的软件堆栈：
+
+![normal_storage](/images/normal_storage.png)
+
+Nvidia在虚拟文件系统VFS之上做了一个[nvidia-fs.ko](https://github.com/NVIDIA/gds-nvidia-fs)，
+负责把GPU的内存（GPU的部分BAR空间）给到文件系统。整个软件栈如下：
+
+![gpudirect_storage2](/images/gpudirect_storage2.png)
+
+更具体一点：
+
+![gpudirect_storage7](/images/gpudirect_storage7.png)
+
+用户态的代码写的时候，就变成下面这样了
+
+![gpudirect_storage3](/images/gpudirect_storage3.png)
+
+其中cudaMalloc/cuFileBufRegister会从GPU内存分配，并调用nvidia-fs.ko做映射，得到一个va和gpu pa/dma、cpu pa的映射，
+后面再调用cuFileRead/cuFileWrite的时候把这个va传递给虚拟文件系统VFS，并通过kernel的`call_write_iter/call_read_iter`
+函数进行文件读写，之后底层sas控制器或者nvme控制器的驱动通过dma_map相关函数把这个va又转换成具体的pa，把内容读或者
+写到这块地址中，具体流程如下：
+
+		nvfs_open
+		 nvfs_blk_register_dma_ops
+		  register nvfs_dma_rw_ops 
+
+		cuFileRead/cuFileWrite
+		 nvfs_ioctl
+		  nvfs_start_io_op
+		   nvfs_direct_io
+		    call_write_iter/call_read_iter
+		     blk_mq_ops.queue_rq
+		      nvme_queue_rq
+		       nvme_map_data
+		        dma_map_bvec
+			 call nvfs register dma callback
+		     
+具体可以参考代码： https://github.com/NVIDIA/gds-nvidia-fs/blob/master/src/nvfs-core.c#L981
+
+![gpudirect_storage4](/images/gpudirect_storage4.png)
+
+cufile的库并没有开源，具体的实现还看不到，主要做了以下事情：
+
+![gpudirect_storage5](/images/gpudirect_storage5.png)
+
+![gpudirect_storage6](/images/gpudirect_storage6.png)
 
 ## Nvidia Magnum IO
 
@@ -145,3 +197,9 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 * [OFVWG:GPUDirect and PeerDirect](https://downloads.openfabrics.org/ofv/ofv_presentation_GPU.pdf)
 * [RDMA over ML/DL and Big Data Frameworks](https://www.sc-asia.org/2018/wp-content/uploads/2018/03/1_1500_Ido_Shamay.pdf)
 * [Accelerating IO in the Modern Data Center: Magnum IO Architecture](https://developer.nvidia.com/blog/accelerating-io-in-the-modern-data-center-magnum-io-architecture/)
+* [GPU Direct IO with HDF5](https://hdfgroup.org/wp-content/uploads/2020/10/GPU_Direct_IO_with_HDF5-_John_Ravi.pdf)
+* [OFED and GPUDirect](https://docs.baskerville.ac.uk/ofed-gpudirect/)
+* [GPUrdma: GPU-side library for high performance networking from GPU kernels](https://marksilberstein.com/wp-content/uploads/2020/04/ross16net.pdf)
+* [GPUDIRECT STORAGE:A DIRECT GPU-STORAGE DATA PATH](https://on-demand.gputechconf.com/supercomputing/2019/pdf/sc1922-gpudirect-storage-transfer-data-directly-to-gpu-memory-alleviating-io-bottlenecks.pdf)
+* [NVIDIA Magnum IO GPUDirect Storage Overview Guide](https://docs.nvidia.com/gpudirect-storage/overview-guide/)
+* [NVIDIA GPU Direct Storage with IBM Spectrum Scale](https://www.spectrumscaleug.org/wp-content/uploads/2022/02/episode-18-NVIDIA-GPU-Direct-Storage-with-IBM-Spectrum-Scale.pdf)
