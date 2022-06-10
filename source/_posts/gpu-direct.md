@@ -20,10 +20,15 @@ GPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepl
 
 再深入之前，先了解下P2P技术的几个阶段：
 
+MLX的roadmap：
+
 ![p2p history](/images/p2p_history.png)
+
+Nvidia的roadmap:
 
 ![p2p history2](/images/p2p_history2.png)
 
+看懂了roadmap，才能理解nvidia背后收购MLX的战略意义。
 有了P2P之后，作为设备厂商的Nvidia一直想着怎么旁路CPU，抢占intel的市场，推出了各种direct技术。
 最后发展成nvidia magnum io。后文会围绕这些技术展开。
 
@@ -82,7 +87,7 @@ GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面�
 ![nvidia_gpudirect2](/images/nvidia_gpudirect2.png)
 
 上面`ibv_reg_mr`注册内存的时候，居然允许注册GPU(peer to peer设备)的内存。
-为了做到这一步，nvidia做了几下几步：
+为了做到这一步，MLX做了几下几步：
 
 * 引入`io_peer_mem`这个ko模块，先把peer设备的内存暴露出来，并把peer设备作为client通过`ib_register_peer_memory_clent`注册到RDMA子系统中
 * `io_peer_mem`主要实现三个回调函数:
@@ -170,6 +175,8 @@ Nvidia在虚拟文件系统VFS之上做了一个[nvidia-fs.ko](https://github.co
 
 ![gpudirect_storage4](/images/gpudirect_storage4.png)
 
+另外nvdia-fs.ko也可以和网络、RDMA结合在一起，配合用户态的cuFile RDMA访问网络上的存储设备。
+
 cufile的库并没有开源，具体的实现还看不到，主要做了以下事情：
 
 ![gpudirect_storage5](/images/gpudirect_storage5.png)
@@ -203,3 +210,5 @@ cufile的库并没有开源，具体的实现还看不到，主要做了以下�
 * [GPUDIRECT STORAGE:A DIRECT GPU-STORAGE DATA PATH](https://on-demand.gputechconf.com/supercomputing/2019/pdf/sc1922-gpudirect-storage-transfer-data-directly-to-gpu-memory-alleviating-io-bottlenecks.pdf)
 * [NVIDIA Magnum IO GPUDirect Storage Overview Guide](https://docs.nvidia.com/gpudirect-storage/overview-guide/)
 * [NVIDIA GPU Direct Storage with IBM Spectrum Scale](https://www.spectrumscaleug.org/wp-content/uploads/2022/02/episode-18-NVIDIA-GPU-Direct-Storage-with-IBM-Spectrum-Scale.pdf)
+* [NVIDIA Magnum IO GPUDirect Storage design guide](https://docs.nvidia.com/gpudirect-storage/pdf/design-guide.pdf)
+* [DRM 驱动 mmap 详解：（一）预备知识](https://blog.csdn.net/hexiaolong2009/article/details/107592704)
