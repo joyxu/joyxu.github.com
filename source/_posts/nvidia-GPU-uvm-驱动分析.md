@@ -23,6 +23,8 @@ tags: [linux]
 
 ![alloc and mmap](/images/alloc-mmap.png)
 
+![alloc and mmap2](/images/mmap.jpg)
+
 这种做法在当前的MESA/DRM中很常见，这里放下AMD GPU的代码，实现很类似：
 
 [mesa amdgpu alloc and mmap](https://github.com/mesa3d/mesa/blob/main/src/gallium/winsys/amdgpu/drm/amdgpu_cs.c#L731)
@@ -49,5 +51,5 @@ tags: [linux]
 
 ## 参考
 
-* []()
+* [DRM 驱动 mmap 详解：（一）预备知识](https://blog.csdn.net/hexiaolong2009/article/details/107592704)
 
