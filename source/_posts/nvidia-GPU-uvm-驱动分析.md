@@ -13,7 +13,6 @@ tags: [linux]
 
 借用下星辰变境界演进的说法。
 
-
 ## 星云期
 
 最早的时候很简单，只是为了让用户态可以访问GPU的显存，于是gpu驱动就在linux kernel中创建了一个设备，
@@ -46,4 +45,3 @@ tags: [linux]
 
 * [DRM 驱动 mmap 详解：（一）预备知识](https://blog.csdn.net/hexiaolong2009/article/details/107592704)
 * [NVIDIA PROFILING TOOLS](https://www.olcf.ornl.gov/wp-content/uploads/2019/08/NVIDIA-Profilers.pdf)
-
