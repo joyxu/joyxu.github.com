@@ -27,12 +27,9 @@ tags: [linux]
 
 这种做法在当前的MESA/DRM中很常见，这里放下AMD GPU的代码，实现很类似：
 
-[mesa amdgpu alloc and mmap](https://github.com/mesa3d/mesa/blob/main/src/gallium/winsys/amdgpu/drm/amdgpu_cs.c#L731)
-
-[drm alloc](https://github.com/freedesktop/mesa-drm/blob/master/amdgpu/amdgpu_bo.c#L78)
-
-[kernel ioctl](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c#L2674)
-
+* [mesa amdgpu alloc and mmap](https://github.com/mesa3d/mesa/blob/main/src/gallium/winsys/amdgpu/drm/amdgpu_cs.c#L731)
+* [drm alloc](https://github.com/freedesktop/mesa-drm/blob/master/amdgpu/amdgpu_bo.c#L78)
+* [kernel ioctl](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c#L2674)
 
 放在cuda上，用户态的写法如下：
 
@@ -45,11 +42,8 @@ tags: [linux]
 	    uvm_vma_wrapper_alloc
 	      uvm_va_range_create_mmap
 
-	
-
-
-
 ## 参考
 
 * [DRM 驱动 mmap 详解：（一）预备知识](https://blog.csdn.net/hexiaolong2009/article/details/107592704)
+* [NVIDIA PROFILING TOOLS](https://www.olcf.ornl.gov/wp-content/uploads/2019/08/NVIDIA-Profilers.pdf)
 
