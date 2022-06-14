@@ -76,7 +76,12 @@ linux中virtual address可以有三类：
 具体代码[VMEMMAP_START](https://elixir.bootlin.com/linux/latest/source/arch/arm64/include/asm/memory.h#L53)
 arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://elixir.bootlin.com/linux/latest/source/Documentation/arm64/memory.rst)
 
-![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png)a
+![arm64 kernel memory mapping](/images/arm64-kernel-memory-map.png)
+
+由于内核已经把virtual memory layout功能给去掉，从4.15内核里面把[这个代码](https://elixir.bootlin.com/linux/v4.15.18/source/arch/arm64/mm/init.c#L603)加回来之后，
+在arm64 virt qemu的机器上，内核的打印如下：
+
+![arm64 kernel memory mapping2](/images/arm64_qemu_virt_memory.png)
 
 ## 综述
 
