@@ -75,3 +75,4 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 * [Set up Message Passing Interface for HPC](https://docs.microsoft.com/en-us/azure/virtual-machines/workloads/hpc/setup-mpi)
 * [Now Available – Elastic Fabric Adapter (EFA) for Tightly-Coupled HPC Workloads](https://aws.amazon.com/cn/blogs/aws/now-available-elastic-fabric-adapter-efa-for-tightly-coupled-hpc-workloads/)
 * [Pathfinding a Kernel Storage Fabric Mid-layer](https://openfabrics.org/images/eventpresos/2016presentations/106kfabric.pdf)
+* [云计算三大神器来了！CPU、GPU、DPU](https://www.sohu.com/a/427490498_505795)
