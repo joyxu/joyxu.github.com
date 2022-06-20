@@ -11,7 +11,7 @@ tags: [linux, storage, file system, rdma]
 
 借用一幅图，基本上把所有网络存储技术都包含了进来
 
-![storage network introduction](/imags/storage_network.png)
+![storage network introduction](/images/storage_network.png)
 
 解释下上面涉及到的名词：
 
@@ -31,21 +31,21 @@ tags: [linux, storage, file system, rdma]
 这里要重点强调下这两个概念，数据的存储和数据的访问是两个不同的概念，
 存储一般要经过文件系统，而访问是不用的，由于要经过文件系统，他们的延时差异也很大。
 
-![ds vs da](/imags/storage_network_ds_da.png)
+![ds vs da](/images/storage_network_ds_da.png)
 
-![ds da latency](/imags/storage_network_ds_da_latency.png)
+![ds da latency](/images/storage_network_ds_da_latency.png)
 
 ## libfabric
 
 libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用。
 
-![libfabric](/imags/storage_network_libfabric.png)
+![libfabric](/images/storage_network_libfabric.png)
 
-![libfabric](/imags/storage_network_libfabric2.png)
+![libfabric](/images/storage_network_libfabric2.png)
 
 但亚马逊的Elastic Fabric Adapter用法不太一样，EFA直接在linux kernel实现了libfabric的provider驱动。
 
-![libfabric](/imags/storage_network_libfabric3.png)
+![libfabric](/images/storage_network_libfabric3.png)
 
 ## kfabric
 
@@ -53,18 +53,18 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 类似的回调函数，OFED组织又做了一层抽象框架命名为kfabric，但是这个模块还一直没有何如到linux kernel主线，
 最近的一次更新也是在16年了，可以认为已经停止开发了。
 
-![kfabric](/imags/storage_network_kfabric.png)
+![kfabric](/images/storage_network_kfabric.png)
 
 主要用于用LNET文件系统，可惜从linux kernel 4.18之后，lustre分布式文件系统被移除了内核，
 但lustre官方仍在维护out of tree的代码，且由于ARM在hpc领域的绽放，linaro也在维护arm的版本，具体可以参考他们的官网。
 
-![kfabric](/imags/storage_network_kfabric2.png)
+![kfabric](/images/storage_network_kfabric2.png)
 
 ## libfabric和kfabric
 
 根据上节的介绍，其实libfabric和kfabric并不一定要配合使用，具体差异参考下图
 
-![libfabric vs kfabric](/imags/storage_network_fabric.png)
+![libfabric vs kfabric](/images/storage_network_fabric.png)
 
 
 ## 参考
