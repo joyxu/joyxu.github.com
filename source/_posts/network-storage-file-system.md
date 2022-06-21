@@ -67,6 +67,12 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
 
 
+## 八卦
+
+以前高端网卡基本都是intel和broadcom的市场，后面微软找MLX在数据中心合作，结果
+MLX在25G时代一把上位。后面亚马逊又收购了同处于以色列的Annapuna Lab，做了自己的
+RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
+
 ## 参考
 
 * [Storage Networking Industry Association](https://www.snia.org/)
@@ -76,3 +82,10 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 * [Now Available – Elastic Fabric Adapter (EFA) for Tightly-Coupled HPC Workloads](https://aws.amazon.com/cn/blogs/aws/now-available-elastic-fabric-adapter-efa-for-tightly-coupled-hpc-workloads/)
 * [Pathfinding a Kernel Storage Fabric Mid-layer](https://openfabrics.org/images/eventpresos/2016presentations/106kfabric.pdf)
 * [云计算三大神器来了！CPU、GPU、DPU](https://www.sohu.com/a/427490498_505795)
+* [深入理解Lustre文件系统-第3篇 LNET：Lustre网络](https://blog.csdn.net/fsdev/article/details/7800126)
+* [lustre patchwork](https://patchwork.kernel.org/project/lustre-devel/list/)
+* [A triad-based architecture for a multipurpose Lustre filesystem at /rdlab](https://rdlab.cs.upc.edu/wp-content/uploads/2021/05/LUG2021-Triad-based-architecture-rdlab.pdf)
+* [NFS over SoftRoCE setup](http://linux-nfs.org/wiki/index.php/NFS_over_SoftRoCE_setup)
+* [NFS/RDMA README](https://kernel.org/doc/Documentation/filesystems/nfs/nfs-rdma.txt)
+* [NFS/RDMA Next Steps](https://datatracker.ietf.org/meeting/99/materials/slides-99-nfsv4-nfsrdma-next-steps-chuck-lever-00)
+* [RDMA in Data Centers: Looking Back and Looking Forward](https://slidetodoc.com/rdma-in-data-centers-looking-back-and-looking/)
