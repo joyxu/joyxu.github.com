@@ -90,6 +90,18 @@ iser的调用栈如下
 
 ![iser e2e](/images/storage_network_iser_e2e.png)
 
+关键代码流程：
+
+	Initiator:
+	iscsi_data_xmit
+	  xmit_task
+	    iser_send_control(registered completed callback iser_ctrl_comp)
+	      ib_dma_sync_xxx
+
+
+	Target:
+
+
 数据流图如下
 
 ![iser dataflow](/images/storage_network_iser_dataflow.png)
@@ -97,6 +109,16 @@ iser的调用栈如下
 以mlx为例，kernel中的关系图如下
 
 ![iser kernel](/images/storage_network_iser_kernel.png)
+
+2.6的kernel中，storage的模块关系如下
+
+![iser kernel](/images/storage_network_26linux.png)
+
+## NVMe/F
+
+## SMB
+
+由于是windows上的技术，这里就不介绍了。
 
 ## 八卦
 
@@ -126,3 +148,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [What is ISER?](https://support.mellanox.com/s/article/what-is-iser-x)
 * [Mellanox Linux Driver Modules Relationship](https://support.mellanox.com/s/article/mellanox-linux-driver-modules-relationship--mlnx-ofed-x)
 * [The OFED package](https://www.rdmamojo.com/2012/04/25/the-ofed-package/)
+* [Linux/iSCSI and a Generic Target Mode Storage Engine for Linux v2.6](https://www.usenix.org/legacy/events/lsf08/tech/IO_bellinger.pdf)
