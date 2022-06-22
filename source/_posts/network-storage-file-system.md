@@ -23,7 +23,7 @@ tags: [linux, storage, file system, rdma]
 * NVMe/F: NVMe over fabric
 * NFSoRDMA: NFS over RDMA
 * SMB Direct: server message block, Windows服务器上的技术, MS-SMB
-* LNET/LND: Lustre networking，分布式文件系统Lustre的网络技术
+* LNET/LND: Lustre networking，分布式文件系统Lustre的网络技术，其它著名的分布式文件系统还有GlusterFS
 * iscsi: scsi based on tcp/ip
 
 ## DataStorage 和DataAcces的差异
@@ -66,6 +66,37 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
 
+## SRP & ISER
+
+SRP和ISER都是已经在内核支持的协议，只需要把相应config选项打开就可以使能了。
+
+![srp kernel configure](/images/storage_network_srp.png)
+
+![iser kernel configure](/images/storage_network_iser.png)
+
+![srp & iser](/images/storage_network_srp_iser.png)
+
+![srp & iser](/images/storage_network_srp_iser2.png)
+
+相对来讲，ISER比SRP更好，具体可以从以下几个方面对比：
+
+![srp & iser](/images/storage_network_srp_iser3.png)
+
+iser一般组网的方式如下：
+
+![iser case](/images/storage_network_iser_case.png)
+
+iser的调用栈如下
+
+![iser e2e](/images/storage_network_iser_e2e.png)
+
+数据流图如下
+
+![iser dataflow](/images/storage_network_iser_dataflow.png)
+
+以mlx为例，kernel中的关系图如下
+
+![iser kernel](/images/storage_network_iser_kernel.png)
 
 ## 八卦
 
@@ -89,3 +120,8 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [NFS/RDMA README](https://kernel.org/doc/Documentation/filesystems/nfs/nfs-rdma.txt)
 * [NFS/RDMA Next Steps](https://datatracker.ietf.org/meeting/99/materials/slides-99-nfsv4-nfsrdma-next-steps-chuck-lever-00)
 * [RDMA in Data Centers: Looking Back and Looking Forward](https://slidetodoc.com/rdma-in-data-centers-looking-back-and-looking/)
+* [The role of a InfiniBand and automated data tiering in achieving extreme storage performance](https://kipdf.com/the-role-of-a-infiniband-and-automated-data-tiering-in-achieving-extreme-storage_5aef9bb47f8b9a0f648b4583.html)
+* [NVIDIA MLNX_OFED Documentation Rev 5.3-1.0.5.0 Introduction](https://docs.nvidia.com/networking/display/MLNXOFEDv531050/Introduction)
+* [iSER as accelerator for Software Defined Storage](https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/RahulFiske_iSER_Accelerator_Software_Defined_Storage_v2.pdf)
+* [What is ISER?](https://support.mellanox.com/s/article/what-is-iser-x)
+* [Mellanox Linux Driver Modules Relationship](https://support.mellanox.com/s/article/mellanox-linux-driver-modules-relationship--mlnx-ofed-x)
