@@ -149,3 +149,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [Mellanox Linux Driver Modules Relationship](https://support.mellanox.com/s/article/mellanox-linux-driver-modules-relationship--mlnx-ofed-x)
 * [The OFED package](https://www.rdmamojo.com/2012/04/25/the-ofed-package/)
 * [Linux/iSCSI and a Generic Target Mode Storage Engine for Linux v2.6](https://www.usenix.org/legacy/events/lsf08/tech/IO_bellinger.pdf)
+* [Performance Implications Libiscsi RDMA support](https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/Shterman-Grimberg_Greenberg_Performance%20Implications%20Libiscsi_%20RDMA_V6.pdf)
