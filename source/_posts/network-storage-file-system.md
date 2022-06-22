@@ -74,10 +74,6 @@ SRP和ISER都是已经在内核支持的协议，只需要把相应config选项�
 
 ![iser kernel configure](/images/storage_network_iser.png)
 
-![srp & iser](/images/storage_network_srp_iser.png)
-
-![srp & iser](/images/storage_network_srp_iser2.png)
-
 相对来讲，ISER比SRP更好，具体可以从以下几个方面对比：
 
 ![srp & iser](/images/storage_network_srp_iser3.png)
@@ -87,6 +83,10 @@ iser一般组网的方式如下：
 ![iser case](/images/storage_network_iser_case.png)
 
 iser的调用栈如下
+
+![srp & iser](/images/storage_network_srp_iser.png)
+
+![srp & iser](/images/storage_network_srp_iser2.png)
 
 ![iser e2e](/images/storage_network_iser_e2e.png)
 
@@ -125,3 +125,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [iSER as accelerator for Software Defined Storage](https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/RahulFiske_iSER_Accelerator_Software_Defined_Storage_v2.pdf)
 * [What is ISER?](https://support.mellanox.com/s/article/what-is-iser-x)
 * [Mellanox Linux Driver Modules Relationship](https://support.mellanox.com/s/article/mellanox-linux-driver-modules-relationship--mlnx-ofed-x)
+* [The OFED package](https://www.rdmamojo.com/2012/04/25/the-ofed-package/)
