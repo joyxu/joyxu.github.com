@@ -26,6 +26,10 @@ tags: [linux, storage, file system, rdma]
 * LNET/LND: Lustre networking，分布式文件系统Lustre的网络技术，其它著名的分布式文件系统还有GlusterFS
 * iscsi: scsi based on tcp/ip
 
+如果对整个层次不清楚的话，可以了解下linux storage的全景图：
+
+![linux storage stack overview](/images/Linux-storage-stack-diagram_v4.10.svg)
+
 ## DataStorage 和DataAcces的差异
 
 这里要重点强调下这两个概念，数据的存储和数据的访问是两个不同的概念，
@@ -65,6 +69,12 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 根据上节的介绍，其实libfabric和kfabric并不一定要配合使用，具体差异参考下图
 
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
+
+## ISCSI
+
+介绍其它基于RoCE的技术前，先介绍下ISCSI，方便我们理解整个流程，详细如下图：
+
+![iscsi scst ](/images/storage_network_iscsi.png)
 
 ## SRP & ISER
 
@@ -150,3 +160,9 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [The OFED package](https://www.rdmamojo.com/2012/04/25/the-ofed-package/)
 * [Linux/iSCSI and a Generic Target Mode Storage Engine for Linux v2.6](https://www.usenix.org/legacy/events/lsf08/tech/IO_bellinger.pdf)
 * [Performance Implications Libiscsi RDMA support](https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/Shterman-Grimberg_Greenberg_Performance%20Implications%20Libiscsi_%20RDMA_V6.pdf)
+* [How Ethernet RDMA Protocols iWARP and RoCE Support NVMe over Fabrics](https://www.snia.org/sites/default/files/ESF/How_Ethernet_RDMA_Protocols_Support_NVMe_over_Fabrics_Final.pdf)
+* [Ethernet Storage Fabrics: Using RDMA with Fast NVMe-oF Storage to Reduce latency and Improve Efficiency](https://www.snia.org/educational-library/ethernet-storage-fabrics-using-rdma-fast-nvme-storage-reduce-latency-and-improve)
+* [Linux iSCSI](https://runsisi.com/2019/10/30/linux-iscsi/)
+* [SCST-Usermode-Adaptation](https://davidbutterfield.github.io/SCST-Usermode-Adaptation/)
+* [Storage Stack](https://wxdublin.gitbooks.io/deep-into-linux-and-beyond/content/io.html)
+* [Linux Storage Stack Diagram](https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram)
