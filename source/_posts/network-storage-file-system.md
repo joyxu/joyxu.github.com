@@ -26,10 +26,6 @@ tags: [linux, storage, file system, rdma]
 * LNET/LND: Lustre networking，分布式文件系统Lustre的网络技术，其它著名的分布式文件系统还有GlusterFS
 * iscsi: scsi based on tcp/ip
 
-如果对整个层次不清楚的话，可以了解下linux storage的全景图：
-
-![linux storage stack overview](/images/Linux-storage-stack-diagram_v4.10.svg)
-
 ## DataStorage 和DataAcces的差异
 
 这里要重点强调下这两个概念，数据的存储和数据的访问是两个不同的概念，
@@ -38,6 +34,72 @@ tags: [linux, storage, file system, rdma]
 ![ds vs da](/images/storage_network_ds_da.png)
 
 ![ds da latency](/images/storage_network_ds_da_latency.png)
+
+本文只介绍数据存储，接下来围绕开篇提到的几个技术展，接下来围绕开篇提到的几个技术展开。
+
+## DAS 直连式存储
+
+讲网络存储之前，还是先介绍下传统的Direct Attached Storage直连式存储。
+说白了，就是常见的PC或者服务器直接连着硬盘的。
+以常见的scsi为例子，应用下发的文件服务，在scsi层都转换为scsi命令发给scsi存储控制器处理，
+对应到kernel中，就是常见的 [scsi驱动](https://elixir.bootlin.com/linux/v5.18.8/source/drivers/scsi/mpt3sas) 了。
+
+如果对整个层次不清楚的话，可以了解下linux storage的全景图：
+
+![linux storage stack overview](/images/Linux-storage-stack-diagram_v4.10.svg)
+
+## ISCSI
+
+为了支持网络存储，linux kernel在scsi层下加了一个传输层，把scsi命令通过网络报文发出来。
+这个发的人可以叫client,在scsi空间中我们称它为initiator, 而接受处理报文的称为target。
+
+![iscsi packet](/images/storage_network_iscsi_packet.png)
+
+### SRP & ISER
+
+SRP和ISER均能通过RDMA支持SCSI，且都已经被内核支持。
+相对来讲，ISER比SRP更好，具体可以从以下几个方面对比：
+
+![srp & iser](/images/storage_network_srp_iser3.png)
+
+iser典型应用场景如下：
+
+![iser case](/images/storage_network_iser_case.png)
+
+其中的数据流如下：
+
+![iser dataflow](/images/storage_network_iser_dataflow.png)
+
+以mlx为例，kernel中的逻辑视图如下：
+
+![iser kernel](/images/storage_network_iser_kernel.png)
+
+### ISER Initiator
+
+内核中iser intiator位于infiniband/ulp中，它会注册到scsi transport里面，把scsi报文封装到IB报文中。
+
+![iser kernel configure](/images/storage_network_iser_initiator.png)
+
+调用栈如下（不包括scsi层之上）
+
+	iscsi_data_xmit
+	  xmit_task
+	    iser_send_control(registered completed callback iser_ctrl_comp)
+	      ib_dma_sync_xxx
+
+### ISER Target
+
+Target侧的实现有很多种方案，主流主要有三种：LIO/TCMU, SCST和STGT(也叫TGT),推荐使用LIO/TCMU方案。
+其中STGT是纯用户态的，但基本不用了，SCST和LIO/TCMU都有内核模块，但SCST的内核模块并没有合入到内核主线。
+更详细的对比可以参考 [SCST的官网](http://scst.sourceforge.net/comparison.html)。
+
+![iser targets](/images/storage_network_iser_targets.png)
+
+#### STGT(TGT)
+
+TGT是纯用户态的，会通过ib
+
+#### LIO/TCMU
 
 ## libfabric
 
@@ -70,59 +132,6 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
 
-## ISCSI
-
-介绍其它基于RoCE的技术前，先介绍下ISCSI，方便我们理解整个流程，详细如下图：
-
-![iscsi scst ](/images/storage_network_iscsi.png)
-
-## SRP & ISER
-
-SRP和ISER都是已经在内核支持的协议，只需要把相应config选项打开就可以使能了。
-
-![srp kernel configure](/images/storage_network_srp.png)
-
-![iser kernel configure](/images/storage_network_iser.png)
-
-相对来讲，ISER比SRP更好，具体可以从以下几个方面对比：
-
-![srp & iser](/images/storage_network_srp_iser3.png)
-
-iser一般组网的方式如下：
-
-![iser case](/images/storage_network_iser_case.png)
-
-iser的调用栈如下
-
-![srp & iser](/images/storage_network_srp_iser.png)
-
-![srp & iser](/images/storage_network_srp_iser2.png)
-
-![iser e2e](/images/storage_network_iser_e2e.png)
-
-关键代码流程：
-
-	Initiator:
-	iscsi_data_xmit
-	  xmit_task
-	    iser_send_control(registered completed callback iser_ctrl_comp)
-	      ib_dma_sync_xxx
-
-
-	Target:
-
-
-数据流图如下
-
-![iser dataflow](/images/storage_network_iser_dataflow.png)
-
-以mlx为例，kernel中的关系图如下
-
-![iser kernel](/images/storage_network_iser_kernel.png)
-
-2.6的kernel中，storage的模块关系如下
-
-![iser kernel](/images/storage_network_26linux.png)
 
 ## NVMe/F
 
@@ -139,6 +148,7 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 ## 参考
 
 * [Storage Networking Industry Association](https://www.snia.org/)
+* [Evolution of iSCSI](https://www.snia.org/sites/default/files/ESF/Evolution_of_iSCSI_Final.pdf)
 * [Persistent Memory over Fabrics An Application-centric view](https://www.snia.org/sites/default/files/PM-Summit/2017/presentations/Paul_Grun_Doug_Voigt_PM_over_Fabrics-an-Application-centered_Viewv2.pdf)
 * [Persistent Memory over Fabric Architecture Overview](https://slideplayer.com/slide/13896886)
 * [Set up Message Passing Interface for HPC](https://docs.microsoft.com/en-us/azure/virtual-machines/workloads/hpc/setup-mpi)
@@ -166,3 +176,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [SCST-Usermode-Adaptation](https://davidbutterfield.github.io/SCST-Usermode-Adaptation/)
 * [Storage Stack](https://wxdublin.gitbooks.io/deep-into-linux-and-beyond/content/io.html)
 * [Linux Storage Stack Diagram](https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram)
+* [Linux LIO 与 TCMU 用户空间透传](http://bos.itdks.com/6267b2df606e482085e35322c7fae55b.pdf)
