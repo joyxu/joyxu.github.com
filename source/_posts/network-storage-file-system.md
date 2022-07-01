@@ -35,13 +35,13 @@ tags: [linux, storage, file system, rdma]
 
 ![ds da latency](/images/storage_network_ds_da_latency.png)
 
-本文只介绍数据存储，接下来围绕开篇提到的几个技术展，接下来围绕开篇提到的几个技术展开。
+本文只介绍数据存储，接下来围绕开篇提到的几个技术展开。
 
 ## DAS 直连式存储
 
 讲网络存储之前，还是先介绍下传统的Direct Attached Storage直连式存储。
 说白了，就是常见的PC或者服务器直接连着硬盘的。
-以常见的scsi为例子，应用下发的文件服务，在scsi层都转换为scsi命令发给scsi存储控制器处理，
+以常见的scsi为例子，应用下发的文件访问，在scsi层都转换为scsi命令发给scsi存储控制器处理，
 对应到kernel中，就是常见的 [scsi驱动](https://elixir.bootlin.com/linux/v5.18.8/source/drivers/scsi/mpt3sas) 了。
 
 如果对整个层次不清楚的话，可以了解下linux storage的全景图：
@@ -51,7 +51,7 @@ tags: [linux, storage, file system, rdma]
 ## ISCSI
 
 为了支持网络存储，linux kernel在scsi层下加了一个传输层，把scsi命令通过网络报文发出来。
-这个发的人可以叫client,在scsi空间中我们称它为initiator, 而接受处理报文的称为target。
+这个发出报文的client,在scsi命名空间中称为initiator, 而接受处理报文的称为target，这两个名词概念后文会税涉及到。
 
 ![iscsi packet](/images/storage_network_iscsi_packet.png)
 
@@ -82,10 +82,28 @@ iser典型应用场景如下：
 
 调用栈如下（不包括scsi层之上）
 
-	iscsi_data_xmit
-	  xmit_task
-	    iser_send_control(registered completed callback iser_ctrl_comp)
-	      ib_dma_sync_xxx
+	scsi_transport_iscsi.c
+		netlink_kernel_create(&iscsi_if_rx)
+		iscsi_if_rx
+		 iscsi_if_recv_msg
+		  transport->create_session
+		  transport->create_conn
+		  transport->bind_conn
+		  transport->create_session
+		  transport->create_session
+
+	ib_isert.ko:
+		iser_init
+		 iscsi_register_transport(&iscsi_iser_transport)
+
+	scsi_lib.c:
+		scsi_dispatch_cmd
+		 transport::queuecommand
+		  iscsi_queuecommand
+		   iscsi_data_xmit
+		    xmit_task
+		     iser_send_control(registered completed callback iser_ctrl_comp)
+		      ib_dma_sync_xxx
 
 ### ISER Target
 
