@@ -107,7 +107,13 @@ iser典型应用场景如下：
 
 ### ISER Target
 
-Target侧的实现有很多种方案，主流主要有三种：LIO/TCMU, SCST和STGT(也叫TGT),推荐使用LIO/TCMU方案。
+Target侧的实现有很多种方案，主流主要有三种：
+
+* LIO/TCMU: LIO后面名字改成了TCM(Target Core Mod), TCMU是TCM的用户态，已经被Linux Kernel主线支持。由linux-iscsi.org运营维护,主要的开发者是Nicholas A.Bellinger。
+* [SCST](http://scst.sourceforge.net/index.html): the generic SCSI target subsystem for Linux,名字最官方，可惜一直没合入到Linux社区，且和LIO的作者一直不合。
+* [STGT(也叫TGT)](https://github.com/fujita/tgt): 作者是NTT的FUJITA Tomonori和Redhat的Mike Christie，最早的版本是包含内核态的，后面去掉了。
+
+推荐使用LIO/TCMU方案。
 其中STGT是纯用户态的，但基本不用了，SCST和LIO/TCMU都有内核模块，但SCST的内核模块并没有合入到内核主线。
 更详细的对比可以参考 [SCST的官网](http://scst.sourceforge.net/comparison.html)。
 
@@ -115,7 +121,11 @@ Target侧的实现有很多种方案，主流主要有三种：LIO/TCMU, SCST和
 
 #### STGT(TGT)
 
-TGT是纯用户态的，iser的支持都在user/iscsi/iser.c中，简单的调用流如下:
+网上的材料都比较老了，很多图里面都画着它有内核态，最初的版本确实是有，只是后面都去掉了，
+这个链接的patch是最早在kernel中加入netlink的patch：[scsi tgt: scsi target netlink interface](https://lwn.net/Articles/172694/)
+喜欢考古的兄弟可以结合github上老的tag版本结合一起看看。
+
+最新的版本是纯用户态的，iser的支持都在user/iscsi/iser.c中，简单的调用流如下:
 
 	iser.c:
 	 iser_device_init
@@ -146,7 +156,19 @@ iser的流程图就不画了，和下面这个tcp的图很类似：
 
 ![iser tgt tcp](/images/storage_network_iser_tgt_tcp.png)
 
+#### SCST
+
+源码除了从官网下载，也可以从github下载 [SCST-project](https://github.com/SCST-project/scst), 其实还是很活跃的，
+从2.6到5.14的内核都可以支持，最新的tag版本是v3.6，发布与2022年1月。
+
+SCST的作者和LIO的作者似乎有些不同的意见，在其官网中也一直强调它的优势，由于精力实在有限，就不深入挖掘它的用法了。
+David画了一个很漂亮的图:
+
+![iser SCST](/images/storage_network_iscsi.png)
+
 #### LIO/TCMU
+
+有看到些信息说中国移动使用了这个方案。
 
 ## libfabric
 
@@ -225,3 +247,5 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [Linux Storage Stack Diagram](https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram)
 * [Linux LIO 与 TCMU 用户空间透传](http://bos.itdks.com/6267b2df606e482085e35322c7fae55b.pdf)
 * [tgt服务端流程分析](https://blog.csdn.net/tdaajames/article/details/80983309?spm=1001.2014.3001.5502)
+* [tgt作者 FUJITA Tomonori个人主页](https://bitset.dev/)
+* [Linux中三种SCSI target的介绍之各个target的优劣](https://blog.csdn.net/scaleqiao/article/details/46761993)
