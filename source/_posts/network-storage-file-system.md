@@ -115,7 +115,36 @@ Target侧的实现有很多种方案，主流主要有三种：LIO/TCMU, SCST和
 
 #### STGT(TGT)
 
-TGT是纯用户态的，会通过ib
+TGT是纯用户态的，iser的支持都在user/iscsi/iser.c中，简单的调用流如下:
+
+	iser.c:
+	 iser_device_init
+	  ibv_create_cq
+	  ibv_req_notify_cq
+	  tgt_event_add(cq->fd, &iser_handle_cq_event)
+
+	 iser_handle_cq_event(如果ib有cq产生，fd唤醒epoll)
+	  iser_poll_cq(ibv_poll_cq)
+	   handle_wc
+	   iser_queue_task
+	    iser_sched_iosubmit
+	     iser_scsi_cmd_iosubmit
+	      target_cmd_queue
+	      	cmd_perform
+		 sbc_rw
+		  bs_cmd_submit
+		   bs_rdwr_request
+		    pread/pwrite(系统调用，读写)
+		  
+	tgtd.c:
+	 main
+	  event_loop
+	   epoll_wait(cq->fd)
+	    handler
+
+iser的流程图就不画了，和下面这个tcp的图很类似：
+
+![iser tgt tcp](/images/storage_network_iser_tgt_tcp.png)
 
 #### LIO/TCMU
 
@@ -195,3 +224,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [Storage Stack](https://wxdublin.gitbooks.io/deep-into-linux-and-beyond/content/io.html)
 * [Linux Storage Stack Diagram](https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram)
 * [Linux LIO 与 TCMU 用户空间透传](http://bos.itdks.com/6267b2df606e482085e35322c7fae55b.pdf)
+* [tgt服务端流程分析](https://blog.csdn.net/tdaajames/article/details/80983309?spm=1001.2014.3001.5502)
