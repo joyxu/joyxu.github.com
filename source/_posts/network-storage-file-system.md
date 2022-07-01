@@ -246,7 +246,7 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [Storage Stack](https://wxdublin.gitbooks.io/deep-into-linux-and-beyond/content/io.html)
 * [Linux Storage Stack Diagram](https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram)
 * [Linux LIO 与 TCMU 用户空间透传](http://bos.itdks.com/6267b2df606e482085e35322c7fae55b.pdf)
-* [LIO and the TCMU Userspace Passthrough:The Best of Both Worlds](https://events.static.linuxfound.org/sites/events/files/slides/tcmu-bobw_0.pdf)
+* [LIO and the TCMU Userspace Passthrough](https://events.static.linuxfound.org/sites/events/files/slides/tcmu-bobw_0.pdf)
 * [tgt服务端流程分析](https://blog.csdn.net/tdaajames/article/details/80983309?spm=1001.2014.3001.5502)
 * [tgt作者 FUJITA Tomonori个人主页](https://bitset.dev/)
 * [Linux中三种SCSI target的介绍之各个target的优劣](https://blog.csdn.net/scaleqiao/article/details/46761993)
