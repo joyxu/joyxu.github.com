@@ -271,6 +271,11 @@ TCMU分为kernel和用户态两部分，用户态现在主要是tcmu-runner, 内
 		    isert_rdma_rw_ctx_post
 		     rdma_rw_ctx_post
 		      ib_post_send  //通知intiator 处理完
+
+
+完整的处理流程可以参考下面这个图，虽然不太对得上，但逻辑是ok的
+
+![iser tgt tcp](/images/storage_network_iser_target3.png)
 	       
 ## libfabric
 
@@ -360,3 +365,5 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [TCMU学习笔记](https://blog.shunzi.tech/post/tcmu/)
 * [中秱苏研-存储产品规划和实践经验分享](https://docsplayer.com/106803585-%E5%B9%BB%E7%81%AF%E7%89%87-1.html)
 * [TCM Userspace Design](https://elixir.bootlin.com/linux/v5.18.8/source/Documentation/target/tcmu-design.rst)
+* [Ceph iscsi方案及环境搭建](http://aspirer.wang/?p=1295)
+* [一个iscsi target hung问题的解决过程](https://blog.approachai.com/revisting-iscsi-target-hung-issue-with-tcmu-glusterfs-backstore/)
