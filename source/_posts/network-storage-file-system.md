@@ -359,3 +359,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [iser-target-rfc-v4](https://git.kernel.org/pub/scm/linux/kernel/git/nab/target-pending.git/log/?h=iser-target-rfc-v4)
 * [TCMU学习笔记](https://blog.shunzi.tech/post/tcmu/)
 * [中秱苏研-存储产品规划和实践经验分享](https://docsplayer.com/106803585-%E5%B9%BB%E7%81%AF%E7%89%87-1.html)
+* [TCM Userspace Design](https://elixir.bootlin.com/linux/v5.18.8/source/Documentation/target/tcmu-design.rst)
