@@ -76,6 +76,34 @@ iser典型应用场景如下：
 
 ### ISER Initiator
 
+按照道理讲，应该先说Target，再说Initiator比较好，但是由于Target比较复杂，所以放在后G面讲。
+假设Target已经配置好，Initator怎么用呢？主要是以下几步：
+
+* discovery: `iscsiadm -m discovery -t st -p target-ip-address` 
+* login: `iscsiadm -m node -T iqn.2006-04.com.example:3260 -l` 
+* mkfs & mount： `mkfs.ext4 /dev/disk_name; mount /dev/disk_name /mount/point`
+
+整个流程如下：
+
+		+--------------------------------------------------------+             
+		| Targets & Sessions configuration files and directories |             
+		+--------------------------------------------------------+             
+
+		+--------------------------+     +----------------------------------+ 
+		| iscsiadm                 |     | iscsid: iSCSI daemon             | 
+		|                          |     |                                  | 
+		|  * Command line tool     |<--->|  * Implements Session management | 
+		|  * Manages database of   |     |  * Communicates with iscsiadm    | 
+		|    sessions and targets  |     |    and iscsi kernel modules      | 
+		+--------------------------+     +---------------+------------------+ 
+		|                    
+		User space                                       |                    
+		- - - - - - - - - - - - - - - - - - - - - - - - - | - - - - - - - - - -
+		Kernel                                           v                    
+		+-----------------------------------------------------------+ 
+		| kernel modules: scsi_transport_iscsi, iscsi_tcp, libiscsi | 
+		+-----------------------------------------------------------+ 
+
 内核中iser intiator位于infiniband/ulp中，它会注册到scsi transport里面，把scsi报文封装到IB报文中。
 
 ![iser kernel configure](/images/storage_network_iser_initiator.png)
@@ -162,14 +190,88 @@ iser的流程图就不画了，和下面这个tcp的图很类似：
 从2.6到5.14的内核都可以支持，最新的tag版本是v3.6，发布与2022年1月。
 
 SCST的作者和LIO的作者似乎有些不同的意见，在其官网中也一直强调它的优势，由于精力实在有限，就不深入挖掘它的用法了。
-David画了一个很漂亮的图:
+[David画了一个很漂亮的图](https://davidbutterfield.github.io/SCST-Usermode-Adaptation/docs/SCST_Usermode.html):
 
 ![iser SCST](/images/storage_network_iscsi.png)
 
 #### LIO/TCMU
 
-有看到些信息说中国移动使用了这个方案。
+中国移动苏研主推这个方案，且在社区中贡献了不少patch。
+主要配置工具是python做的targetcli，它提供了一个交互shell，步骤如下：
 
+* Creating a Backstore
+* Creating an iSCSI Target
+* Configuring an iSCSI Portal
+* Configuring LUNs
+* Configuring ACLs
+
+TCMU分为kernel和用户态两部分，用户态现在主要是tcmu-runner, 内核部分主要有以下几个ko：
+
+* `target_core_user`
+* `target_core_mod`
+* `iscsi_target_mod`
+* `ib_isert`
+
+他们之间的交互关系如下图：
+
+![iser tgt tcp](/images/storage_network_iser_target2.png)
+
+
+在配置iscsi portal时，会通过ib_isert创建QP，通过中断的方式监听IB报文
+
+	lio_target_call_addnptotpg
+	 iscsit_add_np
+	  iscis_target_setup_login_socket
+	   isert_setup_np
+	    isert_setup_id
+	     isert_connect_request
+	      isert_create_qp
+	       ib_cq_pool_get(IB_POLL_WORKQUEUE 内核的IB poll线程监听有没有cq事件，如果有则调用isert_recv_done，监听intiator发过来的报文)
+	       rdma_create_np(isert_qp_event_callback 中断回调函数， 监听硬件中断)
+	       
+收到报文
+
+	isert_recv_done
+	 isert_rx_opcode
+	  isert_handle_scsi_cmd
+	   iscsit_setup_scsi_cmd
+	    target_cmd_parse_cdb
+	     transport->parse_cdb
+	      tcmu_parse_cdb
+	       tcmu_queue_cmd
+	        uio_event_notify 通知用户态
+
+用户态(tcmu-runner)
+
+		tcmur_cmdproc_thread
+		 while(1) {
+			tcmulib_processing_start
+			  read() // block等待，直到收到kernel通知
+			 tcmulib_getnext_command
+			  device_cmd_tail != device_cmd_head //command ringbuffer 中有新的命令
+			 tcmur_generic_handle_cmd
+			  handle_read/handle_write
+			   tcmur_cmd_complete
+			    handle_generic_cbk
+			     aio_command_finish
+			      tcmur_tcmulib_cmd_complete
+			      write() //通知kenrel，处理完command, 触发kernel uio的中断处理
+		 }
+
+用户态处理完报文通知内核：
+
+	tcmu_irqcontrol
+	 tcmu_handle_completions
+	  target_complete_cmd
+	       target_complete_ok_work
+		queue_data_in
+		 lio_queue_data_in
+		  iscsit_queue_data_in
+		   isert_put_datain
+		    isert_rdma_rw_ctx_post
+		     rdma_rw_ctx_post
+		      ib_post_send  //通知intiator 处理完
+	       
 ## libfabric
 
 libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用。
@@ -200,7 +302,6 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 根据上节的介绍，其实libfabric和kfabric并不一定要配合使用，具体差异参考下图
 
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
-
 
 ## NVMe/F
 
@@ -250,3 +351,11 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [tgt服务端流程分析](https://blog.csdn.net/tdaajames/article/details/80983309?spm=1001.2014.3001.5502)
 * [tgt作者 FUJITA Tomonori个人主页](https://bitset.dev/)
 * [Linux中三种SCSI target的介绍之各个target的优劣](https://blog.csdn.net/scaleqiao/article/details/46761993)
+* [Creating an iSCSI Initiator](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/osm-create-iscsi-initiator)
+* [Open-iSCSI](https://wiki.archlinux.org/title/Open-iSCSI)
+* [Elasticsearch with Gluster Block Storage](https://pkalever.wordpress.com/tag/tcm/)
+* [open-iscsi/scst 追踪一](https://blog.csdn.net/u011013137/article/details/9083547)
+* [Add support for iSCSI Extensions for RDMA (ISER) target mode](https://lwn.net/Articles/545912/)
+* [iser-target-rfc-v4](https://git.kernel.org/pub/scm/linux/kernel/git/nab/target-pending.git/log/?h=iser-target-rfc-v4)
+* [TCMU学习笔记](https://blog.shunzi.tech/post/tcmu/)
+* [中秱苏研-存储产品规划和实践经验分享](https://docsplayer.com/106803585-%E5%B9%BB%E7%81%AF%E7%89%87-1.html)
