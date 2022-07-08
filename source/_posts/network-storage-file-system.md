@@ -276,7 +276,67 @@ TCMU分为kernel和用户态两部分，用户态现在主要是tcmu-runner, 内
 完整的处理流程可以参考下面这个图，虽然不太对得上，但逻辑是ok的
 
 ![iser tgt tcp](/images/storage_network_iser_target3.png)
-	       
+	
+## NVMe/F
+
+nvme软件栈相对于scsi来讲，就简单很多，host和target都在内核的drivers/nvme目录下，
+而且支持多种传输机制的支持也包含在这个目录中。工作机制如下图：
+
+![nvme](/images/storage_network_nvme.png)
+
+Target侧，打开来看如下图：
+
+![nvme target](/images/storage_network_nvme2.png)
+
+详细的流程如下：
+
+host侧：
+
+	发包
+	//大部分代码在drivers/nvme/host/rdma.c
+	queue_rq
+	 nvme_rdma_queue_rq
+	  blk_mq_start_request
+	  nvme_rdma_post_send
+	   ib_post_send
+
+	收包
+	nvme_rdma_recv_done
+	 nvme_rdma_process_nvme_rsp
+	  blk_mq_rq_to_pdu
+
+target侧：
+
+	初始化
+	//大部分代码在 drivers/nvme/target/rdma.c
+	nvmet_enable_port
+	 nvmet_rdma_add_port
+	  nvmet_rdma_enable_port
+	   rdma_create_id（注册中断回调函数nvmet_rdma_cm_handler， 当RDMA HCA收到RDMA报文时调用）
+
+	收到控制面报文
+	nvmet_rdma_cm_handler
+	 nvmet_rdma_queue_connect
+
+	收到数据报文
+	nvmet_rdma_recv_done
+	 nvmet_rdma_handle_command
+          nvmet_req_init
+	   nvmet_parse_io_cmd
+	    nmve_cmd_read/nvme_cmd_write （分析命令，针对不同的后端，设置回调函数, nvmet_bdev_execute_rw）
+	  nvmet_rdma_execute_command
+	    req.execute(调用回调函数)
+	     submit_bio
+	      blk_mq_submit_bio
+	       nvme_queue_rq(又回到本地的nvme host，调用nvme读写)a
+	  nvmet_req_complete
+	   nvmet_rdma_queue_response
+	    ib_post_send（返回请求）
+
+观察上面的流程，会发现要回到block层绕一圈，于是MLX提出了直接访问NVME的优化机制，具体如下：
+
+![nvme target offload](/images/storage_network_nvme3.png)
+
 ## libfabric
 
 libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用。
@@ -307,8 +367,6 @@ libfabric一般配合libibverbs(https://github.com/linux-rdma/rdma-core)使用�
 根据上节的介绍，其实libfabric和kfabric并不一定要配合使用，具体差异参考下图
 
 ![libfabric vs kfabric](/images/storage_network_fabric.png)
-
-## NVMe/F
 
 ## SMB
 
@@ -367,3 +425,6 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [TCM Userspace Design](https://elixir.bootlin.com/linux/v5.18.8/source/Documentation/target/tcmu-design.rst)
 * [Ceph iscsi方案及环境搭建](http://aspirer.wang/?p=1295)
 * [一个iscsi target hung问题的解决过程](https://blog.approachai.com/revisting-iscsi-target-hung-issue-with-tcmu-glusterfs-backstore/)
+* [NVMe over Fabrics - Demystified](https://www.snia.org/sites/default/files/SDCIndia/2019/PDF/5%20-%20Mellanox%20SNIA%20Developers%20Conference%20-%20India%20-%20May%202019%20-%20MNVf%20demystified%20v2%20%20-%20%20Read-Only.pdf)
+* [Accelerating Storage with RDMA](https://www.snia.org/sites/default/files/SDCEMEA/2018/Presentations/Accelerating-Storage-with-RDMA-SNIA-SDC-EMEA-2018.pdf)
+* [Using RDMA with Fast NVMe-oF Storage to Reduce latency and Improve Efficiency](https://www.snia.org/sites/default/files/SDC/2017/presentations/Solid_State_Stor_NVM_PM_NVDIMM/Idan_BursteinEthernetStorageFabricsUsingRDMAwithFastNVMe-oFStorage.pdf)
