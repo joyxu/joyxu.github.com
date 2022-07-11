@@ -431,3 +431,4 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [SPDK/NVMe存储技术分析001 - SPDK/NVMe概述](https://www.cnblogs.com/vlhn/p/7727141.html)
 * [NVMe Over Fabrics Support in Linux](https://events.static.linuxfound.org/sites/events/files/slides/nvme-over-fabrics.pdf)
 * [RDMA杂谈 专栏索引](https://zhuanlan.zhihu.com/p/164908617)
+* [How to setup NVMe/TCP with NVME-oF using KVM and QEMU](https://futurewei-cloud.github.io/ARM-Datacenter/qemu/nvme-of-tcp-vms/)
