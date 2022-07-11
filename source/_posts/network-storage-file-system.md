@@ -428,3 +428,6 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [NVMe over Fabrics - Demystified](https://www.snia.org/sites/default/files/SDCIndia/2019/PDF/5%20-%20Mellanox%20SNIA%20Developers%20Conference%20-%20India%20-%20May%202019%20-%20MNVf%20demystified%20v2%20%20-%20%20Read-Only.pdf)
 * [Accelerating Storage with RDMA](https://www.snia.org/sites/default/files/SDCEMEA/2018/Presentations/Accelerating-Storage-with-RDMA-SNIA-SDC-EMEA-2018.pdf)
 * [Using RDMA with Fast NVMe-oF Storage to Reduce latency and Improve Efficiency](https://www.snia.org/sites/default/files/SDC/2017/presentations/Solid_State_Stor_NVM_PM_NVDIMM/Idan_BursteinEthernetStorageFabricsUsingRDMAwithFastNVMe-oFStorage.pdf)
+* [SPDK/NVMe存储技术分析001 - SPDK/NVMe概述](https://www.cnblogs.com/vlhn/p/7727141.html)
+* [NVMe Over Fabrics Support in Linux](https://events.static.linuxfound.org/sites/events/files/slides/nvme-over-fabrics.pdf)
+* [RDMA杂谈 专栏索引](https://zhuanlan.zhihu.com/p/164908617)
