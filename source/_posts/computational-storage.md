@@ -54,7 +54,7 @@ p2pdma在内核的pci驱动目录中的p2pdma.c中，从4.20开始被支持，�
 
 ## SPDK
 
-这里以SPDK为例，
+这里以SPDK为例，由于spdk是用户态的，所以kernel把bar空间映射到用户态以后，主要是bar，doorbell的操作。
 感兴趣的可以直接看spdk中的 [cmb_copy.c](https://github.com/spdk/spdk/blob/master/examples/nvme/cmb_copy/cmb_copy.c#L80)，感觉用起来还是很简单的。
 
 	spdk_nvme_ctrlr_map_cmb
@@ -77,9 +77,10 @@ p2pdma在内核的pci驱动目录中的p2pdma.c中，从4.20开始被支持，�
 
 ## 把算力用起来
 
-要把算力用起来，就要借助一个其它的PCIe 设备，比如网卡，可以参考下面这个仓库，看看怎么用起来的，主要是把网卡的收到的NVMe包，直接放到NVME卡的CMB中：
+要把算力用起来，就要借助一个其它的PCIe 设备，比如网卡，可以参考下面的仓库，看看怎么用起来的，主要是把网卡的收到的NVMe包，直接放到NVME卡的CMB中：
 
 * [Offload+p2pdma kernel code](https://github.com/lsgunth/linux/tree/max-mlnx-offload-p2pdma)
+* [A fork of the Linux kernel for NVMEoF target driver using PCI P2P capabilities for full I/O path offloading](https://github.com/Mellanox/NVMEoF-P2P)
 
 ## 参考
 
