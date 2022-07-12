@@ -16,7 +16,7 @@ CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念�
 那现在有了内存，为什么不参考下GPU，把计算core放进去呢，这样就有了computational storage的概念。
 借用下SNIA组织的图，更形象的说明下什么是computational storage：
 
-![compute storage][/images/compute_storage1.png]
+![compute storage](/images/compute_storage1.png)
 
 ## 代表公司和产品
 
@@ -25,14 +25,14 @@ CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念�
  
 为了有更直观的感受，放个Eideticom卡的图
 
-![compute storage][/images/compute_storage_card.png]
+![compute storage](/images/compute_storage_card.png)
 
 典型的用户场景是通过减少数据移动，把一些原先要在cpu和nvme路径上执行的任务，直接卸载到computational storage processor里面来，提升效率。比如：
 
 * 数据库场景中数据的压缩计算
 * 网络数据的存储，这个有点类似于nvme over rdma，且把计算也offload到nvme卡上，具体示意如下:
 
-![compute storage][/images/compute_storage3.png]
+![compute storage](/images/compute_storage3.png)
 
 ## p2pdma
 
@@ -50,7 +50,7 @@ p2pdma在内核的pci驱动目录中的p2pdma.c中，从4.20开始被支持，�
 卡上的内存暴露出来之后，下一步就是怎么把这块内存给用起来。
 当前能直接使用p2pdma技术的主要有SPDK，以及Eideticom自家的libnoload。
 
-![compute storage][/images/compute_storage2.png]
+![compute storage](/images/compute_storage2.png)
 
 ## SPDK
 
