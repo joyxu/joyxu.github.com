@@ -333,9 +333,18 @@ target侧：
 	   nvmet_rdma_queue_response
 	    ib_post_send（返回请求）
 
+### NVME Target Offload
+
 观察上面的流程，会发现要回到block层绕一圈，于是MLX提出了直接访问NVME的优化机制，具体如下：
 
 ![nvme target offload](/images/storage_network_nvme3.png)
+
+这个改动软件上主要是rdma-core的改动，控制面上创建好share queue，并把这个传递给硬件，kernel并不需要改动，
+但是这个RFC并没有合入到rdma-core的主线，具体的RFC patch和实现可以参考下面几个链接：
+
+* [NVME OVER FABRICS OFFLOAD](https://openfabrics.org/wp-content/uploads/204_TOved.pdf)
+* [Introduce verbs API for NVMe-oF target offload](https://patchwork.kernel.org/project/linux-rdma/patch/CADZhsQrncxo9DvD4+bzWNmepf=EpbwysRoU2z=2UQSjp9LXxXQ@mail.gmail.com/)
+* [NVMF TARGET OFFLOAD](https://openfabrics.org/images/2018workshop/presentations/308_LLiss_NVMfTargetOffload.pdf)
 
 ## libfabric
 
@@ -432,3 +441,5 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [NVMe Over Fabrics Support in Linux](https://events.static.linuxfound.org/sites/events/files/slides/nvme-over-fabrics.pdf)
 * [RDMA杂谈 专栏索引](https://zhuanlan.zhihu.com/p/164908617)
 * [How to setup NVMe/TCP with NVME-oF using KVM and QEMU](https://futurewei-cloud.github.io/ARM-Datacenter/qemu/nvme-of-tcp-vms/)
+* [Deep Dive into NVMe™ and NVMe™ over Fabrics](https://www.ciscolive.com/c/dam/r/ciscolive/us/docs/2018/pdf/BRKDCN-2494.pdf)
+* [NVMe over Fabrics Target](https://spdk.io/doc/nvmf.html)
