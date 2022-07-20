@@ -22,8 +22,10 @@ CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念�
 
 推动computational storage的主要有三家初创公司: Eideticom, NGD和scaleflux。
 当然还有传统的nvme存储公司比如美光和三星，这几家里面我认为软件生态做的最好的是Eideticom。
+它的CTO Stephen Bates在2015年就提出了Donard系统的概念，这个系统当时就把GPGPU、NVMe SSD和RDMA串在了一起，
+旁路了CPU，可以认为这是Eideticom的起源之一，感兴趣的朋友可以看看本文的参考资料。
  
-为了有更直观的感受，放个Eideticom卡的图
+为了对这种产品形态有更直观的感受，放个Eideticom卡的图
 
 ![compute storage](/images/compute_storage_card.png)
 
@@ -91,3 +93,11 @@ p2pdma在内核的pci驱动目录中的p2pdma.c中，从4.20开始被支持，�
 * [p2pmem github code repo](https://github.com/sbates130272/linux-p2pmem)
 * [NoLoad U.2 Computational Storage Processor](https://www.eideticom.com/uploads/attachments/2019/07/31/noload_csp_u2_product_brief.pdf)
 * [Enabling the NVMe™ CMB and PMR Ecosystem](https://nvmexpress.org/wp-content/uploads/Session-2-Enabling-the-NVMe-CMB-and-PMR-Ecosystem-Eideticom-and-Mell....pdf)
+* [MLX peer memory patch set upstreaming history](https://patchwork.kernel.org/project/linux-rdma/list/?series=&submitter=50181&state=*&q=Peer+Memory&archive=both&delegate=)
+* [Donard: NVM Express for Peer-2-Peer between SSDs and other PCIe Devices](https://www.snia.org/sites/default/files/SDC15_presentations/nvme_fab/StephenBates_Donard_NVM_Express_Peer-2_Peer.pdf)
+* [An NVMe-based FPGA Storage Workload Accelerator](https://www.flashmemorysummit.com/English/Collaterals/Proceedings/2018/20180809_ENST-301A-1_Gibb.pdf)
+* [Seamless Operating System Integration of Peer-to-Peer DMA Between SSDs and GPUs](https://usenix.org/sites/default/files/conference/protected-files/atc17_slides_bergman.pdf)
+* [浅谈GPU通信和PCIe P2P DMA](https://zhuanlan.zhihu.com/p/430101220)
+* [Why is Peer to Peer DMA so hard on Linux?](https://lpc.events/event/9/contributions/617/attachments/705/1303/xdc2020_p2p_dma_v4_20200915_clean.pdf)
+* [Coprocessor memory definition](https://openamp.github.io/docs/mca/coprocessor-memory-definition-v6.pdf)
+* [Microsemi PCIE Switch+RDMA](https://www.microsemi.com/document-portal/doc_download/136008-microsemi-pcie-switch-rdma)
