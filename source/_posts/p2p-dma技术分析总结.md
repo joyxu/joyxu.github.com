@@ -62,22 +62,68 @@ Fusion-io是一家做SSD和nvdimm的公司，他们这个方案主要是配合Nv
 
 ![fusion io](/images/p2p_dma1.png)
 
+### iopmem
+
+这个方案更像是一个demo，它基于ZONE_DEVICE，只是把设备的内存映射到CPU地址空间中，供其它设备使用。
+细节请参考 [源码](https://github.com/sbates130272/iopmem)
+
 ## In tree方案（已经合入到linux kernel主线）
+
+### ZONE_DEVICE IO
+
+随着persisttent memory设备的兴起，为了在kernel中能使用这些设备的内存，ZONE_DEVICE的概念被引入了内核。
+一开始的时候这些内存并不支持页表形式的管理，但4.3之后，内核中引入了`devm_memremap_pages` 这个API，使用该API注册的设备内存将会映射到内核的virtual address space中。
+但是并不提倡针对大容量内存的设备使用这个API，因为会浪费掉很多system memory管理页表。
+更详细的使用限制可以 [这个链接](https://lwn.net/Articles/672457/)。
 
 ### P2P PCI方案
 
 这个方案的代码在内核的driver/pci/p2pdma.c中，当前内核只支持NVMe，用户态SPDK支持，但设备侧的内存需要基于page管理，这也就意味着这个方案对于目前使用ttm管理内存的GPU还不能使用。
 之前也有方案不基于page管理，但是 [这组patch Removing struct page from P2PDMA](https://patchwork.kernel.org/project/linux-pci/cover/20190620161240.22738-1-logang@deltatee.com/) 并没有被社区接受。
-而且这个方案基于ZONE_DEVICE，这个在arm64平台上一般是没有使能的。
+而且这个方案基于ZONE_DEVICE，这个在arm64平台上默认没有使能。
 
-### ZONE_DEVICE IO
+在使用这个方案的时候，要显式调用p2pdma框架的api，它并没有和内核中dma框架的api合成一套。
+比如： https://elixir.bootlin.com/linux/v5.19-rc7/source/drivers/nvme/host/pci.c#L870
+
+但目前社区有 [一组patch DMA Mapping P2PDMA Pages](https://patchwork.kernel.org/project/linux-pci/cover/20220708165104.5005-1-logang@deltatee.com/)把它和dma iommu api框架结合起来。
+完整的 [仓库链接](https://github.com/sbates130272/linux-p2pmem/tree/p2pdma_map_v8), 作者居然是Eideticom的CTO。
+
+这个方案还有两个限制：
+ 
+仅能支持同一个root port下面的end point设备，对于跨root port的，需要修改p2pdma.c显式增加支持。
+具体代码修改参考这个链接： https://elixir.bootlin.com/linux/v5.19-rc7/source/drivers/pci/p2pdma.c#L292
+[原始patch PCI/P2PDMA: start with a whitelist for root complexes](https://patchwork.kernel.org/project/linux-pci/patch/20190418115859.2394-1-christian.koenig@amd.com/)
+
+设备内存是pinned住的。
 
 ### DMA-BUF
 
-### iopmem
+这个方案开始的时候并不是用于设备内存的，而是用于系统内存的。
+它支持unpin的内存(监听move_notify消息)，由于GPU的内存十分宝贵，且需要换入换出，所以在GPU驱动中目前有使用这个方案。
+另外这个方案已经和dma iommu框架集成在一起，调用dma_map等api的时候，会自动回调它的相关callback函数。
+
+社区中也有人正在让RDMA设备支持这个方案：[RDMA: Add dma-buf support](https://lwn.net/Articles/839314/)
+
+### habanalabs
+
+intel之前收购了以色列的habanalab，他们在2021年也提出了基于DMA-BUF的方案，让设备可以互相访问对方的内存，且也已经合入到了社区。
+它提供了一个ioctl，要求用户态发 `HL_MEM_OP_EXPORT_DMABUF_FD` 命令，把设备的内存暴露到用户态。
+但是很可惜，没有找到用户态的例子。
 
 ### HMM
 
+这个方案开始的时候，也是针对CPU使用异构内存的，也并不是针对设备内存的。
+设备内存可以注册到ZONE_DEVICE，但是只能配置成DEVICE_PRIVATE，所以CPU无法访问。
+
+但是呢，社区里也有人让这款内存变成CPU可以访问的，具体参考这个patch：[MEMORY_DEVICE_PUBLIC for CPU-accessible coherent device memory](https://lwn.net/Articles/869201/)
+上面这个patch是AMD用于构建自己的超算Frontier，希望CPU可以访问GPU的内存，且支持coherence。
+
+## GPU + RDMA + RDMA + NVMe
+
+回过头来，看看我们的场景，希望本地的GPU通过RDMA网卡，访问远程的NVMe SSD存储介质上的文件数据，这种情况下的限制：
+
+* GPU上的内存并不希望被pin住
+* RDMA并不支持GPU上的dma_fence同步概念
 
 ## 参考
 
