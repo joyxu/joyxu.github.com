@@ -57,3 +57,4 @@ tags: [linux]
 * [没有IOMMU的DMA操作](https://mp.weixin.qq.com/s/wiyLzfnwQAAOn4i7ArgKcA#at)
 * [Page migration for IOMMU enhanced devices](https://events.static.linuxfound.org/sites/events/files/slides/main.pdf)
 * [DMA -1-（基本）](http://jake.dothome.co.kr/dma-1/)
+* [The-Flavors-of-Memory-Supported-by-Linux-their-Use](https://events19.linuxfoundation.org/wp-content/uploads/2017/12/The-Flavors-of-Memory-Supported-by-Linux-their-Use-and-Benefit-Christoph-Lameter-Jump-Trading-LLC.pdf)
