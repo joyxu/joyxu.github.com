@@ -60,3 +60,4 @@ map，ftrace或者perf buffer中写数据。
 * [Choosing a Linux Tracer 2015](http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html)
 * [Kprobes Event Tracing on Armv8](https://www.linaro.org/blog/kprobes-event-tracing-armv8/)
 * [记一次有惊无险的丢包调试经历](http://blog.huoding.com/2020/04/27/814)
+* [Intro to Kernel and Userspace Tracing Using BCC, Part 1 of 3](https://blogs.oracle.com/linux/post/intro-to-bcc-1)

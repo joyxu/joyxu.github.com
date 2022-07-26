@@ -222,3 +222,7 @@ gdb qemu后，设置断点，再通过run加qemu运行参数。
 或者也可以通过组合键‘ctrl+a c’进到qemu moniter中，再通过trace-event来跟踪，比如跟踪smmu事件
 
 		trace-event smmuv3_* on
+
+## 参考
+
+* [A study of the Linux kernel PCI subsystem with QEMU](https://blogs.oracle.com/linux/post/a-study-of-the-linux-kernel-pci-subsystem-with-qemu)

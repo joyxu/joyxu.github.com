@@ -25,3 +25,7 @@ IO机制一般分为4种：阻塞，非阻塞，同步和异步。
 最后总结下，驱动里面需要加一个wait queue head，提供poll这个ops。
 在poll ops函数中，调用poll_wait把自己加入到poll table的entity里面去，针对情况
 返回pollin等，如果返回0，则用户态调用poll的时候则一直阻塞。
+
+# 参考
+
+* [Linux kernel concurrency cheat sheet](https://blogs.oracle.com/linux/post/linux-kernel-concurrency-cheat-sheet)

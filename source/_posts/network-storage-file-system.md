@@ -443,3 +443,6 @@ RDMA，也就是后面的EFA(https://github.com/amzn/amzn-drivers)。
 * [How to setup NVMe/TCP with NVME-oF using KVM and QEMU](https://futurewei-cloud.github.io/ARM-Datacenter/qemu/nvme-of-tcp-vms/)
 * [Deep Dive into NVMe™ and NVMe™ over Fabrics](https://www.ciscolive.com/c/dam/r/ciscolive/us/docs/2018/pdf/BRKDCN-2494.pdf)
 * [NVMe over Fabrics Target](https://spdk.io/doc/nvmf.html)
+* [NFS Over RDMA Community Development](https://blogs.oracle.com/linux/post/nfs-over-rdma-community-development)
+* [Using Tracepoints to Debug iSCSI](https://blogs.oracle.com/linux/post/using-tracepoints-to-debug-iscsi)
+* [NVMe over TCP](https://blogs.oracle.com/linux/post/nvme-over-tcp)
