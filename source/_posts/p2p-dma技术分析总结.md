@@ -135,3 +135,4 @@ intel之前收购了以色列的habanalab，他们在2021年也提出了基于DM
 * [浅析nv_peer_memory的实现](https://zhuanlan.zhihu.com/p/439280640)
 * [Building Mellanox OFED from source code](https://insujang.github.io/2020-01-25/building-mellanox-ofed-from-source/)
 * [rdma-gpu-direct-for-fusion-io-iodrive](https://on-demand.gputechconf.com/gtc/2014/presentations/S4265-rdma-gpu-direct-for-fusion-io-iodrive.pdf)
+* [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)

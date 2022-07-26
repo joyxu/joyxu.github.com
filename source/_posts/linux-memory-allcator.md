@@ -102,8 +102,9 @@ arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://el
 ![mm api scope](/images/mm-scope.PNG)
 
 参考：
-[Arm64 Linux Kernel vs. Memory Fragmentation[ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
-[KASLR-MT: Kernel Address Space Layout Randomization for Multi-Tenant cloud systems](https://github.com/joyxu/archive/blob/master/document/linux/memory/kaslr-mt.pdf)
-[AArch64 Kernel Page Tables](https://wenboshen.org/posts/2018-09-09-page-table.html)
-[Tour de Linux memory management](https://github.com/joyxu/archive/blob/master/document/linux/memory/07_memory_management.pdf)
-[W4118 OPERATING SYSTEMS](http://www.cs.columbia.edu/~junfeng/13fa-w4118/syllabus.html)
+* [Arm64 Linux Kernel vs. Memory Fragmentation[ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
+* [KASLR-MT: Kernel Address Space Layout Randomization for Multi-Tenant cloud systems](https://github.com/joyxu/archive/blob/master/document/linux/memory/kaslr-mt.pdf)
+* [AArch64 Kernel Page Tables](https://wenboshen.org/posts/2018-09-09-page-table.html)
+* [Tour de Linux memory management](https://github.com/joyxu/archive/blob/master/document/linux/memory/07_memory_management.pdf)
+* [W4118 OPERATING SYSTEMS](http://www.cs.columbia.edu/~junfeng/13fa-w4118/syllabus.html)
+* [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
