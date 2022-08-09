@@ -60,3 +60,4 @@ tags: [linux]
 * [The-Flavors-of-Memory-Supported-by-Linux-their-Use](https://events19.linuxfoundation.org/wp-content/uploads/2017/12/The-Flavors-of-Memory-Supported-by-Linux-their-Use-and-Benefit-Christoph-Lameter-Jump-Trading-LLC.pdf)
 * [GUP and ZONE_DEVICE pages](https://lpc.events/event/4/contributions/369/)
 * [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
+* [DMA CACHE一致性问题解决方案](https://www.cnblogs.com/dream397/p/15660063.html)
