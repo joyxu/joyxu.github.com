@@ -212,3 +212,4 @@ cufile的库并没有开源，具体的实现还看不到，主要做了以下�
 * [NVIDIA GPU Direct Storage with IBM Spectrum Scale](https://www.spectrumscaleug.org/wp-content/uploads/2022/02/episode-18-NVIDIA-GPU-Direct-Storage-with-IBM-Spectrum-Scale.pdf)
 * [NVIDIA Magnum IO GPUDirect Storage design guide](https://docs.nvidia.com/gpudirect-storage/pdf/design-guide.pdf)
 * [DRM 驱动 mmap 详解：（一）预备知识](https://blog.csdn.net/hexiaolong2009/article/details/107592704)
+* [GPU Direct Storage](https://zhuanlan.zhihu.com/p/509396439)

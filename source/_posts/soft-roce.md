@@ -51,3 +51,7 @@ tags: [RoCE, Linux Kernel]
 
 ![soft RDMA运行实例](/images/soft_rdma.gif)
 ![soft RDMA调试实例](/images/soft_roce_debug.PNG)
+
+# 参考
+
+* [RDMA API 应用](https://zhuanlan.zhihu.com/p/481256797)
