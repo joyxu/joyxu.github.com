@@ -2,7 +2,7 @@
 title: linux memory management
 author: Joy Xu
 date: 2020-08-21 19:18
-tags: [Linux Kernel]
+tags: [Linux Kernel, memory]
 ---
 
 先立个Flag，给自己一个Todo :)
@@ -11,13 +11,14 @@ tags: [Linux Kernel]
 务必先读 gorman的书 [Understanding The Linux Virtual Memory Manager](https://www.kernel.org/doc/gorman/pdf/understand.pdf)
 务必先读 gorman的书 [Understanding The Linux Virtual Memory Manager](https://www.kernel.org/doc/gorman/pdf/understand.pdf)
 
+https://landley.net/writing/memory-faq.txt
+https://slideshare.net/AdrianHuang/presentations
 https://hammertux.github.io/slab-allcator
 https://blog.csdn.net/mrwangwang/article/details/38709813
 https://inst.eecs.berkeley.edu/~cs162/sp20/static/lectures/13.pdf
 https://linuxplumbersconf.org/event/2/contributions/65/attachments/15/171/slides-expanded.pdf
 https://manybutfinite.com/post/how-the-kernel-manages-your-memory/
 https://www.cse.iitb.ac.in/~mythili/teaching/cs347_autumn2016/notes/07-memory.pdf
-
 
 # 名词解释
 
