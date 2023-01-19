@@ -11,6 +11,8 @@ script:
 - hexo clean && hexo g
 
 after_script:
+- echo $GITHUB_REF
+- echo $GIT_AUTH_TOKEN
 - cd ./public
 - git init
 - git config user.name "joyxu"
