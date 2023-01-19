@@ -25,4 +25,4 @@ branches:
 env:
   global:
   - GITHUB_REF: github.com/joyxu/joyxu.github.com.git
-  - secure: "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"
+  - secure: "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"
