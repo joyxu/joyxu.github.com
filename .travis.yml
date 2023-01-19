@@ -20,11 +20,10 @@ after_script:
 - ls -l
 - git add -A
 - git commit -m "Update - auto deploy by Travis CI."
-- git push --force --quiet "https://${S_T}@${GITHUB_REF}" master:master
+- git push --force --quiet "https://${GIT_AUTH_TOKEN}@${GITHUB_REF}" master:master
 branches:
   only:
   - blog_source
 env:
   global:
   - GITHUB_REF: github.com/joyxu/joyxu.github.com.git
-  - S_T: "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"
