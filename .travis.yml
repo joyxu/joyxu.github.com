@@ -27,4 +27,4 @@ branches:
 env:
   global:
   - GITHUB_REF: github.com/joyxu/joyxu.github.com.git
-  - secure: "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"
+  - secure: "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"
