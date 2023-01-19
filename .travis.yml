@@ -25,4 +25,4 @@ branches:
 env:
   global:
   - GITHUB_REF: github.com/joyxu/joyxu.github.com.git
-  - GIT_AUTH_TOKEN: "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"
+  - GIT_AUTH_TOKEN: "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"
