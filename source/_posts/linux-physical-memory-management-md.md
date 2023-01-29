@@ -84,7 +84,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 # 参考
 
-* [Linux物理内存初始化](https://www.cnblogs.com/LoyenWang/p/11440957.html）
+* [Linux物理内存初始化](https://www.cnblogs.com/LoyenWang/p/11440957.html)
 * [Linux Memory Managment Frequently Asked Questions](https://landley.net/writing/memory-faq.txt)
 * [Physical Memmory Management](https://slideshare.net/AdrianHuang/presentations)
 * [ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
