@@ -5,7 +5,8 @@ date: 2023-01-13 01:14:53
 tags: [Linux Kernel, memory]
 ---
 
-物理内存管理涉及到物理内存的上报发现、分配、反碎片。Linux Kernel中相关的概念有`node`，`pglist_data`, `zone`, `mem_block`等。
+物理内存管理涉及到物理内存的上报发现、物理内存到逻辑的映射、分配释放、反碎片、迁移等。
+Linux Kernel中相关的概念有`node`，`pglist_data`, `zone`, `memblock`，`page`，`page frame`，`mem_section`，``，，等。
 
 # 物理内存上报和发现
 
@@ -51,7 +52,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 示例图如下：
 
-![memoryblock boot from acpi](/images/memory_block_acpi_boot.png)
+![memblock boot from acpi](/images/memory_block_acpi_boot.png)
 
 ## fixmap
 
@@ -62,28 +63,45 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 比如说启动的时候，虽然传递了DTB的物理地址，但Linux Kernel还没有建立物理地址到虚拟地址的映射，还不能读取，
 这时候就可以通过`fixmap`机制，读取解析DTB文件，找到物理内存节点，建立`struct memblock`，
-整个流程可以参考`DeviceTree`章节中的流程图，`fixmap`中各个地址区间的定义可以参考代码[fixmap.h](https://elixir.bootlin.com/linux/v6.1/source/arch/arm64/include/asm/fixmap.h#L103)。
+整个流程可以参考`DeviceTree`章节中的流程图。还比如说早期的`early_ioremap`来访问外设的寄存器等。
+`fixmap`中各个地址区间的定义可以参考代码[fixmap.h](https://elixir.bootlin.com/linux/v6.1/source/arch/arm64/include/asm/fixmap.h#L103)。
 
 上面这个过程结束后，所有的物理内存都可以通过`memblock`、`memblock_region`等结构体呈现了，示意图如下：
 
-![memoryblock and region](/images/memory_block.png)
+![memblock and region](/images/memory_block.png)
 
 配套的日志和debug接口信息如下:
 
-![memoryblock and region2](/images/memory_block_dmesg_debug.png)
+![memblock and region2](/images/memory_block_dmesg_debug.png)
 
 现在已经可以通过`memblock_allock`分配物理内存了，但是还不能通过虚拟地址来访问这块物理内存，而且cpu、numa和zone
 的信息已经建立，接下来就是建立虚拟地址到物理地址的映射了，并把物理页面挂到不同cpu节点的zone里面了。
 
-# 建立页表
+# 物理内存到内核逻辑概念的映射
+
+要想使用物理内存，自然就会想到把这段物理内存地址映射到虚拟地址，自然就有了页表的建立。
+另外呢，物理内存一般被划分成`page frame`来管理，对应到内核中的概念`struct page`。
+一般一个虚拟地址其实是落到单个`struct page`中的offset，而物理地址同样也会落到单个`page frame`中，
+所以虚拟地址到物理地址的转换，其实也可以复用到`page`到`page frame`的映射。
+
+![page frame and page](/images/memory_pfn_page.png)
+
+## 页表建立
 
 建立页表这个过程发生在`paging_init`，`map_kernel`和`map_mem`几个函数中。
 其中`map_kenrel`是完成kernel各个段的映射，虚拟地址的信息也可以从System.map或者vmlinux中查到。
-而`map_mem`则完成其它内存物理地址到虚拟地址的映射。
-这两个函数都是通过`__create_pgd_mapping`创建页表，建立的映射。
+而`map_mem`则完成前面发现的`memregion`的物理地址到虚拟地址的映射。这两个函数都是通过`__create_pgd_mapping`创建页表，建立的映射。
+这时候最底层的页表并没有pte，pte的创建在发生缺页的时候建立。
+
+## page frame到page的映射
+
+这个映射稍微麻烦点，它涉及到内核怎么管理物理内存，现在有四种模型，但主要使用sparse模型。
 
 # 参考
 
+* [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://www.codenong.com/cs105984564/)
+* [Linux内存管理(三)：“看见”物理内存](https://blog.csdn.net/yhb1047818384/article/details/108328097?spm=1001.2014.3001.5501)
+* [Linux内存管理(四)：paging_init分析](https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501)
 * [Linux物理内存初始化](https://www.cnblogs.com/LoyenWang/p/11440957.html)
 * [Linux Memory Managment Frequently Asked Questions](https://landley.net/writing/memory-faq.txt)
 * [Physical Memmory Management](https://slideshare.net/AdrianHuang/presentations)
