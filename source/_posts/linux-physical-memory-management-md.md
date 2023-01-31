@@ -79,7 +79,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 # 物理内存到内核逻辑概念的映射
 
-要想使用物理内存，自然就会想到把这段物理内存地址映射到虚拟地址，自然就有了页表的建立。
+要想使用物理内存，自然就会想到把这段物理内存地址映射到虚拟地址，于是就有了页表的建立。
 另外呢，物理内存一般被划分成`page frame`来管理，对应到内核中的概念`struct page`。
 一般一个虚拟地址其实是落到单个`struct page`中的offset，而物理地址同样也会落到单个`page frame`中，
 所以虚拟地址到物理地址的转换，其实也可以复用到`page`到`page frame`的映射。
@@ -88,10 +88,26 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ## 页表建立
 
+在ARM64平台上，以4KB页表页表寻址过程如下图:
+
+![page table walking](/images/memory_pagetable_walking.png)
+
+其中table\block\page描述符和虚拟地址格式如下图：
+
+![page table walking](/images/memory_page_descriptions.png)
+
+以一个虚拟地址为例话，地址翻译的过程如下：
+
+![page table walking](/images/memory_pagetable_walking2.png)
+
 建立页表这个过程发生在`paging_init`，`map_kernel`和`map_mem`几个函数中。
 其中`map_kenrel`是完成kernel各个段的映射，虚拟地址的信息也可以从System.map或者vmlinux中查到。
 而`map_mem`则完成前面发现的`memregion`的物理地址到虚拟地址的映射。这两个函数都是通过`__create_pgd_mapping`创建页表，建立的映射。
 这时候最底层的页表并没有pte，pte的创建在发生缺页的时候建立。
+
+具体流程如下：
+
+![page table directory create](/images/memory_pagetable_create.png)
 
 ## page frame到page的映射
 
@@ -99,7 +115,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 # 参考
 
-* [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://www.codenong.com/cs105984564/)
+* [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://blog.csdn.net/u011649400/article/details/105984564)
 * [Linux内存管理(三)：“看见”物理内存](https://blog.csdn.net/yhb1047818384/article/details/108328097?spm=1001.2014.3001.5501)
 * [Linux内存管理(四)：paging_init分析](https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501)
 * [Linux物理内存初始化](https://www.cnblogs.com/LoyenWang/p/11440957.html)
@@ -111,3 +127,5 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Fix-Mapped Addresses](http://www.wowotech.net/memory_management/fixmap.html)
 * [linux-kernel-labs](https://linux-kernel-labs.github.io/refs/heads/master/lectures/address-space.html)
 * [A little bit about a linux kernel](https://github.com/0xAX/linux-insides)
+* [d42_5_overview_of_the_vmsav8-64_address_translation](https://armv8-ref.codingbelief.com/en/chapter_d4/d42_5_overview_of_the_vmsav8-64_address_translation.html)
+* [Armv8-A Address Translation](https://documentation-service.arm.com/static/5efa1d23dbdee951c1ccdec5)
