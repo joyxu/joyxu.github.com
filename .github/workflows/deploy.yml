@@ -73,7 +73,7 @@ jobs:
           hexo clean && hexo g
           cd ./public
           git init
-          ls -l
+          tree -lh
           git add -A
           git commit -m "Update - auto deploy by Travis CI."
           git push --force --quiet "https://${{secrets.HEXO_TOKEN}}@github.com/${GIT_DEPLOY_REPO}" master:master
