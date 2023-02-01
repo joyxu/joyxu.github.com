@@ -67,8 +67,8 @@ jobs:
 
       - name: Deploy hexo
         run: |
-          #git submodule init
-          #git submodule update
+          git submodule init
+          git submodule update
           cp next_config.yml ./themes/next/_config.yml
           hexo clean && hexo g
           cd ./public
