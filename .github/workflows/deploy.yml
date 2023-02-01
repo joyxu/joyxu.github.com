@@ -27,8 +27,8 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
     strategy:
       matrix:
-        os: [ubuntu-18.04]
-        node_version: [12.x]
+        os: [ubuntu-latest]
+        node_version: [10.x]
 
     steps:
       - name: Checkout
@@ -68,7 +68,14 @@ jobs:
           # 根据你安装的组件进行安装
           npm uninstall hexo-generator-index --save
           npm install hexo-baidu-url-submit hexo-generator-index2 hexo-symbols-count-time hexo-blog-encrypt hexo-deployer-git --save
+          cp next_config.yml ./themes/next/_config.yml
 
       - name: Deploy hexo
         run: |
-          npm run deploy
+          hexo clean && hexo g
+          cd ./public
+          git init
+          ls -l
+          git add -A
+          git commit -m "Update - auto deploy by Travis CI."
+          git push --force --quiet "https://${GIT_DEPLOY_REPO}" master:master

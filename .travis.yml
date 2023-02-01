@@ -27,9 +27,3 @@ branches:
 env:
   global:
   - GITHUB_REF: github.com/joyxu/joyxu.github.com.git
-
-os:linux
-arch:
-  - arm64
-  - ppc64le
-  - s390x
