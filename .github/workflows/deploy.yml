@@ -76,4 +76,4 @@ jobs:
           ls -l
           git add -A
           git commit -m "Update - auto deploy by Travis CI."
-          git push --force --quiet "https://${GIT_DEPLOY_REPO}" master:master
+          git push --force --quiet "https://github.com//${GIT_DEPLOY_REPO}" master:master
