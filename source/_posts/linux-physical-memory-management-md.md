@@ -151,6 +151,10 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![physical memory model](/images/memory_physical_models5.png)
 
+后面就是内存伙伴`buddy`系统的事情了。
+
+![zone frame allocator](/images/memory_zone_frame_allocator.png)
+
 # 参考
 
 * [linux内存管理](https://blog.csdn.net/wwwlyj123321/article/details/128241134)
