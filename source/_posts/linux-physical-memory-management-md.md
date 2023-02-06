@@ -75,7 +75,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 ![memblock and region2](/images/memory_block_dmesg_debug.png)
 
 现在已经可以通过`memblock_allock`分配物理内存了，但是还不能通过虚拟地址来访问这块物理内存，而且cpu、numa和zone
-的信息已经建立，接下来就是建立虚拟地址到物理地址的映射了，并把物理页面挂到不同cpu节点的zone里面了。
+的信息已经可以获取到，接下来就是建立虚拟地址到物理地址的互相映射了，并把物理页面挂到不同cpu节点的zone里面了。
 
 # 物理内存到内核逻辑概念的映射
 
@@ -120,9 +120,13 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 以ARM64为例，具体函数在`bootmem_init`，其中：
 * `arm64_numa_init` 负责建立numa的cpu节点
-* `arm64_memory_prenset` 负责把大的`memblock`、`mem_region`拆成小的`mem_section`来管理，并和cpu节点关联起来
+* `arm64_memory_prenset` 负责把大的`memblock`、`memblock_region`拆成小的`mem_section`来管理，并和cpu节点关联起来
 * `sparse_init` 把物理page frame和`mem_section`、`struct page`关联起来，这样通过物理page frame number就可以找到具体的struct page
 * `zone_sizes_init`初始化各个cpu节点的zone信息，把`struct page`放到各个cpu节点zone下面的`free_area`中。
+
+这时候，`memblock`、`memblock_region`、`mem_section`和`struct page`关系如下：
+
+![physical memory model](/images/memory_physical_models3.png)
 
 在这种模型下，物理page frame number转换到struct page的过程如下:
 
