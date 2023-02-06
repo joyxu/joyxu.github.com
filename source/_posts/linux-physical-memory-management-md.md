@@ -122,7 +122,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * `arm64_numa_init` 负责建立numa的cpu节点
 * `arm64_memory_prenset` 负责把大的`memblock`、`memblock_region`拆成小的`mem_section`来管理，并和cpu节点关联起来
 * `sparse_init` 把物理page frame和`mem_section`、`struct page`关联起来，这样通过物理page frame number就可以找到具体的struct page
-* `zone_sizes_init`初始化各个cpu节点的zone信息，把`struct page`放到各个cpu节点zone下面的`free_area`中。
+* `zone_sizes_init`初始化各个cpu节点的zone信息。
 
 这时候，`memblock`、`memblock_region`、`mem_section`和`struct page`关系如下：
 
@@ -136,9 +136,20 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![physical frame to page2](/images/memory_pfn2page2.png)
 
+## 把page加到zone
+
+接下来就是把`struct page`放到各个cpu节点zone下面的`free_area`中，就到了`zone page frame allocator`阶段。
+函数调用栈和实例如下：
+
+![physical memory model](/images/memory_physical_models4.png)
+
 到此，物理内存已经可以基于CPU的拓扑结构，在zone的基础上，基于page来分配了，结构如下:
 
 ![physical memory model](/images/memory_physical_models2.png)
+
+运行实例图如下:
+
+![physical memory model](/images/memory_physical_models5.png)
 
 # 参考
 
