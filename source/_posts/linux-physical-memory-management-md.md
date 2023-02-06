@@ -86,7 +86,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![page frame and page](/images/memory_pfn_page.png)
 
-## 页表建立
+## 虚拟地址和页表
 
 在ARM64平台上，以4KB页表页表寻址过程如下图:
 
@@ -100,6 +100,9 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![page table walking](/images/memory_pagetable_walking2.png)
 
+## 建立页表
+
+建立页表的输入是`memblock`，也就是物理内存的起始地址和结束地址，输出是空的页表。
 建立页表这个过程发生在`paging_init`，`map_kernel`和`map_mem`几个函数中。
 其中`map_kenrel`是完成kernel各个段的映射，虚拟地址的信息也可以从System.map或者vmlinux中查到。
 而`map_mem`则完成前面发现的`memregion`的物理地址到虚拟地址的映射。这两个函数都是通过`__create_pgd_mapping`创建页表，建立的映射。
@@ -111,7 +114,23 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ## page frame到page的映射
 
-这个映射稍微麻烦点，它涉及到内核怎么管理物理内存，现在有四种模型，但主要使用sparse模型。
+页表框架搭起来之后，就到了把物理内存转换到内核物理内存逻辑概念的阶段，目前内核管理物理内存有四种模型，但主要使用sparse模型。
+
+![physical memory models](/images/memory_physical_models.png)
+
+以ARM64为例，具体函数在`bootmem_init`，其中：
+* `arm64_numa_init` 负责建立numa的cpu节点
+* `arm64_memory_prenset` 负责把大的`memblock`、`mem_region`拆成小的`mem_section`来管理，并和cpu节点关联起来
+* `sparse_init` 把物理page frame和`mem_section`、`struct page`关联起来，这样通过物理page frame number就可以找到具体的struct page
+* `zone_sizes_init`初始化各个cpu节点的zone信息，把`struct page`放到各个cpu节点zone下面的`free_area`中。
+
+在这种模型下，物理page frame number转换到struct page的过程如下:
+
+![physical frame to page](/images/memory_pfn2page.png)
+
+一个运行实例如下图:
+
+![physical frame to page2](/images/memory_pfn2page2.png)
 
 # 参考
 
@@ -121,6 +140,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Linux物理内存初始化](https://www.cnblogs.com/LoyenWang/p/11440957.html)
 * [Linux Memory Managment Frequently Asked Questions](https://landley.net/writing/memory-faq.txt)
 * [Physical Memmory Management](https://slideshare.net/AdrianHuang/presentations)
+* [setup_arch：bootmem_init : sparse_init](https://blog.csdn.net/jasonactions/article/details/122930298)
 * [ARM64 Kernel Image Mapping的变化](http://www.wowotech.net/memory_management/436.html)
 * [内存开机在干嘛？ -memblock](https://www.jianshu.com/p/20e8fec48419)
 * [Linux内存管理(四)：paging_init分析](https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501)
@@ -129,3 +149,5 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [A little bit about a linux kernel](https://github.com/0xAX/linux-insides)
 * [d42_5_overview_of_the_vmsav8-64_address_translation](https://armv8-ref.codingbelief.com/en/chapter_d4/d42_5_overview_of_the_vmsav8-64_address_translation.html)
 * [Armv8-A Address Translation](https://documentation-service.arm.com/static/5efa1d23dbdee951c1ccdec5)
+* [slideshare 翻墙下载](https://ssslideshare.com/)
+* [Linuxでのpage構造体群の配置](https://qiita.com/akachochin/items/121d2bf3aa1cfc9bb95a)
