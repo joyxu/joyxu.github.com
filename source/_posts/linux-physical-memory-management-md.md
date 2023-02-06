@@ -132,8 +132,13 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![physical frame to page2](/images/memory_pfn2page2.png)
 
+到此，物理内存已经可以基于CPU的拓扑结构，在zone的基础上，基于page来分配了，结构如下:
+
+![physical memory model](/images/memory_physical_models2.png)
+
 # 参考
 
+* [linux内存管理](https://blog.csdn.net/wwwlyj123321/article/details/128241134)
 * [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://blog.csdn.net/u011649400/article/details/105984564)
 * [Linux内存管理(三)：“看见”物理内存](https://blog.csdn.net/yhb1047818384/article/details/108328097?spm=1001.2014.3001.5501)
 * [Linux内存管理(四)：paging_init分析](https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501)
