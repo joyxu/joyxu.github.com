@@ -9,6 +9,7 @@ tags: [写作, 转载]
 原文出处：[[译] 长文写作的魔力（2022）](https://arthurchiao.art/blog/writing-is-magic-zh/)
 
 ---以下是原文---
+----------------
 
 [译] 长文写作的魔力（2022）
 Published at 2023-06-22 | Last Update 2023-06-22
