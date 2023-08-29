@@ -2,7 +2,7 @@
 title: linux kernel有趣的link
 author: "Joy Xu"
 date: 2020-12-08 19:44:44
-tags: [Linxu Kernel]
+tags: [Linux Kernel]
 ---
 
 # 整体：

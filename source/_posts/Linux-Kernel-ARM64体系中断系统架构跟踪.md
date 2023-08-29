@@ -2,7 +2,7 @@
 title: Linux Kernel ARM64体系中断子系统跟踪
 author: "Joy Xu"
 date: 2017-03-07 09:44:44
-tags: [Linxu Kernel, IRQ, 中断]
+tags: [Linux Kernel, IRQ, 中断]
 ---
 
 # 目的

@@ -3,7 +3,7 @@
 title: Linux patch狩猎
 author: "Joy Xu"
 date: 2020-09-04 19:44:44
-tags: [Linxu Kernel]
+tags: [Linux Kernel]
 ---
 
 最近要冲linux的补丁数量了，写个总结，有哪些方法可以快速找到补丁。

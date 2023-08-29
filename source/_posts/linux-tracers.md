@@ -3,7 +3,7 @@
 title: Linux Tracers杂谈
 author: "Joy Xu"
 date: 2020-08-05 19:44:44
-tags: [Linxu Kernel]
+tags: [Linux Kernel]
 ---
 
 准备开始做性能分析的时候，网上找了下linux性能分析工具，结果发现一堆，什么LTTng，

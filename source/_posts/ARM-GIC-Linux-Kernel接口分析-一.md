@@ -1,7 +1,7 @@
 title: 'ARM GIC Linux Kernel接口分析(一)'
 author: Joy Xu
 date: 2018-10-18 15:27:27
-tags: [Linxu Kernel, IRQ, 中断]
+tags: [Linux Kernel, IRQ, 中断]
 ---
 
 这篇文章是基于[Linux-Kernel-ARM64体系中断系统架构跟踪](http://joyxu.github.io/2017/03/07/Linux-Kernel-ARM64%E4%BD%93%E7%B3%BB%E4%B8%AD%E6%96%AD%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E8%B7%9F%E8%B8%AA/)的第一个扩展。
