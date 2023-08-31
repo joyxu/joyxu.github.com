@@ -14,14 +14,9 @@ tags: [Linux Kernel, ARM Server]
 
 # 服务器硬件形态
 
-N2的硬件架构图就是一个典型的服务器硬件架构，加上BMC和CPLD部分就更好了
+N2的硬件架构图就是一个典型的服务器硬件架构，一般板级形态上还有BMC、CPLD等协同。
 
 ![N2硬件架构图](/images/arm_server_hardware_topo.png)
-
-下面是一张带BMC和CPLD的图
-
-![硬件架构图](/images/arm_server_hardware_topo2.png)
-
 
 # 服务器软件形态
 
@@ -56,19 +51,23 @@ ARM定义了一套RAS处理机制SDEI，一旦发生了RAS错误，Firmware会�
 
 # 带外管理-BMC
 
-带外管理一般走BMC，BMC主要用来管理风扇，电源，固件升级，远程控制等，具体功能如下图
-
-![BMC funciton view](/images/arm_server_bmc3.png)
-
-BMC的功能以及和AP之间的交互如下图
+服务器一般还带一个BMC芯片做带外的板级管理，BMC主要用来管理风扇，电源，固件升级，远程控制等，具体功能如下图
 
 ![硬件架构图-BMC](/images/arm_server_bmc.jpg)
+
+涉及到的协议，总线和功能一般如下：
+
+![BMC funciton view](/images/arm_server_bmc3.png)
 
 AP和BMC一般有LPC、USB、PCIe、SMBUS总线等。PCIe一般用于KVM(键盘、鼠标和显示的重定向);
 USB多用于虚拟磁盘，通过它支持光盘、ISO镜像用于安装操作系统。
 BMC和AP之间的接口叫作system interface，简称SI，常见的SI有KCS、SMIC、BT和SSIF传输协议，这些协议均已被Linux Kernel主线支持，
 
 ![BMC logic view](/images/arm_server_bmc2.jpg)
+
+以Amper为例，实际上板级结构如下图
+
+![BMC real case](/images/arm_server_hardware_topo2.png)
 
 内核的驱动在 `drivers/char/ipmi` 中:
 `ipmi_ssif.ko`: 支持通过SMBUS接口和发送消息
@@ -81,7 +80,7 @@ BMC和AP之间的接口叫作system interface，简称SI，常见的SI有KCS、S
 BMC一般提供一个网络界面，这个界面上用户可以上传一个ISO，远程的服务器可以读取该ISO来安装系统。
 这个机制一般通过如下机制实现[参考openBMC实现](https://github.com/openbmc/docs/blob/master/designs/virtual-media.md)
 
-![BMC virtual media](/images/arm_server_bmc_virutal_media.png)
+![BMC virtual media](/images/arm_server_bmc_virtual_media.png)
 
 # 参考
 
@@ -99,3 +98,5 @@ BMC一般提供一个网络界面，这个界面上用户可以上传一个ISO�
 * [IPMI的几个问题](https://www.cnblogs.com/klb561/p/9070001.html)
 * [IPMI2：ipmi逻辑设备](https://blog.csdn.net/qq_34160841/article/details/121728388)
 * [BMC virtual media](https://github.com/openbmc/docs/blob/master/designs/virtual-media.md)
+* [服务器BMC与IPMI基础知识](https://blog.csdn.net/star871016/article/details/112257689)
+* [Ampere Altra 64-Bit Multi-Core Processor Platform Hardware Design Specification](https://connect-admin.amperecomputing.com/api/secure-file-download/download-regular/?file=Altra_Platform_HW_Design_Specification_v1_12_20230110_7fec8e8c20.pdf&type=technical-document&doc_id=437)
