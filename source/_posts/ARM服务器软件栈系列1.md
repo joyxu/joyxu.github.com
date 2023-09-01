@@ -152,3 +152,5 @@ Flash的构成可以参考[N2 TF-M BL2的代码](https://gitlab.arm.com/infra-so
 * [BMC virtual media](https://github.com/openbmc/docs/blob/master/designs/virtual-media.md)
 * [服务器BMC与IPMI基础知识](https://blog.csdn.net/star871016/article/details/112257689)
 * [Ampere Altra 64-Bit Multi-Core Processor Platform Hardware Design Specification](https://connect-admin.amperecomputing.com/api/secure-file-download/download-regular/?file=Altra_Platform_HW_Design_Specification_v1_12_20230110_7fec8e8c20.pdf&type=technical-document&doc_id=437)
+* [Arm Corstone-1000](https://corstone1000.docs.arm.com/en/latest/software-architecture.html)
+* [Arm Neoverse N2 Automotive Reference Stack Documentation](https://rd-n2-automotive.docs.arm.com/en/v1.0/design/boot_process.html)
