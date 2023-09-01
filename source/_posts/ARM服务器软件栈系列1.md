@@ -82,6 +82,58 @@ BMC一般提供一个网络界面，这个界面上用户可以上传一个ISO�
 
 ![BMC virtual media](/images/arm_server_bmc_virtual_media.png)
 
+# 可信度量启动
+
+如果要支持可信度量启动，一般还会加上TF-M(PSA Firmware)。
+如果还要支持运行时安全(runtime security subsystem)，一般会在TF-M中加上RSS，在N2的参考设计中，这是一个[M55的core](https://neoverse-reference-design.docs.arm.com/en/latest/platforms/rdfremont/docs/rss.html)。
+
+加上可信度量和运行时安全core之后，整个启动过程如下图:
+
+![TF-M & RSS](/images/arm_server_tfm_rss.png)
+
+## 二进制构成和Flash layout
+
+TF-M分成三部分：TF-M BL11, BL12, BL2。其中BL11是出厂时烧在TF-M芯片的ROM中，其它在flash里面。
+
+Flash的构成可以参考[N2 TF-M BL2的代码](https://gitlab.arm.com/infra-solutions/reference-design/platsw/trusted-firmware-m/-/blob/refinfra-fremont/platform/ext/target/arm/rss/rdfremont/bl2/flash_map_bl2.c)
+或者[flash_layout.c](https://gitlab.arm.com/infra-solutions/reference-design/platsw/trusted-firmware-m/-/blob/refinfra-fremont/platform/ext/target/arm/rss/rdfremont/flash_layout.h#L24)
+
+		/* Flash layout on RSS with BL2 (multiple image boot):
+		 *
+		 * 0x3100_0000 BL2 - MCUBoot (64 KB)
+		 * 0x3101_0000 BL2 - MCUBoot (64 KB)
+		 * 0x3102_0000 Secure image     primary slot (384 KB)
+		 * 0x3108_0000 Non-secure image primary slot (384 KB)
+		 * 0x310E_0000 Secure image     secondary slot (384 KB)
+		 * 0x3114_0000 Non-secure image secondary slot (384 KB)
+		 * 0x311A_0000 SCP BL1 primary slot (512 KB)
+		 * 0x3122_0000 SCP BL1 secondary slot (512 KB)
+		 * 0x312A_0000 MCP BL1 primary slot (512 KB)
+		 * 0x3132_0000 MCP BL1 secondary slot (512 KB)
+		 * 0x313A_0000 LCP BL1 primary slot (64 KB)
+		 * 0x313B_0000 LCP BL1 secondary slot (64 KB)
+		 * 0x312A_0000 AP BL1 primary slot (512 KB)
+		 * 0x3132_0000 AP BL1 secondary slot (512 KB)
+		 */
+
+
+把不同二进制打包成一个二进制，可以参考[fiptool这个工具](https://gitlab.arm.com/infra-solutions/reference-design/platsw/trusted-firmware-m/-/blob/refinfra-fremont/docs/platform/arm/rss/readme.rst)
+
+		fiptool create \
+				--align 8192 --rss-bl2           bl2_signed.bin \
+				--align 8192 --rss-ns            tfm_ns.bin \
+				--align 8192 --rss-s             tfm_s.bin \
+				--align 8192 --rss-sic-tables-ns tfm_ns_sic_tables_signed.bin \
+				--align 8192 --rss-sic-tables-s  tfm_s_sic_tables_signed.bin \
+				--align 8192 --rss-scp-bl1       <signed Host SCP BL1 image> \
+				--align 8192 --rss-ap-bl1        <signed Host AP BL1 image> \
+				fip.bin
+
+
+以SCP二进制为例，在flash上的布局如下：
+
+![flash scp sample](/images/arm_server_flash_scp.png)
+
 # 参考
 
 * [Arm Neoverse N2 reference design Technical Overview](https://developer.arm.com/documentation/102337/0000/Software-stack/About-the-software?lang=en)
