@@ -177,3 +177,4 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Linuxでのpage構造体群の配置](https://qiita.com/akachochin/items/121d2bf3aa1cfc9bb95a)
 * [Linux Kernel Memory Hacking](https://oliveryang.net/2017/03/linux-kernel-memory-hacking/)
 * [内存是怎么映射到物理地址空间的？内存是连续分布的吗？](https://zhuanlan.zhihu.com/p/66288943)
+* [Linux crash工具结合/dev/mem任意修改内存](https://blog.csdn.net/dog250/article/details/102704164)
