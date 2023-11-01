@@ -132,9 +132,17 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![physical frame to page](/images/memory_pfn2page.png)
 
-一个运行实例如下图:
+### PFN到Page的映射
+
+一个PFN到Page的运行实例如下图:
 
 ![physical frame to page2](/images/memory_pfn2page2.png)
+
+### Page到Physical address的映射
+
+一个Page到Physical address的运行实例如下图:
+
+![virtual address to physical address](/images/memory_virt2phy.png)
 
 ## 把page加到zone
 
@@ -178,3 +186,5 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Linux Kernel Memory Hacking](https://oliveryang.net/2017/03/linux-kernel-memory-hacking/)
 * [内存是怎么映射到物理地址空间的？内存是连续分布的吗？](https://zhuanlan.zhihu.com/p/66288943)
 * [Linux crash工具结合/dev/mem任意修改内存](https://blog.csdn.net/dog250/article/details/102704164)
+* [ARMv8 MMU及Linux页表映射](https://www.cnblogs.com/LoyenWang/p/11406693.html)
+* [用crash tool观察ARM64 Linux地址转换](https://www.cnblogs.com/bigfish0506/p/16273091.html)
