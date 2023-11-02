@@ -205,3 +205,4 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [ARMv8 MMU及Linux页表映射](https://www.cnblogs.com/LoyenWang/p/11406693.html)
 * [用crash tool观察ARM64 Linux地址转换](https://www.cnblogs.com/bigfish0506/p/16273091.html)
 * [Memory Management in Linux](https://makelinux.net/ldd3/chp-15-sect-1.shtml)
+* [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
