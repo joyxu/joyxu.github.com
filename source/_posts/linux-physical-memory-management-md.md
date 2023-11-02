@@ -132,17 +132,33 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 ![physical frame to page](/images/memory_pfn2page.png)
 
-### PFN到Page的映射
-
 一个PFN到Page的运行实例如下图:
 
 ![physical frame to page2](/images/memory_pfn2page2.png)
 
-### Page到Physical address的映射
+## 物理地址到page frame的转换实例
 
-一个Page到Physical address的运行实例如下图:
+物理地址到PFN的转换按照前面的介绍，就是物理地址左移`PAGE_SHIFT` page的大小就可以了。以4K为例：
+
+![physical to pfn](/images/memory_phy2pfn.png)
+
+## virtual address到Physical address的映射
+
+一个virtual address到Physical address的运行实例如下图:
 
 ![virtual address to physical address](/images/memory_virt2phy.png)
+
+### 为什么内核中有的物理地址对应到了2个虚拟地址
+
+内核中虽然只有一份页表，但是有几种映射关系，这也是kernel logic address(kmalloc)和kernel virtual address(vmalloc)，以及kmap之间的关系。
+
+在LDD3中也有描述：
+
+![address types used in linux](/images/memory_ldr3_1501.gif)
+
+以jiffies为例，在crash工具中，`vtop`通常返回`kernel logic address`，但是可以通过`kmem`看物理地址对应的虚拟地址。
+
+![address types used in linux2](/images/memory_phy2virt2.png)
 
 ## 把page加到zone
 
@@ -188,3 +204,4 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Linux crash工具结合/dev/mem任意修改内存](https://blog.csdn.net/dog250/article/details/102704164)
 * [ARMv8 MMU及Linux页表映射](https://www.cnblogs.com/LoyenWang/p/11406693.html)
 * [用crash tool观察ARM64 Linux地址转换](https://www.cnblogs.com/bigfish0506/p/16273091.html)
+* [Memory Management in Linux](https://makelinux.net/ldd3/chp-15-sect-1.shtml)
