@@ -152,7 +152,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 
 内核中虽然只有一份页表，但是有几种映射关系，这也是kernel logic address(kmalloc)和kernel virtual address(vmalloc)，以及kmap之间的关系。
 
-在LDD3中也有描述：
+在[LDD3](https://makelinux.net/ldd3/chp-15-sect-1.shtml)中也有描述：
 
 ![address types used in linux](/images/memory_ldr3_1501.gif)
 
