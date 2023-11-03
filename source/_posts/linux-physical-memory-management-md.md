@@ -206,3 +206,5 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [用crash tool观察ARM64 Linux地址转换](https://www.cnblogs.com/bigfish0506/p/16273091.html)
 * [Memory Management in Linux](https://makelinux.net/ldd3/chp-15-sect-1.shtml)
 * [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
+* [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://blog.csdn.net/u011649400/article/details/105984564)
+* [Linux Memory Pressure - 1](https://oliveryang.net/2017/06/linux-memroy-pressure/)
