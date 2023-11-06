@@ -208,3 +208,4 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
 * [内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)](https://blog.csdn.net/u011649400/article/details/105984564)
 * [Linux Memory Pressure - 1](https://oliveryang.net/2017/06/linux-memroy-pressure/)
+* [Linux Rootkits](https://consen.github.io/2018/02/07/linux-rootkits/)
