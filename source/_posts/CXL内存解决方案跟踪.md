@@ -28,4 +28,24 @@ tags: [Linux Kernel, CXL, memory]
 
 ![SMDK overview2](/images/cxl_smdk_overview2.png)
 
+## 代码细节
+
+因为整个代码树已经没有了具体的commit历史信息了，看代码的时候建议以`ZONE_EXMEM`或者`CONFIG_EXMEM`来看，比较方便。
+
+### 初始化
+
+内核中内存初始化的建议流程如下：
+
+		cxl_pci_probe
+		  cxl_dvsec_rr_decode
+		    register_cxl_dvsec_ranges
+		      update_or_add_cxl_meminfo (内存起始地址，范围，numa节点)
+		        request_mem_region
+		        add_subzone
+		        add_memory_driver_managed
+		          mem_hotplug_begin
+		          memblock_add_node (添加CXL物理内存)
+		          __try_online_node
+		             hotadd_init_pgdat (建立CXL内存的struct page到物理内存的映射)
+
 # 参考
