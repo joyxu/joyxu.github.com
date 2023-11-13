@@ -210,3 +210,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [Linux Memory Pressure - 1](https://oliveryang.net/2017/06/linux-memroy-pressure/)
 * [Linux Rootkits](https://consen.github.io/2018/02/07/linux-rootkits/)
 * [Linux Kernel中AEP的现状和发展](https://cloud.tencent.com/developer/article/1442273)
+* [解决Linux内核问题实用技巧之-dev/mem的新玩法](https://cloud.tencent.com/developer/article/1543163)
+* [User-space control of memory management](https://lwn.net/Articles/931662/)
+* [The 2023 LSFMM+BPF Summit](https://lwn.net/Articles/lsfmmbpf2023/)
+* [Reducing page structures for huge pages](https://lwn.net/Articles/839737/)
