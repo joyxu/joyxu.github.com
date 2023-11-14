@@ -75,34 +75,36 @@ cpuless NUMA节点的形式出现，Linux Kernel就可以分配PMEM上的memory�
 比如，当内核分配内存时，如果从PMEM上分配了memory，并且这块内存上的数据是被经常访问的，那么由于物理特性上的差异，一般应用都会体会到性能的下降。
 那么怎么更明智的使用PMEM就是一个待解决的问题。
 
-吴峰光的一组patch[PMEM NUMA node and hotness accounting/migration](https://lore.kernel.org/linux-mm/20190202065741.GA1011@xz-x1/T/)来尝试解决这个问题。
+吴峰光的一组patch [PMEM NUMA node and hotness accounting/migration](https://lore.kernel.org/linux-mm/20190202065741.GA1011@xz-x1/T/) 尝试解决这个问题。
 
 这组patch主要提供了下面几个功能：
 
-1 隔离DRAM和PMEM。为PMEM单独构造了一个zonelist，这样一般的内存分配是不会分配到PMEM上的。
-2 跟踪内存的冷热。利用内核中已经有的idle page tracking功能（目前主线内核只支持系统全局的tracking），在per process的粒度上跟踪内存的冷热。
-3 利用现有的page reclaim，在reclaim时将冷内存迁移到PMEM上（只能迁移匿名页）。
-4 利用一个userspace的daemon和idle page tracking，来将热内存（在PMEM上的）迁移到DRAM中。
+1. 隔离DRAM和PMEM。为PMEM单独构造了一个zonelist，这样一般的内存分配是不会分配到PMEM上的。
+2. 跟踪内存的冷热。利用内核中已经有的idle page tracking功能（目前主线内核只支持系统全局的tracking），在per process的粒度上跟踪内存的冷热。
+3. 利用现有的page reclaim，在reclaim时将冷内存迁移到PMEM上（只能迁移匿名页）。
+4. 利用一个userspace的daemon和idle page tracking，来将热内存（在PMEM上的）迁移到DRAM中。
 
 这组patch发到LKML以后，引来了很激烈的讨论，主要集中在两个方面：
 
-1 为什么要单独构造一个zonelist把PMEM和DRAM分开？
+1. 为什么要单独构造一个zonelist把PMEM和DRAM分开？
 
 目前的NUMA API只能控制从哪个node分配，但是不能控制比例，比如mbind()，只能告诉进程这段VMA可以用哪些node，但是不能控制具体多少memory从哪个node来。
-要想做到更细粒度的控制，需要改造目前的NUMA API。而且目前memory hierarchy越来越复杂，比如device memory，这都是目前的NUMA API所不能很好解决的。
+要想做到更细粒度的控制，需要改造目前的NUMA API。
+另外目前memory hierarchy越来越复杂，比如device memory，这都是目前的NUMA API所不能很好解决的。
 
-2 能不能把冷热内存迁移通用化？
+2. 能不能把冷热内存迁移通用化？
 
-冷热内存迁移这个方向是没有问题的，问题在于目前patch中的处理太过于PMEM specific了。
+冷热内存迁移这个方向是没有问题的，问题在于该patch中的处理太过于PMEM specific了。
 内核中的NUMA balancing是把“热”内存迁移到最近的NUMA node来提高性能。但是却没有对“冷”内存的处理。所以能不能实现一种更通用的NUMA rebalancing?
-比如，在reclaim时候，不是直接reclaim内存，而是把内存迁移到一个远端的，或者空闲的，或者低速的NUMA node，类似于NUMA balancing所做的，只不过是往相反的方向。
-patch[Another Approach to Use PMEM as NUMA Node](https://lore.kernel.org/linux-mm/1554955019-29472-1-git-send-email-yang.shi@linux.alibaba.com/)，就体现了这种思路。
+比如在reclaim时候，不是直接reclaim内存，而是把内存迁移到一个远端的，或者空闲的，或者低速的NUMA node，类似于NUMA balancing所做的，只不过是往相反的方向。
+
+这个patch [Another Approach to Use PMEM as NUMA Node](https://lore.kernel.org/linux-mm/1554955019-29472-1-git-send-email-yang.shi@linux.alibaba.com/) 就体现了这种思路。
 利用Kernel中已经很成熟的memory reclaim路径把“冷”内存迁移到PMEM node中，NUMA Balancing访问到这个page的时候可以选择是否把这个页迁移回DRAM，相当于是一种比较粗粒度的“热”内存识别。
 
 社区中还有一种更加激进的想法就是不区分PMEM和DRAM，在memory reclaim时候只管把“冷”内存迁移到最近的remote node，如果target node也有内存压力，那就在target node上做同样的迁移。
 但是这种方法有可能引入一个内存迁移“环”，导致内存在NUMA node中间不停地迁移，有可能引入unbounded time问题。而且一旦node增多，可能会迅速恶化问题。
-在内存回收方面还有一个更可能立竿见影的方案就是把PMEM用作swap设备或者swap文件。
-目前swap的最大问题就是传统磁盘的延迟问题，很容易造成系统无响应，这也是为什么有zswap这样的技术出现。
+
+在内存回收方面还有一个更可能立竿见影的方案就是把PMEM用作swap设备或者swap文件。目前swap的最大问题就是传统磁盘的延迟问题，很容易造成系统无响应，这也是为什么有zswap这样的技术出现。
 PMEM的低延迟特性完全可以消除swap的延迟问题。
 
 # 参考
