@@ -88,7 +88,6 @@ cpuless NUMA节点的形式出现，Linux Kernel就可以分配PMEM上的memory�
 
 1. 为什么要单独构造一个zonelist把PMEM和DRAM分开？
 
-其实在这块，我们也遇到了相似的问题。我们在某些项目要求做到控制每个进程使用的DRAM和PMEM的比例（比如8：2），但是目前的NUMA API做不到。
 目前的NUMA API只能控制从哪个node分配，但是不能控制比例，比如mbind()，只能告诉进程这段VMA可以用哪些node，但是不能控制具体多少memory从哪个node来。
 要想做到更细粒度的控制，需要改造目前的NUMA API。而且目前memory hierarchy越来越复杂，比如device memory，这都是目前的NUMA API所不能很好解决的。
 
