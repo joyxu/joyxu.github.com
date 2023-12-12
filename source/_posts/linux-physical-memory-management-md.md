@@ -103,6 +103,7 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 ## 建立页表
 
 建立页表的输入是`memblock`，也就是物理内存的起始地址和结束地址，输出是空的页表。
+memblock是在2010年Yinghai提出的。有兴趣的可以看一下当时的邮件列表中的[讨论](https://lkml.org/lkml/2010/7/13/114)。
 建立页表这个过程发生在`paging_init`，`map_kernel`和`map_mem`几个函数中。
 其中`map_kenrel`是完成kernel各个段的映射，虚拟地址的信息也可以从System.map或者vmlinux中查到。
 而`map_mem`则完成前面发现的`memregion`的物理地址到虚拟地址的映射。这两个函数都是通过`__create_pgd_mapping`创建页表，建立的映射。
@@ -214,3 +215,4 @@ UEFI启动流程，内存节点上报流程关键调用栈如下:
 * [User-space control of memory management](https://lwn.net/Articles/931662/)
 * [The 2023 LSFMM+BPF Summit](https://lwn.net/Articles/lsfmmbpf2023/)
 * [Reducing page structures for huge pages](https://lwn.net/Articles/839737/)
+* [原始内存分配器--memblock](https://richardweiyang-2.gitbook.io/kernel-exploring/00-memory_a_bottom_up_view/02-memblock)
