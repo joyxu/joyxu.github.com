@@ -128,3 +128,4 @@ ATS域段
 * [Down to the TLP: How PCI express devices talk](https://xillybus.com/tutorials/pci-express-tlp-pcie-primer-tutorial-guide-1)
 * [颠覆性技术！你NRZ相守20年又怎样？看我PAM4如何上位PCIe 6.0](https://mangopapa.blog.csdn.net/article/details/120775889)
 * [p2pmem-test](https://github.com/sbates130272/p2pmem-test)
+* [Linux SVA特性分析](https://blog.csdn.net/scarecrow_byr/article/details/100983619?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170263012016800180699660%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=170263012016800180699660&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_ecpm_v1~rank_v31_ecpm-1-100983619-null-null.nonecase&utm_term=sva&spm=1018.2226.3001.4450)
