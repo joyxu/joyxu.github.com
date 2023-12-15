@@ -86,13 +86,26 @@ PCIe P2P是指两个PCIe设备直接通信，通信的数据不经过CPU处理�
 要理解这个细节，可以看`pci_p2pmem_virt_to_bus`，它会调用`gen_pool_virt_to_phys`，返回pcie bar的offset，于是对端设备实际上配置的是pcie的地址空间。
 于是当对端设备针对这个地址发起访问的时候，就没有上pcie root port，而是直接到该设备了。
 
-注意，原则上ATS和P2P是冲突的，因为当ATS打开之后，设备不清楚拿到的地址是否还要走ATS转换。
+注意：
+当前内核一旦开启了P2P，默认会关掉ACS，也可能会影响到SVA。
+原则上ATS/ACS和P2P是有些冲突的，因为当ATS打开之后，设备发出的PCIe TLP报文会声称该报文的地址是否是翻译过的。
+如果没有翻译，则先路由到RC的TA处进行地址翻译;如果翻译过，则直接使用，绕过了IOMMU的隔离，直接访问这个物理地址了，导致安全风险。
+比如说，开启了P2P和ATS以后，同一个PCIe Switch后的所有EP设备，必须都分给同一个虚拟机，不然分给不同虚拟机的话，可以从这个PCIe设备的另外一个Function攻击到其它的虚拟机。
+于是呢，就引入了ACS（访问控制）来决定一个TLP是否能正常路由，还是被阻塞或者重定向。
+可以参考这个patch的评论[PCI/P2PDMA: Clear ACS P2P flags for all devices behind switches](https://patchwork.kernel.org/project/linux-pci/patch/20180312193525.2855-5-logang@deltatee.com/)。
+也可以参考SBSA的测试用例[SBSA PCIe ATS test](https://github.com/ARM-software/sbsa-acs/issues/111)。
 
 # 其它
 
 PCIe TLP报文格式
 
 ![pcie tlp](/images/pcie_tlp.png)
+
+ATS域段
+
+![pcie tlp_ats](/images/pcie_tlp_ats.png)
+
+![pcie_ats](/images/pcie_ats.png)
 
 # 参考
 
@@ -103,9 +116,14 @@ PCIe TLP报文格式
 * [A Practical Tutorial on PCIe for Total Beginners on Windows (Part 1)](https://ctf.re/windows/kernel/pcie/tutorial/2023/02/14/pcie-part-1/)
 * [UEFI——PCIe子系统(I)](https://blog.csdn.net/weixin_43921686/article/details/132136732)
 * [Introduction to PCIe Address Translation Services](https://liujunming.top/2019/11/24/Introduction-to-PCIe-Address-Translation-Services/)
+* [PCIe TLP Header 中的常见 Feild 及其释义](https://mangopapa.blog.csdn.net/article/details/128538065)
+* [PCIe地址转换服务（ATS）详解](https://mangopapa.blog.csdn.net/article/details/120245027)
 * [PCIe地址转换服务（ATS）详解](https://github.com/yakoye/PCIeDocs/blob/main/PCIe%E5%9C%B0%E5%9D%80%E8%BD%AC%E6%8D%A2%E6%9C%8D%E5%8A%A1%EF%BC%88ATS%EF%BC%89%E8%AF%A6%E8%A7%A3.md)
+* [PCIe访问控制服务（ACS）](https://mangopapa.blog.csdn.net/article/details/120295827)
 * [PCI设备驱动（二）](https://blog.csdn.net/21cnbao/article/details/105525581)
 * [P2P DMA](https://zhuanlan.zhihu.com/p/664873131)
 * [PCI Peer-to-Peer DMA Support](https://www.kernel.org/doc/html/next/driver-api/pci/p2pdma.html)
 * [Peer-to-peer DMA](https://lwn.net/Articles/931668/)
 * [PCIe扫盲——一个Memory Read操作的例子](http://blog.chinaaet.com/justlxy/p/5100053263)
+* [Down to the TLP: How PCI express devices talk](https://xillybus.com/tutorials/pci-express-tlp-pcie-primer-tutorial-guide-1)
+* [颠覆性技术！你NRZ相守20年又怎样？看我PAM4如何上位PCIe 6.0](https://mangopapa.blog.csdn.net/article/details/120775889)
