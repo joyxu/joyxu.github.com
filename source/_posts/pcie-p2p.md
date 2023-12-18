@@ -76,7 +76,8 @@ PCIe P2P是指两个PCIe设备直接通信，通信的数据不经过CPU处理�
 
 * mmap怎么从这个bar分配内存呢？
 
-由于bar是作为`zone_device`注册的，它的分配和释放并不是通过sparse来管理的，而是通过generic purpose allocator来管理分配的，并会针对该设备创建一个内存池。
+由于bar是作为`zone_device`注册的,`zone_device`仍然是基于`sparsemem_vmemmap`的，它提供了基于`struct page`的服务，包括`pfn_to_page`,`page_to_pfn`和`get_user_pages`等。
+但它的分配和释放并不是当做普通内存来管理的，而是通过generic purpose allocator来管理分配的，并会针对该设备创建一个内存池。
 当map的时候，会调用`p2pmem_alloc_mmap`，并通过`vm_insert_page`把这个地址映射到用户态的va。
 
 * 对端设备怎么用这个地址呢？
