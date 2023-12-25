@@ -115,6 +115,7 @@ ATS域段
 * [PCIe ECAM机制](https://blog.csdn.net/u013253075/article/details/130755162)
 * [Linux源码阅读——PCI总线驱动代码（三）PCI设备枚举过程](https://blog.csdn.net/u013253075/article/details/123301127)
 * [Writing a PCI device driver for Linux](https://olegkutkov.me/2021/01/07/writing-a-pci-device-driver-for-linux/)
+* [How To Write Linux PCI Drivers](https://www.kernel.org/doc/html/latest/PCI/pci.html)
 * [A Practical Tutorial on PCIe for Total Beginners on Windows (Part 1)](https://ctf.re/windows/kernel/pcie/tutorial/2023/02/14/pcie-part-1/)
 * [UEFI——PCIe子系统(I)](https://blog.csdn.net/weixin_43921686/article/details/132136732)
 * [Introduction to PCIe Address Translation Services](https://liujunming.top/2019/11/24/Introduction-to-PCIe-Address-Translation-Services/)
