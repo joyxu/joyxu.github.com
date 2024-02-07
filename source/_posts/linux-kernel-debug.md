@@ -50,6 +50,11 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
 如果发现R的任务占比多，则是通常说的cpu bound，开始进行on cpu分析。
 首先可以通过top命令观测下，是用户态占比多，还是内核态占比多。
 
+#### free
+
+A buffer is something that has yet to be "written" to disk.
+A cache is something that has been "read" from the disk and stored for later use.
+
 ![linux debug top](/images/linux-debug-top.png)
 
 之后可以通过工具箱里的psn，以及`perf record -e cycles`命令，找到热点应用和函数。
@@ -91,3 +96,4 @@ bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了
 * [Linux Process Snapper](https://tanelpoder.com/psnapper/)
 * [High System Load with Low CPU Utilization on Linux?](https://tanelpoder.com/posts/high-system-load-low-cpu-utilization-on-linux/)
 * [运行状态的进程和线程](https://huataihuang.gitbooks.io/cloud-atlas/content/os/linux/process/management/process_in_run_queue.html)
+* [free 查詢可用內存](https://jasonblog.github.io/note/linux_tools/free.html)
