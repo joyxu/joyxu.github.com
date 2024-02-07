@@ -32,7 +32,7 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
 既然R和D都给系统负载做了贡献，分析系统高负载的问题，首先要清楚是R带来的，还是D带来的。
 整个debug流程大致如下：
 
-![linux debug load](/images/linux-debug-flow.png)
+![linux debug loadflow](/images/linux-debug-flow.png)
 
 #### R状态和D状态task变化趋势
 
@@ -42,9 +42,15 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
 
 也可以通过我工具箱里的psn观察
 
-![linux debug load](/images/linux-debug-load2.png)
+![linux debug load_sample](/images/linux-debug-load2.png)
 
 #### top
+
+如果发现R的任务占比多，则进行on cpu分析，首先可以通过top命令观测下，是用户态占比多，还是内核态占比多。
+
+![linux debug top](/images/linux-debug-top.png)
+
+之后可以通过工具箱里的psn，以及`perf record -e cycles`命令，找到热点应用和函数。
 
 
 ## 动态跟踪调试(tracing)
