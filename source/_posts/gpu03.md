@@ -53,6 +53,10 @@ GPU的用户态驱动也是在MESA在实现，MESA会通过DRM动态库，把硬
 用户态主要维护状态机、渲染context、把高级的shader语言编译成GPU识别的ISA、组装GPU的job或者command。
 内核态主要处理和内存、提交GPU的job或者command、调度以及中断，还有和Window System交互。
 
+Thomas Zimmermann写了2篇非常好的文章，来解释完整的软件栈，务必深入之前，多读几遍。
+* [The Linux graphics stack in a nutshell, part 1](https://lwn.net/Articles/955376/)
+* [The Linux graphics stack in a nutshell, part 2](https://lwn.net/Articles/955708/)
+
 # 安卓
 
 安卓的软件栈又稍稍不一样，安卓去掉了X11和Wayland，实现了自己的drm_hwcomposer和内存管理gralloc。
