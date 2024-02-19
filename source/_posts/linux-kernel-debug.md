@@ -35,7 +35,7 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
 
 ![linux debug loadflow](/images/linux-debug-flow.png)
 
-#### R状态和D状态task变化趋势
+### R状态和D状态task变化趋势
 
 可以通过以下ps命令观察R和D状态的变化
 
@@ -45,21 +45,42 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
 
 ![linux debug load_sample](/images/linux-debug-load2.png)
 
-#### top
+### top
 
-如果发现R的任务占比多，则是通常说的cpu bound，开始进行on cpu分析。
-首先可以通过top命令观测下，是用户态占比多，还是内核态占比多。
-
-#### free
-
-A buffer is something that has yet to be "written" to disk.
-A cache is something that has been "read" from the disk and stored for later use.
+之后再通过top命令观测下cpu的执行时间变化趋势，是用户态占比多，还是内核态占比多，还是iowait或者idle占比多。
+结合前面R和D的变化趋势，如果发现R的任务占比多，则是通常说的cpu bound，开始进行on cpu分析；
+如果D任务占比多，则要进行off cpu分析。
 
 ![linux debug top](/images/linux-debug-top.png)
 
-之后可以通过工具箱里的psn，以及`perf record -e cycles`命令，找到热点应用和函数。
+之后可以通过工具箱里的psn，或者通过`perf top`命令，找到热点应用和函数。
 
-![linux debug perf cycle](/images/linux-debug-perf-cycle.png)
+![linux debug perf top](/images/linux-debug-perf-top.png)
+
+#### IPC状态
+
+cpu bound的，也可以深入再看看和cpu微架构相关的指标，这时候首先要知道当前cpu的理论IPC值。
+
+##### 理论IPC值
+
+当前并没有工具可以直接获取cpu的理论IPC值，Brendan写了一个通过nop来获取IPC值的文章:[The noploop CPU Benchmark](https://www.brendangregg.com/blog/2014-04-26/the-noploop-cpu-benchmark.html)
+参考这个逻辑，通过工具箱里的`stress-ng`其实也可以来获取这个值，具体命令如下：
+
+		sudo perf stat -d ./benchmark/stress-ng/stress-ng --nop 1 --timeout 5 --taskset 0
+
+结果如下图：
+
+![linux debug nop ipc](/images/linux-debug-nop-ipc.png)
+
+另外，如果是在ARM64平台上，也可以通过sysfs下的pmu的slot文件来判断，具体路径在`/sys/devices/armv8_pmuv3/caps/slots`，虚拟机上由于还不支持，获取的信息是0，具体如下：
+
+		root@localhost:~# cat /sys/devices/armv8_pmuv3/caps/slots
+		0x00000000
+
+####  free
+
+A buffer is something that has yet to be "written" to disk.
+A cache is something that has been "read" from the disk and stored for later use.
 
 ## 动态跟踪调试(tracing)
 
