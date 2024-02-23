@@ -84,6 +84,54 @@ cpu bound的，也可以深入再看看和cpu微架构相关的指标，这时�
 A buffer is something that has yet to be "written" to disk.
 A cache is something that has been "read" from the disk and stored for later use.
 
+### offcpu 分析
+
+offcpu分析务必先看Brendan的[Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)。
+
+#### cpu iowait高
+
+offcpu分析时，要理解linux kernel怎么计算idle和iowait的，比如下面这个场景
+
+![linux top iowait](/images/linux-debug-tio-iowait.png)
+
+实际上iowait的试试，CPU也是什么都没干的，也是在执行idle线程，只是idle线程里面针对`idle`和`iowait`分别计数。
+ 
+
+		/*       
+		 * Account multiple ticks of idle time.
+		 * @ticks: number of stolen ticks
+		 */   
+		void account_idle_ticks(unsigned long ticks)
+		{        
+
+			if (sched_clock_irqtime) {
+				irqtime_account_idle_ticks(ticks);
+				return;
+			}   
+
+			account_idle_time(jiffies_to_cputime(ticks));                                                                                                                                                       
+		}        
+
+
+		/*
+		 * Account for idle time.
+		 * @cputime: the cpu time spent in idle wait
+		 */
+		void account_idle_time(cputime_t cputime)                                                                                                                                                               
+		{
+			u64 *cpustat = kcpustat_this_cpu->cpustat;
+			struct rq *rq = this_rq();
+
+			if (atomic_read(&rq->nr_iowait) > 0)
+				cpustat[CPUTIME_IOWAIT] += (__force u64) cputime;
+			else
+				cpustat[CPUTIME_IDLE] += (__force u64) cputime;
+		}
+
+而 Linux IO 栈和文件系统的代码则会调用 io_schedule，等待磁盘 IO 的完成。
+这时候，对 CPU 时间被记为 iowait 起关键计数的原子变量 rq->nr_iowait 则会在睡眠前被增加。
+注意，io_schedule 在被调用前，通常 caller 会先将任务显式地设置成 TASK_UNINTERRUPTIBLE 状态
+
 ## 动态跟踪调试(tracing)
 
 是指通过动态跟踪工具，动态掌握执行的状态，来理解当前的问题。在linux上，tracing的全景图如下:
