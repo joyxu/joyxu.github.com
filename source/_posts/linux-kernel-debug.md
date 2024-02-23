@@ -27,6 +27,8 @@ task数包括D状态(uninterruptible)和R状态(running)的task，所以这个�
        average  numbers  given  by uptime(1) and other programs.  The fourth field consists of two numbers separated by a slash (/).  The first of these is the number of currently runnable kernel scheduling entities (pro‐
        cesses, threads).  The value after the slash is the number of kernel scheduling entities that currently exist on the system.  The fifth field is the PID of the process that was most recently created on the system.
 
+关于D状态的故事，可以参考Brendan写的一个小故事[Linux Load Averages: Solving the Mystery](https://www.brendangregg.com/blog/2017-08-08/linux-load-averages.html)中的`Searching for an ancient Linux patch`章节。
+
 ![linux debug load](/images/linux-debug-load.png)
 
 如果1分钟的负载比5或者15分钟高，说明系统负载在增加，否则在减少。如果数值大于cpu数量(`cat /proc/cpuinfo`)，或许系统有问题。
@@ -77,7 +79,7 @@ cpu bound的，也可以深入再看看和cpu微架构相关的指标，这时�
 		root@localhost:~# cat /sys/devices/armv8_pmuv3/caps/slots
 		0x00000000
 
-####  free
+####  内存观测工具free
 
 A buffer is something that has yet to be "written" to disk.
 A cache is something that has been "read" from the disk and stored for later use.
@@ -118,3 +120,8 @@ bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了
 * [High System Load with Low CPU Utilization on Linux?](https://tanelpoder.com/posts/high-system-load-low-cpu-utilization-on-linux/)
 * [运行状态的进程和线程](https://huataihuang.gitbooks.io/cloud-atlas/content/os/linux/process/management/process_in_run_queue.html)
 * [free 查詢可用內存](https://jasonblog.github.io/note/linux_tools/free.html)
+* [perf zine](https://jvns.ca/perf-zine.pdf)
+* [perf cheat sheet](https://jvns.ca/perf-cheat-sheet.pdf)
+* [Linux Perf Tools Tips](https://oliveryang.net/2016/07/linux-perf-tools-tips/)
+* [The PMCs of EC2: Measuring IPC](https://www.brendangregg.com/blog/2017-05-04/the-pmcs-of-ec2.html)
+* [Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)
