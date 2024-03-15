@@ -84,6 +84,27 @@ cpu bound的，也可以深入再看看和cpu微架构相关的指标，这时�
 A buffer is something that has yet to be "written" to disk.
 A cache is something that has been "read" from the disk and stored for later use.
 
+### oncpu 分析
+
+#### perf
+
+perf是用的最多的，除了直接用`perf top`看热点以外，通常先抓perf的trace数据，再转换成火焰图。
+主要通过以下两个命令：
+
+		sudo perf record -F 99 -p 指定进程号 -g -- sleep 30
+		sudo perf record -F 99 -a -g -- sleep 30  //-a 表示整个系统
+
+perf record 表示采集系统事件, 没有使用 -e 指定采集事件, 则默认采集 cycles(即 CPU clock 周期), -F 99 表示每秒 99次, 
+-p  指定进程号, 即对哪个进程进行分析, -g 表示记录调用栈, sleep 30 则是持续 30 秒。
+
+之后再用`sudo perf report -n --stdio` 查看结果，可以统计每个调用栈出现的百分比, 然后从高到低排列。
+		
+但是这种不太直观，一般会把record记录下来的`perf.data`转换成火焰图，可以直接使用下面的命令，其中FlameGraph取自Brendan的[仓库](https://github.com/brendangregg/FlameGraph)
+
+		perf script | FlameGraph/stackcollapse-perf.pl | FlameGraph/flamegraph.pl > process.svg
+
+![linux debug perf report](/images/linux-debug-perf-report.png)
+
 ### offcpu 分析
 
 offcpu分析务必先看Brendan的[Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)。
@@ -92,7 +113,7 @@ offcpu分析务必先看Brendan的[Off-CPU Analysis](https://www.brendangregg.co
 
 offcpu分析时，要理解linux kernel怎么计算idle和iowait的，比如下面这个场景
 
-![linux top iowait](/images/linux-debug-tio-iowait.png)
+![linux top iowait](/images/linux-debug-top-iowait.png)
 
 实际上iowait的试试，CPU也是什么都没干的，也是在执行idle线程，只是idle线程里面针对`idle`和`iowait`分别计数。
  
@@ -173,3 +194,4 @@ bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了
 * [Linux Perf Tools Tips](https://oliveryang.net/2016/07/linux-perf-tools-tips/)
 * [The PMCs of EC2: Measuring IPC](https://www.brendangregg.com/blog/2017-05-04/the-pmcs-of-ec2.html)
 * [Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)
+* [用 perf 生成火焰图](https://www.cnblogs.com/liushuhe1990/articles/11139776.html)
