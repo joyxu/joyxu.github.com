@@ -195,3 +195,4 @@ bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了
 * [The PMCs of EC2: Measuring IPC](https://www.brendangregg.com/blog/2017-05-04/the-pmcs-of-ec2.html)
 * [Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)
 * [用 perf 生成火焰图](https://www.cnblogs.com/liushuhe1990/articles/11139776.html)
+* [perf和火焰图使用方法](https://cloud.tencent.com/developer/article/2245316)
