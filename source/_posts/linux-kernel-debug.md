@@ -115,7 +115,7 @@ offcpu分析时，要理解linux kernel怎么计算idle和iowait的，比如下�
 
 ![linux top iowait](/images/linux-debug-top-iowait.png)
 
-实际上iowait的试试，CPU也是什么都没干的，也是在执行idle线程，只是idle线程里面针对`idle`和`iowait`分别计数。
+实际上iowait，CPU也是什么都没干的，也是在执行idle线程，只是idle线程里面针对`idle`和`iowait`分别计数。
  
 
 		/*       
