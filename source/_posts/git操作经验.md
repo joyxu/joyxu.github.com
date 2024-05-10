@@ -15,6 +15,10 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 		git remote update
 		git status
 
+# 查看merge commmit历史
+
+		git log --oneline --graph
+
 # 发送带cover letter的series
 
 		sendemail.suppresscc=all //一定要在git config加上，避免误发
@@ -39,6 +43,15 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 * 加后缀
 	`git filter-branch -f --msg-filter 'cat && echo "[Reviewer Walsh]"' master..HEAD`
 
+* 中间插入
+	`git filter-branch -f --msg-filter 'sed "2 s/^/\n xxx \n"' HEAD~1..HEAD`  
+
+* 修改作者信息
+	`git filter-branch -f --env-filter "GIT_AUTHOR_NAME='xxx' GIT_AUTHOR_EMAIL='xxx' GIT_COMMITTER_NAME='xxx' GIT_COMMITTER_EMAIL='xxx'" HEAD~1..HEAD`  
+
+* 插入sign off
+	`git filter-branch -f --msg-filter 'git interpret-trailers --where start --trailer "Signed-off-by: xxx <xxx@xxx.com>"' HEAD~1..HEAD`  
+
 # 使用git回复没有subscribe过的社区邮件
 
 比如我们想回复这个[patch](https://patchwork.kernel.org/patch/10371127/),
@@ -60,7 +73,7 @@ git命令之前加`GIT_TRACE=2`或者`GIT_CURL_VERBOSE=1`
 * 提交到目标git repo: `git push xxx branch-name:master`
 
 
-#git 拆分patch
+# git 拆分patch
 
 假设当前有几个改动需要重新拆分，简要的命令如下：
 
