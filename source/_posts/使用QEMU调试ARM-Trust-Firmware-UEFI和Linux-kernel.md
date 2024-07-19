@@ -227,3 +227,4 @@ gdb qemu后，设置断点，再通过run加qemu运行参数。
 
 * [A study of the Linux kernel PCI subsystem with QEMU](https://blogs.oracle.com/linux/post/a-study-of-the-linux-kernel-pci-subsystem-with-qemu)
 * [arm64-hypervisor-tutorial 1 hello, world!text](https://ashw-archive.github.io/)
+* [UEFI开发探索](http://yiiyee.cn/blog/2022/01/08/uefi%e5%bc%80%e5%8f%91%e6%8e%a2%e7%b4%a2102-acpi%e6%8e%a2%e7%a9%b601%ef%bc%88uefi%e9%85%8d%e7%bd%ae%e8%a1%a8%ef%bc%89/)
