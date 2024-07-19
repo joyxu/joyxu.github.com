@@ -60,3 +60,4 @@ tags: [RoCE, Linux Kernel]
 * [RDMA之Memory Region](https://zhuanlan.zhihu.com/p/156975042)
 * [用户程序调用 IBVerbs](https://gwzlchn.github.io/202208/rdma-stack-02/)
 * [ibv_reg_mr](https://www.rdmamojo.com/2012/09/07/ibv_reg_mr/)
+* [RDMA Tutorial.pdf](https://netdevconf.info/0x16/slides/40/)
