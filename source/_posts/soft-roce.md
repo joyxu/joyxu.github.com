@@ -55,3 +55,8 @@ tags: [RoCE, Linux Kernel]
 # 参考
 
 * [RDMA API 应用](https://zhuanlan.zhihu.com/p/481256797)
+* [RDMA-tutorial](https://github.com/StarryVae/RDMA-tutorial)
+* [RDMA 高级](https://zhuanlan.zhihu.com/p/567720023)
+* [RDMA之Memory Region](https://zhuanlan.zhihu.com/p/156975042)
+* [用户程序调用 IBVerbs](https://gwzlchn.github.io/202208/rdma-stack-02/)
+* [ibv_reg_mr](https://www.rdmamojo.com/2012/09/07/ibv_reg_mr/)
