@@ -117,5 +117,6 @@ Cache对软件的影响，主要有cache miss，false sharing(多core同时访�
 * [17_ARMv8_高速缓存（二）ARM cache设计](https://github.com/carloscn/blog/issues/58)
 * [从技术角度聊CPU分支预测器](https://zhuanlan.zhihu.com/p/715411484)
 * [卡内基梅隆大学的Parallel Computer Architecture and Programming, Spring 2024](https://www.cs.cmu.edu/afs/cs/academic/class/15418-s24/www/schedule.html)
+* [Cache snoop](https://www.am.ics.keio.ac.jp/comparc/snoop.pdf)
 * [The microarchitecture of Intel, AMD and VIA CPUs: An optimization guide for assembly programmers and compiler makers](https://agner.org/optimize/)
 * [Intel 海光 鲲鹏920 飞腾2500 CPU性能对比](https://www.cnblogs.com/88223100/p/Comparison-of-CPU-Performance-between-Intel_Haiguang_Kunpeng-920_and-Feiteng-2500.html)
