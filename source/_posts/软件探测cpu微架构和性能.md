@@ -21,11 +21,6 @@ decode后，会把指令顺序的放到reorder buffer中，告诉执行单元尽
 
 ![典型乱序CPU微架构2](/images/uarch_ooo2.png)
 
-在branch Prediction，除了图上这些，其实各CPU厂家也都做了很多技术改进，比如：
-* Zero Bubble Conditional Branches
-* High Accuracy and Larger BTB
-* Basic Block Fetch
-
 指令在执行过程中，会拆分成更小的单元macro-ops(mops decode单元)和micro-ops(uops dispatch单元)，能拆分成多少个也叫width，或者说解码宽度(pipeline width)。
 下图是ARM Neoverse V1的微架构，可以观察到每个单元的width，有多少个EU(执行单元)
 
@@ -56,6 +51,8 @@ Cache探测除了组织方式以外，还包括时延和带宽，主要通过poi
 算法的基本思想是创建一个数组，每个数组元素中保存一个指针，指向下一个要访问的数组元素，设置不同的步长，来遍历这个数组，观察时延的变化。
 一般L1 Cache都是个位数的Cycle，L2 Cache大概十几个Cycle，L3 Cache大概50以内个Cycle左右，DDR基本都是上百个Cycle。
 于是呢一旦时延变化较大，则肯定发生cache miss，就可以判断cache的大小了。
+
+Cache Coherence的机制和实现可以参考
 
 ## Cache影响
 
@@ -119,3 +116,4 @@ Cache对软件的影响，主要有cache miss，false sharing(多core同时访�
 * [Cache: a place for concealment and safekeeping](https://manybutfinite.com/post/intel-cpu-caches/)
 * [17_ARMv8_高速缓存（二）ARM cache设计](https://github.com/carloscn/blog/issues/58)
 * [从技术角度聊CPU分支预测器](https://zhuanlan.zhihu.com/p/715411484)
+* [卡内基梅隆大学的Parallel Computer Architecture and Programming, Spring 2024](https://www.cs.cmu.edu/afs/cs/academic/class/15418-s24/www/schedule.html)

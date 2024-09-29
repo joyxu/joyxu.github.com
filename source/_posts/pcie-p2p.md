@@ -51,6 +51,32 @@ ECAM其实也是基于mmio访问的，以ACPI启动举例，ACPI的MCFG(memory-m
 
 ![pcie ecam_scan](/images/pcie_ecam_scan.png)
 
+## PCIe热插拔
+
+热插拔分为2种：通知式和暴力热插拔，差异体现在拔插动作上，暴力热插拔是没有事先通知的情况下，直接插拔。
+热插拔依赖PCIe硬件的实现，内核中的驱动在`driver/pci/hotplug`里面，其中：
+
+* `pciehp_hpc.c`主要负责控制器的初始化以及检测设备在位变化、attention button pressed、电源错误等事件检测，检测到这些事件后，会上报热插拔中断。
+* `pciehp_ctrl.c`主要是对热插拔各个events 的具体处理。
+
+* 如果pcieslot槽位处于上电状态，却产生了在位状态改变的event，说明产生了暴力热拔操作，此时直接将槽位下电。
+
+	pciehp_handle_presence_or_link_change()
+		slot->state = POwEROFF_STATE;
+		pciehp_disable_slot()
+			remove_board()
+
+* 如果链路状态正常并且pcie卡处于在位状态，进行热插的处理。			
+
+	present || link_active
+		pciehp_enable_slot()
+			board_added()
+				pciehp_configure_device()
+					pcie_scan_single_device //和枚举流程一样，调用pci_setup_divice读取设备config space
+					pci_bus_add_devices //调用设备驱动，使能设备
+
+热插的卡的bar空间，一般是在BIOS/UEFI阶段枚举过程中预留的地址空间，但随着pcie nvme盘的流程，动态bar空间的技术也被引入了，具体参考[The modernization of PCIe hotplug in Linux](https://lwn.net/Articles/767885/)。
+
 # 设备访问内存、CPU
 
 这块涉及到的技术主要包括IOMMU，SVA，DDIO等，就不在本文描述了。
@@ -133,3 +159,5 @@ ATS域段
 * [p2pmem-test](https://github.com/sbates130272/p2pmem-test)
 * [Linux SVA特性分析](https://blog.csdn.net/scarecrow_byr/article/details/100983619?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170263012016800180699660%2522%252C%2522scm%2522%253A%252220140713.130102334.pc%255Fblog.%2522%257D&request_id=170263012016800180699660&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_ecpm_v1~rank_v31_ecpm-1-100983619-null-null.nonecase&utm_term=sva&spm=1018.2226.3001.4450)
 * [How can my PCI device driver remap PCI memory to userspace](https://stackoverflow.com/questions/66893486/how-can-my-pci-device-driver-remap-pci-memory-to-userspace)
+* [Linux | PCIe Hotplug | 概念及工作原理的不完全总结](https://blog.csdn.net/MissMango0820/article/details/128497422)
+* [PCI hotplug: movable BARs and bus numbers](https://lpc.events/event/7/contributions/847/attachments/584/1035/lpc2020_sergmir.pdf)
