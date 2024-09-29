@@ -52,7 +52,7 @@ Cache探测除了组织方式以外，还包括时延和带宽，主要通过poi
 一般L1 Cache都是个位数的Cycle，L2 Cache大概十几个Cycle，L3 Cache大概50以内个Cycle左右，DDR基本都是上百个Cycle。
 于是呢一旦时延变化较大，则肯定发生cache miss，就可以判断cache的大小了。
 
-Cache Coherence的机制和实现可以参考
+Cache Coherence的机制和实现可以参考[卡内基梅隆大学的Snooping-Based Cache Coherence](https://www.cs.cmu.edu/afs/cs/academic/class/15418-s21/www/lectures/11_cachecoherence1.pdf)
 
 ## Cache影响
 
@@ -117,3 +117,5 @@ Cache对软件的影响，主要有cache miss，false sharing(多core同时访�
 * [17_ARMv8_高速缓存（二）ARM cache设计](https://github.com/carloscn/blog/issues/58)
 * [从技术角度聊CPU分支预测器](https://zhuanlan.zhihu.com/p/715411484)
 * [卡内基梅隆大学的Parallel Computer Architecture and Programming, Spring 2024](https://www.cs.cmu.edu/afs/cs/academic/class/15418-s24/www/schedule.html)
+* [The microarchitecture of Intel, AMD and VIA CPUs: An optimization guide for assembly programmers and compiler makers](https://agner.org/optimize/)
+* [Intel 海光 鲲鹏920 飞腾2500 CPU性能对比](https://www.cnblogs.com/88223100/p/Comparison-of-CPU-Performance-between-Intel_Haiguang_Kunpeng-920_and-Feiteng-2500.html)
