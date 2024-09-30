@@ -110,3 +110,4 @@ arm64上映射布局可以参考下图,具体文档[arm64 memory.rst](https://el
 * [W4118 OPERATING SYSTEMS](http://www.cs.columbia.edu/~junfeng/13fa-w4118/syllabus.html)
 * [Minimizing struct page overhead](https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead)
 * [struct page, the Linux physical page frame data structure](https://blogs.oracle.com/linux/post/struct-page-the-linux-physical-page-frame-data-structure)
+* [linux内存管理](https://blog.csdn.net/sinat_22338935/category_12552409.html?spm=1001.2014.3001.5482)
