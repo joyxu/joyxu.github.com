@@ -160,3 +160,4 @@ Flash的构成可以参考[N2 TF-M BL2的代码](https://gitlab.arm.com/infra-so
 * [Ampere Altra 64-Bit Multi-Core Processor Platform Hardware Design Specification](https://connect-admin.amperecomputing.com/api/secure-file-download/download-regular/?file=Altra_Platform_HW_Design_Specification_v1_12_20230110_7fec8e8c20.pdf&type=technical-document&doc_id=437)
 * [Arm Corstone-1000](https://corstone1000.docs.arm.com/en/latest/software-architecture.html)
 * [Arm Neoverse N2 Automotive Reference Stack Documentation](https://rd-n2-automotive.docs.arm.com/en/v1.0/design/boot_process.html)
+* [SoC 设计流程](https://blog.csdn.net/ygyglg/article/details/131159942)
