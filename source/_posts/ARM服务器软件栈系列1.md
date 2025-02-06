@@ -18,6 +18,12 @@ N2的硬件架构图就是一个典型的服务器硬件架构，一般板级形
 
 ![N2硬件架构图](/images/arm_server_hardware_topo.png)
 
+上图中涉及到的ARM IP均可以从[ARM官网](https://developer.arm.com/developer/ip-products/)获取，从而拼成一个SoC，不同SoC间互联之后，同时加上板级设计，进而形成服务器单板硬件。
+
+![ARM ipexplorer](/images/arm_server_ip_explorer.png)
+
+ARM官网专门有一个check list文档[Arm Design Checklists User Guide](https://developer.arm.com/documentation/110244/0100/Arm-Design-Checklists)，帮助SoC设计者检验。
+
 # 服务器软件形态
 
 软件形态主要是解释各处理器的职责。
