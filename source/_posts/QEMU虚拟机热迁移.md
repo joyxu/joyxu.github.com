@@ -119,6 +119,10 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [vfio: VFIO migration support with vIOMMU](https://lore.kernel.org/all/20230622214845.3980-1-joao.m.martins@oracle.com/)
 * [Multifd: device state transfer support with VFIO consumer](https://lore.kernel.org/all/cover.1738171076.git.maciej.szmigiero@oracle.com/)
 
+# 未来演进
+
+* ARM架构特性演进，比如:FEAT_TLBIRANG减少TLBI次数，FEAT_BBM=2, MMU/IOMMU硬件标脏
+
 # 参考
 
 * [Live Migration of Virtual Machines](https://dl.acm.org/doi/abs/10.5555/1251203.1251223#core-collateral-purchase-access)
