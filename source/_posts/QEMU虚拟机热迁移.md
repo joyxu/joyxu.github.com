@@ -102,6 +102,8 @@ VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存�
 
 ![VFIO直通设备热迁移完整流程](/images/qemu_live_migration_big_picture_vfio.png)
 
+![VFIO直通设备热迁移完整流程2](/images/qemu_live_migration_big_picture_vfio2.png)
+
 ### intel E810网卡的VF热迁移实际流程
 
 ![intel E810 VFIO直通设备热迁移完整流程](/images/qemu_live_migration_vfio_e810.png)
