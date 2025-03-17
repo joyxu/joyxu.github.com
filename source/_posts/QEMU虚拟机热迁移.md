@@ -15,6 +15,10 @@ tags: [Linux Kernel, QEMU, VFIO]
 
 QEMU虚拟机热迁移是指在host上QEMU命令行中使用`migrate`命令把指定的虚拟机从一个host迁移到另外一个host。
 热迁移过程中会有短暂的停机时间，但目的是尽可能减少停机时间。
+热迁移的性能好坏，一般会考虑3个指标：
+* 整体迁移时间：越长越差
+* 停机时间：越长越差
+* 对业务性能的影响：迁移对于虚机中运行的服务的影响程度，可以通过每秒指令数来观察业务被中断的时间。
 
 ![热迁移完整流程](/images/qemu_live_migration_big_picture.png)
 
@@ -91,7 +95,7 @@ Start guest on destination, connect, enable dirty page logging and more
 
 ## QEMU VFIO设备热迁移
 
-VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存标脏，停流和恢复。
+VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存标脏，设备停流和设备状态保存恢复。
 
 在热迁移过程中涉及到很多回调，主要涉及到`SaveVMHandlers`结构体，针对内存的回调基本在`savevm_ram_handlers`中。
 那如果虚机中有VFIO直通设备，同样也需要实现该回调，针对VFIO设备的`savevm_vfio_handlers`。
@@ -138,3 +142,4 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [Unleashing VFIO's Potential: Code Refactoring and New Frontiers in Device Virtualization](https://kvm-forum.qemu.org/2024/KVM_Forum_2024_-_VFIO_5LSTtyJ.pdf)
 * [QEMU live migration device state transfer parallelization via multifd channels](https://kvm-forum.qemu.org/2024/kvm-forum-2024-multifd-device-state-transfer_3K5EQIG.pdf)
 * [virtio-net: add support for SR-IOV emulation](https://kvm-forum.qemu.org/2024/Unleashing_SR-IOV_on_Virtual_Machines_qSX9OJ9.pdf)
+* [IDPF Live Migration Support](https://netdevconf.info/0x17/docs/netdev-0x17-paper30-talk-slides/idpf_live_migration_support.pdf)
