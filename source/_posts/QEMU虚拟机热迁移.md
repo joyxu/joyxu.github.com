@@ -93,6 +93,12 @@ Start guest on destination, connect, enable dirty page logging and more
 	     ram_load_precopy
 	      qemu_get_buffer
 
+## QEMU VDPA设备热迁移
+
+vdpa当前支持virtio-net，这块的迁移流程已经很成熟，因为virito设备的规范已经有virtio spec覆盖。
+
+![VDPA直通设备热迁移完整流程](/images/qemu_live_migration_big_picture_vdpa.png)
+
 ## QEMU VFIO设备热迁移
 
 VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存标脏，设备停流和设备状态保存恢复。
@@ -145,3 +151,4 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [QEMU live migration device state transfer parallelization via multifd channels](https://kvm-forum.qemu.org/2024/kvm-forum-2024-multifd-device-state-transfer_3K5EQIG.pdf)
 * [virtio-net: add support for SR-IOV emulation](https://kvm-forum.qemu.org/2024/Unleashing_SR-IOV_on_Virtual_Machines_qSX9OJ9.pdf)
 * [IDPF Live Migration Support](https://netdevconf.info/0x17/docs/netdev-0x17-paper30-talk-slides/idpf_live_migration_support.pdf)
+* [Hardware Friendly Vhost vDPA Towards an Efficient and Migratable Device Model](https://www.patchew.org/2022/KVM22-Migratable-Vhost-vDPA.pdf/)
