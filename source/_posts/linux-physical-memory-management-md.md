@@ -113,6 +113,10 @@ memblock是在2010年Yinghai提出的。有兴趣的可以看一下当时的邮�
 
 ![page table directory create](/images/memory_pagetable_create.png)
 
+### arm64上页表内存属性设置
+
+ARM上内存属性主要通过MAIR寄存器来获取。
+
 ## page frame到page的映射
 
 页表框架搭起来之后，就到了把物理内存转换到内核物理内存逻辑概念的阶段，目前内核管理物理内存有四种模型，但主要使用sparse模型。
@@ -215,3 +219,7 @@ memblock是在2010年Yinghai提出的。有兴趣的可以看一下当时的邮�
 * [The 2023 LSFMM+BPF Summit](https://lwn.net/Articles/lsfmmbpf2023/)
 * [Reducing page structures for huge pages](https://lwn.net/Articles/839737/)
 * [原始内存分配器--memblock](https://richardweiyang-2.gitbook.io/kernel-exploring/00-memory_a_bottom_up_view/02-memblock)
+* [mair_el1和页表关联](https://blog.csdn.net/xuelin273/article/details/126599611)
+* [MAIR_ELX总结](https://blog.csdn.net/xuelin273/article/details/127104473?spm=1001.2014.3001.5502)
+* [armv8 cacheable/shareable](https://blog.csdn.net/xuelin273/article/details/126749937?spm=1001.2014.3001.5502)
+* [AArch64 memory and paging](https://krinkinmu.github.io/2024/01/14/aarch64-virtual-memory.html)

@@ -137,6 +137,7 @@ VFIO热迁移的历史可以追踪一下patch set:
 
 # 参考
 
+* [Live Migrating VFIO, vhost-user,and vfio-user Devices](https://kvm-forum.qemu.org/2021/Live%20Migrating%20VFIO%2C%20vhost-user%2C%20and%20vfio-user%20Devices.pdf)
 * [Live Migration of Virtual Machines](https://dl.acm.org/doi/abs/10.5555/1251203.1251223#core-collateral-purchase-access)
 * [Live Migrating QEMU-KVM Virtual Machines](https://developers.redhat.com/blog/2015/03/24/live-migrating-qemu-kvm-virtual-machines)
 * [论文笔记 Live Migration of Virtual Machines NSDI, 2005](https://www.cnblogs.com/yuquanlaobo/archive/2013/01/17/2863040.html)
@@ -152,3 +153,7 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [virtio-net: add support for SR-IOV emulation](https://kvm-forum.qemu.org/2024/Unleashing_SR-IOV_on_Virtual_Machines_qSX9OJ9.pdf)
 * [IDPF Live Migration Support](https://netdevconf.info/0x17/docs/netdev-0x17-paper30-talk-slides/idpf_live_migration_support.pdf)
 * [Hardware Friendly Vhost vDPA Towards an Efficient and Migratable Device Model](https://www.patchew.org/2022/KVM22-Migratable-Vhost-vDPA.pdf/)
+* [vDPA-net live migration with Shadow Virtqueue](https://kvm-forum.qemu.org/2023/vDPA_sw_lm_-_KVM2023_6Ix6R5i.pdf)
+* [Live Migration with Mediated Device](https://www.linux-kvm.org/images/f/fa/Live_migration_with_mdev_device_-_2017_0.pdf)
+* [vDPA Live Migration Downtime improvements for net devices](https://netdevconf.info/0x18/sessions/talk/vdpa-live-migration-downtime-improvements-for-net-devices.html)
+* [SW Assisted vDPA for Live Migration](https://www.dpdk.org/wp-content/uploads/sites/35/2018/12/XiaoWang-DPDK-US-Summit-SW-assisted-VDPA-for-LM-v2.pdf)
