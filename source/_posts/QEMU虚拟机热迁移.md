@@ -99,12 +99,18 @@ vdpa当前支持virtio-net，这块的迁移流程已经很成熟，因为virito
 
 ![VDPA直通设备热迁移完整流程](/images/qemu_live_migration_big_picture_vdpa.png)
 
-## QEMU VFIO设备热迁移
+## VFIO设备热迁移
 
 VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存标脏，设备停流和设备状态保存恢复。
 
-在热迁移过程中涉及到很多回调，主要涉及到`SaveVMHandlers`结构体，针对内存的回调基本在`savevm_ram_handlers`中。
-那如果虚机中有VFIO直通设备，同样也需要实现该回调，针对VFIO设备的`savevm_vfio_handlers`。
+在热迁移过程中涉及到很多回调，QEMU中主要涉及到`SaveVMHandlers`结构体，针对内存的回调基本在`savevm_ram_handlers`中。
+那如果虚机中有VFIO直通设备，同样也需要实现该回调，针对VFIO设备的`savevm_vfio_handlers`, 另外也要实现`qdev_add_vm_change_state_handler_full` 和 `migration_add_notifier` 这两个回调。
+
+* `SaveVMHandlers` 是数据面，它定义了设备状态如何被持久化传输，没有它，设备状态就无法迁移，解决 “我的状态是什么？怎么存？怎么读？” 的问题。
+* `qdev_add_vm_change_state_handler_full` 是控制面，它允许设备在迁移过程的关键节点（开始前、完成后、失败时、加载前后等）执行管理操作，确保设备在迁移前后行为正确，但这些操作本身不产生迁移流数据。它调用 SaveVMHandlers 来传输实际状态。解决 “VM 要暂停/恢复了，我需要做点啥准备/收尾？” 的问题（特别是与迁移相关的暂停/恢复）。
+* `migration_add_notifier` 是错误处理，它提供系统级别对迁移状态变化的感知，针对VFIO设备，主要执行设备状态回滚操作。解决 “迁移这个事儿本身现在怎么样了？（开始了吗？成功了吗？失败了吗？）” 的问题。
+
+内核态的vfio厂商驱动中，也要对应实现上面的ioctl，以及migration序列化结构体，结构体中除了保存寄存器以外，还有硬件上不是通过寄存器呈现的硬件状态，比如通过mailbox下发给硬件的DMA地址。
 
 ![VFIO直通设备热迁移完整流程](/images/qemu_live_migration_big_picture_vfio.png)
 
@@ -120,7 +126,7 @@ VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存�
 
 ![直通设备热迁移流程](/images/qemu_live_migration_vfio_qemu2.png)
 
-在QEMU的官网上，针对VFIO设备迁移在QEMU内的实现，专门有一段描述：
+在QEMU的官网上，针对VFIO设备迁移在QEMU内的实现，专门有一段描述:(括号中的状态，分别代表 VM状态，迁移状态，VFIO设备状态)
 
 ![VFIO直通设备热迁移QEMU流程](/images/qemu_live_migration_vfio_qemu.png)
 
@@ -131,9 +137,13 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [vfio: VFIO migration support with vIOMMU](https://lore.kernel.org/all/20230622214845.3980-1-joao.m.martins@oracle.com/)
 * [Multifd: device state transfer support with VFIO consumer](https://lore.kernel.org/all/cover.1738171076.git.maciej.szmigiero@oracle.com/)
 
+内核态的驱动适配可以参考这个patch set:
+
+* [vfio/hisilicon: add ACC live migration driver](https://patchwork.kernel.org/project/linux-pci/patch/20220308184902.2242-1-shameerali.kolothum.thodi@huawei.com/)
+
 # 未来演进
 
-* ARM架构特性演进，比如:FEAT_TLBIRANG减少TLBI次数，FEAT_BBM=2, MMU/IOMMU硬件标脏
+* ARM架构特性演进，比如在iommu侧也实现mmu侧的相关特性，比如：FEAT_TLBIRANG减少TLBI次数，FEAT_BBM=2, MMU/IOMMU硬件标脏等。
 
 # 参考
 
