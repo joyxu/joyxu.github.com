@@ -50,7 +50,7 @@ Start guest on destination, connect, enable dirty page logging and more
 热迁移关键stage是上图中的stage2、3和5,QEMU中对应的实现如下：
 
 1. 将虚拟机所有RAM pages设置成dirty，主要函数`ram_save_setup`
-2. 持续迭代将虚拟机的dirty pages发送到dst，直到达到一定条件，比如dirty pages数量比较少, 主要函数`ram_save_iterate`
+2. 持续迭代将虚拟机的dirty pages发送到dst，直到达到一定条件，比如dirty pages数量比较少, 主要涉及函数`migration_thread`中的whille循环中的`migration_iteration_run`以及内存保存函数`ram_save_iterate`
 3. 停止src上面的guest，把剩下的dirty pages发送到dst，之后发送设备状态，主要函数`qemu_savevm_state_complete_precopy`
 
 其中1和2是上图中的灰色区域，3是灰色和左边的区域。
@@ -64,10 +64,10 @@ Start guest on destination, connect, enable dirty page logging and more
 	   ram_init_all
 	    ram_init_bitmaps
 	     ram_list_init_bitmaps
-	      bitmap_new
+	      bitmap_newjiangp
 	      bitmap_set
 
-	migration_iteration_run //迭代拷贝脏内存
+	migration_iteration_run //快速迭代拷贝脏内存，当剩余脏页量小于bandwidht * downtime时，进入停机拷贝阶段，参数可以参考hmp_info_migrate
 	 qemu_savevm_state_pending
 	  ram_save_pending[save_live_pending] //确定还要传输的字节数
 	 qemu_savevm_state_iterate
@@ -101,10 +101,10 @@ vdpa当前支持virtio-net，这块的迁移流程已经很成熟，因为virito
 
 ## VFIO设备热迁移
 
-VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存标脏，设备停流和设备状态保存恢复。
+VFIO直通设备在热迁移过程中，首先要求设备停流排空，把流量收敛住，进入一个稳态，过程中已经在路上的流量就涉及到DMA内存标脏，进入稳态之后，设备需要保存和恢复状态。
 
 在热迁移过程中涉及到很多回调，QEMU中主要涉及到`SaveVMHandlers`结构体，针对内存的回调基本在`savevm_ram_handlers`中。
-那如果虚机中有VFIO直通设备，同样也需要实现该回调，针对VFIO设备的`savevm_vfio_handlers`, 另外也要实现`qdev_add_vm_change_state_handler_full` 和 `migration_add_notifier` 这两个回调。
+那如果虚机中有VFIO直通设备，同样也需要实现针对VFIO设备的`savevm_vfio_handlers`回调, 另外也要实现`qdev_add_vm_change_state_handler_full` 和 `migration_add_notifier` 这两个回调。
 
 * `SaveVMHandlers` 是数据面，它定义了设备状态如何被持久化传输，没有它，设备状态就无法迁移，解决 “我的状态是什么？怎么存？怎么读？” 的问题。
 * `qdev_add_vm_change_state_handler_full` 是控制面，它允许设备在迁移过程的关键节点（开始前、完成后、失败时、加载前后等）执行管理操作，确保设备在迁移前后行为正确，但这些操作本身不产生迁移流数据。它调用 SaveVMHandlers 来传输实际状态。解决 “VM 要暂停/恢复了，我需要做点啥准备/收尾？” 的问题（特别是与迁移相关的暂停/恢复）。
@@ -116,19 +116,19 @@ VFIO直通设备在热迁移过程中，主要涉及到设备发起的DMA内存�
 
 ![VFIO直通设备热迁移完整流程2](/images/qemu_live_migration_big_picture_vfio2.png)
 
+在QEMU的官网上，针对VFIO设备迁移在QEMU内的实现，专门有一段描述:(括号中的状态，分别代表 VM状态，迁移状态，VFIO设备状态)
+
+![VFIO直通设备热迁移QEMU流程](/images/qemu_live_migration_vfio_qemu.png)
+
 ### intel E810网卡的VF热迁移实际流程
 
 ![intel E810 VFIO直通设备热迁移完整流程](/images/qemu_live_migration_vfio_e810.png)
 
-### pre-copy减少停机时间
+### 停机时间优化-通过pre-copy减少停机时间
 
 由于设备的状态保存和恢复发生在停机阶段，为了尽可能减少虚机停机时间，也会考虑pre-copy。
 
 ![直通设备热迁移流程](/images/qemu_live_migration_vfio_qemu2.png)
-
-在QEMU的官网上，针对VFIO设备迁移在QEMU内的实现，专门有一段描述:(括号中的状态，分别代表 VM状态，迁移状态，VFIO设备状态)
-
-![VFIO直通设备热迁移QEMU流程](/images/qemu_live_migration_vfio_qemu.png)
 
 ### VFIO设备迁移相关patchset
 
@@ -138,7 +138,6 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [Multifd: device state transfer support with VFIO consumer](https://lore.kernel.org/all/cover.1738171076.git.maciej.szmigiero@oracle.com/)
 
 内核态的驱动适配可以参考这个patch set:
-
 * [vfio/hisilicon: add ACC live migration driver](https://patchwork.kernel.org/project/linux-pci/patch/20220308184902.2242-1-shameerali.kolothum.thodi@huawei.com/)
 
 # 未来演进
