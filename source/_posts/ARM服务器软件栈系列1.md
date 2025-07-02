@@ -34,13 +34,16 @@ ARM官网专门有一个check list文档[Arm Design Checklists User Guide](https
 MCP处理器用来做RAS，并和带外的BMC通信。SCP和MCP均是ARM M7 core。
 AP处理器运行Arm Trust Firmware、UEFI和Linux Kernel操作系统。
 
-
 # AP和协处理器之间的通信协议
 
 SCP、MCP和AP之间一般通过SCMI协议进行通信。
 SCMI通信的基地址一般通过ACPI的PCCT(platform communication table)呈现给AP,PCCT的具体定义可以在ACPI规范的14章找到，示例如下图：
 
 ![SCMI PCCT](/images/arm_server_scmi.png)
+
+## AMD通过APML来做带内和带外通信
+
+![AMD APML](/images/amd-epyc-sms-diagram.avif)
 
 # 电源管理-SCP
 
@@ -161,3 +164,4 @@ Flash的构成可以参考[N2 TF-M BL2的代码](https://gitlab.arm.com/infra-so
 * [Arm Corstone-1000](https://corstone1000.docs.arm.com/en/latest/software-architecture.html)
 * [Arm Neoverse N2 Automotive Reference Stack Documentation](https://rd-n2-automotive.docs.arm.com/en/v1.0/design/boot_process.html)
 * [SoC 设计流程](https://blog.csdn.net/ygyglg/article/details/131159942)
+* [EPYC System Management Software (E-SMS)](https://www.amd.com/en/developer/e-sms.html)
