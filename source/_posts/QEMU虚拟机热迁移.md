@@ -166,3 +166,5 @@ VFIO热迁移的历史可以追踪一下patch set:
 * [Live Migration with Mediated Device](https://www.linux-kvm.org/images/f/fa/Live_migration_with_mdev_device_-_2017_0.pdf)
 * [vDPA Live Migration Downtime improvements for net devices](https://netdevconf.info/0x18/sessions/talk/vdpa-live-migration-downtime-improvements-for-net-devices.html)
 * [SW Assisted vDPA for Live Migration](https://www.dpdk.org/wp-content/uploads/sites/35/2018/12/XiaoWang-DPDK-US-Summit-SW-assisted-VDPA-for-LM-v2.pdf)
+* [Virtio live migration technical deep dive](https://developers.redhat.com/articles/2024/02/21/virtio-live-migration-technical-deep-dive)
+* [First Principles: Eliminating VM downtime with OCI’s live migration](https://blogs.oracle.com/cloud-infrastructure/post/first-principles-eliminating-vm-downtime-with-ocis-live-migration)

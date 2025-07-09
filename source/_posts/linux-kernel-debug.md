@@ -196,3 +196,4 @@ bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了
 * [Off-CPU Analysis](https://www.brendangregg.com/offcpuanalysis.html)
 * [用 perf 生成火焰图](https://www.cnblogs.com/liushuhe1990/articles/11139776.html)
 * [perf和火焰图使用方法](https://cloud.tencent.com/developer/article/2245316)
+* [Load average, process states on Linux, and some loadavg myths](https://euro-linux.com/en/blog/load-average-process-states-on-linux/)
