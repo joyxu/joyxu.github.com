@@ -117,6 +117,46 @@ memblock是在2010年Yinghai提出的。有兴趣的可以看一下当时的邮�
 
 ARM上内存属性主要通过MAIR寄存器来获取。
 
+### dump内核态页表
+
+kernel的页表，可以通过内核内置的"ptdump"功能导出，它依赖下面的config
+
+	CONFIG_PTDUMP=y
+	CONFIG_PTDUMP_DEBUGFS=y
+
+编译好后，使用命令`sudo mount -t debugfs none /sys/kernel/debug` 挂载到debugfs之后，执行`cat /sys/kernel/debug/kernel_page_tables`命令会输入页表映射信息。
+
+![page table directory create](/images/memory_pagetable_kernel_layout_dump.png)
+
+### dump用户态指定进程页表
+
+想要dump指定进程的页表，可以想办法获取进程的"struct mm"，或者解析`/proc/pid`下的maps和pagemap获取。
+在内核`tools/mm`下也内置了一个工具`page-types`，可以dump进程的页表，使用命令`make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../kernel-dev.build tools/mm` 编译生成就好。
+
+或者通过以下shell脚本解析也行。
+
+		#!/bin/bash
+
+		cat /proc/$1/maps | while read line
+		do
+			echo $1-${line}
+			echo $1-${line} | awk '{print $1}' | (
+				IFS=- read pid start end
+				start=$(( 0x${start} ))
+				end=$(( 0x${end} ))
+				addr=${start}
+				while [ ${addr} -lt ${end} ]
+				do
+					printf "%08x: " ${addr}
+					dd if=/proc/$pid/pagemap bs=8 skip=$(( addr / 4096 )) count=1 2>/dev/null | od -v -t x8 -A none
+					addr=$(( addr + 4096 ))
+				done
+			)
+		done
+
+
+![page table directory create](/images/memory_pagetable_process_layout_dump.png)
+
 ## page frame到page的映射
 
 页表框架搭起来之后，就到了把物理内存转换到内核物理内存逻辑概念的阶段，目前内核管理物理内存有四种模型，但主要使用sparse模型。
