@@ -130,7 +130,7 @@ kernel的页表，可以通过内核内置的"ptdump"功能导出，它依赖下
 
 ### dump用户态指定进程页表
 
-想要dump指定进程的页表，可以想办法获取进程的"struct mm"，或者解析`/proc/pid`下的maps和pagemap获取。
+想要dump指定进程的页表，可以想办法获取进程的"struct mm"，或者解析`/proc/pid`下的maps、smaps和pagemap获取，[结合`/proc/kpageflags`解析](https://www.kernel.org/doc/Documentation/vm/pagemap.txt)
 在内核`tools/mm`下也内置了一个工具`page-types`，可以dump进程的页表，使用命令`make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../kernel-dev.build tools/mm` 编译生成就好。
 
 或者通过以下shell脚本解析也行。
@@ -263,3 +263,6 @@ kernel的页表，可以通过内核内置的"ptdump"功能导出，它依赖下
 * [MAIR_ELX总结](https://blog.csdn.net/xuelin273/article/details/127104473?spm=1001.2014.3001.5502)
 * [armv8 cacheable/shareable](https://blog.csdn.net/xuelin273/article/details/126749937?spm=1001.2014.3001.5502)
 * [AArch64 memory and paging](https://krinkinmu.github.io/2024/01/14/aarch64-virtual-memory.html)
+* [page-table-kernel-exploitation](https://sam4k.com/page-table-kernel-exploitation/)
+* [用户态进程如何得到虚拟地址对应的物理地址](https://blog.csdn.net/21cnbao/article/details/108989210)
+* [Memory Deep Dive Summary](https://frankdenneman.nl/2015/page/3/)
