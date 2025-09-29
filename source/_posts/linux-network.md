@@ -15,3 +15,5 @@ https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/
 https://www.csee.umbc.edu/~jtang/archives/cs421.f18/lectures/L26Networking.pdf
 https://people.redhat.com/pladd/
 https://elinux.org/Networking_Presentations
+
+[配置网卡中断绑核](https://www.hikunpeng.com/document/detail/zh/kunpengwebs/ecosystemEnable/Tomcat/kunpengtomcat_05_0011.html)

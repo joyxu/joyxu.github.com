@@ -266,3 +266,6 @@ kernel的页表，可以通过内核内置的"ptdump"功能导出，它依赖下
 * [page-table-kernel-exploitation](https://sam4k.com/page-table-kernel-exploitation/)
 * [用户态进程如何得到虚拟地址对应的物理地址](https://blog.csdn.net/21cnbao/article/details/108989210)
 * [Memory Deep Dive Summary](https://frankdenneman.nl/2015/page/3/)
+* [Dump PTE with SystemTap](https://blog.jeffli.me/blog/2015/04/05/dump-pte-with-systemtap/)
+* [面向应用开发者的系统指南》CPU篇之使用systemtap分析进程的行为](https://www.codedump.info/post/20200503-sgfap-process-systemtap/)
+* [内存碎片指数](https://github.com/liujunming/Tools/blob/master/linux%20%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E6%8C%87%E6%95%B0.md)
