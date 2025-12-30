@@ -25,35 +25,36 @@ CHI 协议通常定义了请求（REQ）、数据（DAT）和响应（RSP）三�
 * 数据通道（DAT）：真正的数据搬运，会带上DBID。包括写数据通道（WDAT）和读数据通道（RDAT）。WDAT 用于传输写数据、原子数据、监听数据和转发数据等；RDAT 用于接收读数据和原子数据等，负责实际数据的传输。
 * 响应通道（RSP）：状态与完成。包括发送响应通道（SRSP）和接收响应通道（CRSP）。SRSP 用于发送监听响应和完成确认等；CRSP 用于接收来自完成者（Completer）的响应，用于反馈请求的处理结果，确保数据操作的完整性和一致性。
 
+```mermaid
+sequenceDiagram
+	participant Core as CPU Core
+	participant CSU as CSU
+	participant CHI as CHI 互连
+	participant RC as PCIe RC
+	participant EP as PCIe EP
 
-	sequenceDiagram
-		participant Core as CPU Core
-		participant CSU as CSU
-		participant CHI as CHI 互连
-		participant RC as PCIe RC
-		participant EP as PCIe EP
+	%% 第一阶段：发起写请求并等待就绪
+	Core->>CSU: 1. 发起写请求<br/>(REQ, TxnID, BAR_ADDR)
+	CSU->>CHI: 2. 非缓存判断→透传
+	CHI->>RC: 3. REQ通道路由
+	RC->>EP: 4. CHI→PCIe TLP转换
+	EP-->>RC: 5. 接收请求→生成就绪响应
+	RC-->>CHI: 6. PCIe→CHI RSP转换 (带DBID)
+	CHI-->>CSU: 7. RSP通道回传DBID
+	CSU-->>Core: 8. 透传RSP响应给Core
+	Note over Core: 9. 接收DBID<br/>准备写数据
 
-		%% 第一阶段：发起写请求并等待就绪
-		Core->>CSU: 1. 发起写请求<br/>(REQ, TxnID, BAR_ADDR)
-		CSU->>CHI: 2. 非缓存判断→透传
-		CHI->>RC: 3. REQ通道路由
-		RC->>EP: 4. CHI→PCIe TLP转换
-		EP-->>RC: 5. 接收请求→生成就绪响应
-		RC-->>CHI: 6. PCIe→CHI RSP转换 (带DBID)
-		CHI-->>CSU: 7. RSP通道回传DBID
-		CSU-->>Core: 8. 透传RSP响应给Core
-		Note over Core: 9. 接收DBID<br/>准备写数据
-
-		%% 第二阶段：发送写数据并确认完成
-		Core->>CSU: 10. 发送写数据<br/>(DAT, TxnID, DBID, W_DATA)
-		CSU->>CHI: 11. 透传DAT数据到CHI
-		CHI->>RC: 12. DAT通道路由到PCIe RC
-		RC->>EP: 13. CHI→PCIe TLP转换
-		EP-->>RC: 14. 写入MMIO寄存器→生成完成响应
-		RC-->>CHI: 15. PCIe→CHI RSP转换 (带TxnID)
-		CHI-->>CSU: 16. RSP通道回传完成确认
-		CSU-->>Core: 17. 透传RSP完成确认给Core
-		Note over Core: 18. 接收确认<br/>释放TxnID/DBID
+	%% 第二阶段：发送写数据并确认完成
+	Core->>CSU: 10. 发送写数据<br/>(DAT, TxnID, DBID, W_DATA)
+	CSU->>CHI: 11. 透传DAT数据到CHI
+	CHI->>RC: 12. DAT通道路由到PCIe RC
+	RC->>EP: 13. CHI→PCIe TLP转换
+	EP-->>RC: 14. 写入MMIO寄存器→生成完成响应
+	RC-->>CHI: 15. PCIe→CHI RSP转换 (带TxnID)
+	CHI-->>CSU: 16. RSP通道回传完成确认
+	CSU-->>Core: 17. 透传RSP完成确认给Core
+	Note over Core: 18. 接收确认<br/>释放TxnID/DBID
+```
 
 
 ![flash scp sample](/images/arm_server_flash_scp.png)
