@@ -70,6 +70,7 @@ jobs:
         run: |
           git submodule init
           git submodule update
+          git submodule update --remote --merge
           cp next_config.yml ./themes/next/_config.yml
           hexo clean && hexo g
           cd ./public
@@ -78,4 +79,5 @@ jobs:
           git add -A
           git commit -m "Update - auto deploy by Travis CI."
           git push --force --quiet "https://${{secrets.HEXO_TOKEN}}@github.com/${GIT_DEPLOY_REPO}" master:master
+
 
