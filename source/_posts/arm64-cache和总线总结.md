@@ -56,7 +56,6 @@ sequenceDiagram
 	Note over Core: 18. 接收确认<br/>释放TxnID/DBID
 ```
 
-
 ![flash scp sample](/images/arm_server_flash_scp.png)
 
 # 参考
