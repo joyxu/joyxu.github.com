@@ -1,23 +1,23 @@
-# Action µÄÃû×Ö
+# Action çš„åå­—
 name: Hexo Auto Deploy
 
 on:
-  # ´¥·¢Ìõ¼ş1£ºmain ·ÖÖ§ÊÕµ½ push ºóÖ´ĞĞÈÎÎñ¡£
+  # è§¦å‘æ¡ä»¶1ï¼šmain åˆ†æ”¯æ”¶åˆ° push åæ‰§è¡Œä»»åŠ¡ã€‚
   push:
     branches:
       - blog_source
-  # ´¥·¢Ìõ¼ş2£ºÊÖ¶¯°´Å¥
+  # è§¦å‘æ¡ä»¶2ï¼šæ‰‹åŠ¨æŒ‰é’®
   workflow_dispatch:
 
-# ÕâÀï·Å»·¾³±äÁ¿,ĞèÒªÌæ»»³ÉÄã×Ô¼ºµÄ
+# è¿™é‡Œæ”¾ç¯å¢ƒå˜é‡,éœ€è¦æ›¿æ¢æˆä½ è‡ªå·±çš„
 env:
-  # Hexo ±àÒëºóÊ¹ÓÃ´Ë git ÓÃ»§²¿Êğµ½ github ²Ö¿â
+  # Hexo ç¼–è¯‘åä½¿ç”¨æ­¤ git ç”¨æˆ·éƒ¨ç½²åˆ° github ä»“åº“
   GIT_USER: joyxu
-  # Hexo ±àÒëºóÊ¹ÓÃ´Ë git ÓÊÏä²¿Êğµ½ github ²Ö¿â
+  # Hexo ç¼–è¯‘åä½¿ç”¨æ­¤ git é‚®ç®±éƒ¨ç½²åˆ° github ä»“åº“
   GIT_EMAIL: weixu_2008@163.com
-  # Hexo ±àÒëºóÒª²¿ÊğµÄ github ²Ö¿â
+  # Hexo ç¼–è¯‘åè¦éƒ¨ç½²çš„ github ä»“åº“
   GIT_DEPLOY_REPO: joyxu/joyxu.github.com
-  # Hexo ±àÒëºóÒª²¿Êğµ½µÄ·ÖÖ§
+  # Hexo ç¼–è¯‘åè¦éƒ¨ç½²åˆ°çš„åˆ†æ”¯
   GIT_DEPLOY_BRANCH: master
  
 jobs:
@@ -50,7 +50,7 @@ jobs:
           echo "$HEXO_DEPLOY_PRI" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-          # coding ÒÑÈ¡ÏûÍ¬²½
+          # coding å·²å–æ¶ˆåŒæ­¥
           ssh-keyscan -t rsa e.coding.net >> ~/.ssh/known_hosts
           ssh-keyscan -t rsa gitee.com >> ~/.ssh/known_hosts
           git config --global user.name $GIT_USER
@@ -60,10 +60,11 @@ jobs:
         run: |
           npm install hexo-cli -g
           npm install
-          # ¸ù¾İÄã°²×°µÄ×é¼ş½øĞĞ°²×°
+          # æ ¹æ®ä½ å®‰è£…çš„ç»„ä»¶è¿›è¡Œå®‰è£…
           #npm uninstall hexo-generator-index --save
           #npm install hexo-baidu-url-submit hexo-generator-index2 hexo-symbols-count-time hexo-blog-encrypt hexo-deployer-git --save
           #cp next_config.yml ./themes/next/_config.yml
+          npm install hexo-filter-mermaid-diagrams
 
       - name: Deploy hexo
         run: |
@@ -77,3 +78,4 @@ jobs:
           git add -A
           git commit -m "Update - auto deploy by Travis CI."
           git push --force --quiet "https://${{secrets.HEXO_TOKEN}}@github.com/${GIT_DEPLOY_REPO}" master:master
+
