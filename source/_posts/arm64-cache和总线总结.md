@@ -56,7 +56,6 @@ CHI 协议通常定义了请求（REQ）、数据（DAT）和响应（RSP）三�
 		Note over Core: 18. 接收确认<br/>释放TxnID/DBID
 
 
-
 ![flash scp sample](/images/arm_server_flash_scp.png)
 
 # 参考
