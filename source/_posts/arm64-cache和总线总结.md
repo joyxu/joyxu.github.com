@@ -27,7 +27,7 @@ graph TD
 片上地址翻译流程基本如下：
 
 ```mermaid
-graph
+graph LR
 	%% 定义组件（按数据流向布局）
 	subgraph "发起端"
 		CPU["CPU发起虚拟地址(VA)请求"]
@@ -49,19 +49,6 @@ graph
 		DRAM["DRAM存储数据"]
 	end
 
-	%% 核心流程：CPU发起的地址映射与访问路径
-	CPU -->|1.发送虚拟地址VA请求| MMU
-	MMU -->|2.地址映射：VA → PA| CMN
-	CMN -->|3.地址映射：PA → Home Node ID通过SAM按地址范围划分| HomeNode
-	HomeNode -->|4.地址映射：PA → 目录条目 查询缓存状态/共享者| DMC
-	DMC -->|5.地址映射：PA → DRAM物理地址| DRAM
-	DRAM -->|返回数据| DMC --> HomeNode --> CMN --> CPU
-
-	%% 分支流程：I/O设备发起的地址映射与访问路径
-	Device -->|1.发送IO虚拟地址IOVA请求| IOMMU
-	IOMMU -->|2.地址映射：IOVA → PA| CMN
-	%% 复用CMN的路由逻辑
-	%% 后续流程与CPU侧一致（CMN → HomeNode → DMC → DRAM）
 ```
 
 # CHI展开
