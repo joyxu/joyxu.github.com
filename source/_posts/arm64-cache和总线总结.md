@@ -225,15 +225,15 @@ Cache System Unit，缓存系统单元，并不是arm的名字。实现层，核
 
 # ARM64 内存属性对照表
 
-| 内存大类 | 子类型 | 全称（英文） | 缓存支持 | 聚合（Gathering） | 重排（Reordering） | 推测执行 | 写合并（Write Combine） | 访问粒度 | 地址对齐要求 | 总线事务类型 | 软件配置方式（Linux） | 典型应用场景 | 备注 |
-|---------|--------|--------------|----------|-------------------|--------------------|----------|-------------------------|----------|--------------|--------------|------------------------|--------------|------|
-| **Normal（常规内存）** | Normal WB | Write-Back, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteBack、Read、ReadUnique | `kmalloc()`、默认页映射 | DRAM数据段、代码段、堆/栈 | 写先更新缓存，替换时写回内存 |
-| | Normal WT | Write-Through, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteThrough、Read | `ioremap_cache()`（需配置MAIR） | 高频读、低频写的共享数据（如配置表） | 写同时更新缓存和内存 |
-| | Normal NC | Non-Cacheable | 否 | 是（需对齐） | 是 | 是 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Read | `ioremap_wc()`、`memremap_wc()` | PCIe显存、帧缓冲区、DMA非一致性缓冲区 | 合并连续小粒度写为64字节Burst |
-| **Device（设备内存）** | Device_nGnRE | Non-Gathering, Non-Reordering, Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable、Single Read | `ioremap()`、`pci_iomap()` | 外设控制寄存器、时序敏感设备（如中断控制器） | 严格按程序顺序执行，确保原子性 |
-| | Device_nGnRnE | Non-Gathering, Non-Reordering, No Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable（需Comp确认） | 设备树：`cache-type = "none"` | 存储类设备（如NAND Flash）、需要写确认的寄存器 | 写完成确认来自设备，无中间缓冲区ack |
-| | Device_GRE | Gathering, Reordering, Early Ack | 否 | 是（需对齐） | 是 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 设备树：`gathering = "true"` | FIFO设备、DMA一致性缓冲区、批量数据传输 | 允许合并和重排，对顺序不敏感 |
-| | Device_GnRE | Gathering, Non-Reordering, Early Ack | 否 | 是（需对齐） | 否 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 自定义MAIR配置 | 需合并但严格顺序的设备（如流式DMA） | 允许聚合但禁止重排 |
+	| 内存大类 | 子类型 | 全称（英文） | 缓存支持 | 聚合（Gathering） | 重排（Reordering） | 推测执行 | 写合并（Write Combine） | 访问粒度 | 地址对齐要求 | 总线事务类型 | 软件配置方式（Linux） | 典型应用场景 | 备注 |
+	|---------|--------|--------------|----------|-------------------|--------------------|----------|-------------------------|----------|--------------|--------------|------------------------|--------------|------|
+	| **Normal（常规内存）** | Normal WB | Write-Back, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteBack、Read、ReadUnique | `kmalloc()`、默认页映射 | DRAM数据段、代码段、堆/栈 | 写先更新缓存，替换时写回内存 |
+	| | Normal WT | Write-Through, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteThrough、Read | `ioremap_cache()`（需配置MAIR） | 高频读、低频写的共享数据（如配置表） | 写同时更新缓存和内存 |
+	| | Normal NC | Non-Cacheable | 否 | 是（需对齐） | 是 | 是 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Read | `ioremap_wc()`、`memremap_wc()` | PCIe显存、帧缓冲区、DMA非一致性缓冲区 | 合并连续小粒度写为64字节Burst |
+	| **Device（设备内存）** | Device_nGnRE | Non-Gathering, Non-Reordering, Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable、Single Read | `ioremap()`、`pci_iomap()` | 外设控制寄存器、时序敏感设备（如中断控制器） | 严格按程序顺序执行，确保原子性 |
+	| | Device_nGnRnE | Non-Gathering, Non-Reordering, No Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable（需Comp确认） | 设备树：`cache-type = "none"` | 存储类设备（如NAND Flash）、需要写确认的寄存器 | 写完成确认来自设备，无中间缓冲区ack |
+	| | Device_GRE | Gathering, Reordering, Early Ack | 否 | 是（需对齐） | 是 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 设备树：`gathering = "true"` | FIFO设备、DMA一致性缓冲区、批量数据传输 | 允许合并和重排，对顺序不敏感 |
+	| | Device_GnRE | Gathering, Non-Reordering, Early Ack | 否 | 是（需对齐） | 否 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 自定义MAIR配置 | 需合并但严格顺序的设备（如流式DMA） | 允许聚合但禁止重排 |
 
 ## 关键字段说明
 
