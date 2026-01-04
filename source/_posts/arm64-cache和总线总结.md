@@ -27,7 +27,7 @@ graph TD
 片上地址翻译流程基本如下：
 
 ```mermaid
-graph LR
+graph
 	%% 定义组件（按数据流向布局）
 	subgraph "发起端"
 		CPU["CPU发起虚拟地址(VA)请求"]
