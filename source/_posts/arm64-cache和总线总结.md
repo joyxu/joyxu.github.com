@@ -13,7 +13,7 @@ tags: [arm64, SoC, CSU, CHI, Cache]
 
 通常一颗arm64 SoC使用的IP如下：
 
-```memrmaid
+```mermaid
 graph TD
 	A[Cortex-A710处理器] -->|CHI接口| B(CMN-600)
 	B -->|CHI协议| C[DMC-1000内存控制器]
@@ -23,7 +23,7 @@ graph TD
 	D -->|PCIe接口| G[外设]
 	E -->|CHI协议| B
 ```
- 
+
 ## CHI
 
 协议层，Coherent Hub Interface，一种缓存一致性协议。
@@ -71,7 +71,6 @@ sequenceDiagram
 ```
 
 多core之间访问同一个数据时为例：
-
 
 ```mermaid
 sequenceDiagram
