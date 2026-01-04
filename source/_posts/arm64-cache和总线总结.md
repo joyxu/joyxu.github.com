@@ -28,40 +28,42 @@ graph TD
 
 ```mermaid
 flowchart LR
-%% 定义组件（按数据流向布局）
-subgraph "发起端"
-CPU["CPU发起虚拟地址VA请求"]
-Device["I/O 设备如PCIe外设"]
-end
+	%% 定义组件（按数据流向布局）
+	subgraph "发起端"
+		CPU["CPU发起虚拟地址(VA)请求"]
+		Device["I/O 设备(如PCIe外设)"]
+	end
 
-subgraph "地址转换层"
-MMU["MMU CPU内置VA → 物理地址PA"]
-IOMMU["IOMMUIOVA → 物理地址PA"]
-end
+	subgraph "地址转换层"
+		MMU["MMU(CPU内置)VA → 物理地址(PA)"]
+		IOMMU["IOMMU IOVA → 物理地址(PA)"]
+	end
 
-subgraph "互连与地址路由层"
-CMN["CMN 互连控制器核心功能：1. 解析PA2. 系统地址映射SAM3. 路由至Home Node"]
-HomeNode["Home Node核心功能：1. PA → 目录条目映射2. 缓存一致性协调3. 转发PA至内存控制器"]
-end
+	subgraph "互连与地址路由层"
+		CMN["CMN(互连控制器)核心功能：1. 解析PA2. 系统地址映射(SAM)3. 路由至Home Node"]
+		HomeNode["Home Node核心功能：1. PA → 目录条目映射2. 缓存一致性协调3. 转发PA至内存控制器"]
+	end
 
-subgraph "存储层"
-DMC["内存控制器DMCPA → DRAM行列地址访问物理内存"]
-DRAM["DRAM存储数据"]
-end
+	subgraph "存储层"
+		DMC["内存控制器(DMC)PA → DRAM行列地址访问物理内存"]
+		DRAM["DRAM存储数据"]
+	end
 
-%% 核心流程：CPU发起的地址映射与访问路径
-CPU -->|1.发送虚拟地址VA请求| MMU
-MMU -->|2.地址映射：VA → PA| CMN
-CMN -->|3.地址映射：PA → Home Node ID通过SAM按地址范围划分| HomeNode
-HomeNode -->|4. 地址映射：PA → 目录条目 查询缓存状态/共享者| DMC
-DMC -->|5. 地址映射：PA → DRAM物理地址| DRAM
-DRAM -->|返回数据| DMC --> HomeNode --> CMN --> CPU
+	%% 核心流程：CPU发起的地址映射与访问路径
+	CPU -->|1.发送虚拟地址VA请求| MMU
+	MMU -->|2.地址映射：VA → PA| CMN
+	CMN -->|3.地址映射：PA → Home Node ID通过SAM按地址范围划分| HomeNode
+	HomeNode -->|4. 地址映射：PA → 目录条目 查询缓存状态/共享者| DMC
+	DMC -->|5. 地址映射：PA → DRAM物理地址| DRAM
+	DRAM -->|返回数据| DMC --> HomeNode --> CMN --> CPU
 
-%% 分支流程：I/O设备发起的地址映射与访问路径
-Device -->|1.发送IO虚拟地址IOVA请求| IOMMU
-IOMMU -->|2.地址映射：IOVA → PA| CMN  %% 复用CMN的路由逻辑
-%% 后续流程与CPU侧一致（CMN → HomeNode → DMC → DRAM）
+	%% 分支流程：I/O设备发起的地址映射与访问路径
+	Device -->|1.发送IO虚拟地址IOVA请求| IOMMU
+	IOMMU -->|2.地址映射：IOVA → PA| CMN  %% 复用CMN的路由逻辑
+	%% 后续流程与CPU侧一致（CMN → HomeNode → DMC → DRAM）
 ```
+
+#CHI展开
 
 ## CHI
 
@@ -150,7 +152,7 @@ sequenceDiagram
 
 CHI协议片上网络实现层，Coherent mesh network，是arm定义的一个互联硬件架构，包括home node, snoop filter node, router等概念，负载消息路由、缓存目录维护和一致性控制等。
 
-### CCI & CCN & CMN
+### CCI & CCN & CMN的演进
 
 
 
