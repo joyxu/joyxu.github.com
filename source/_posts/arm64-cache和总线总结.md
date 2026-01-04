@@ -7,7 +7,7 @@ tags: [arm64, SoC, CSU, CHI, Cache]
 
 # 目的
 
-本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识。
+本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识，主要围绕read/write，以及衍生出来的write combine/merge等。
 
 # SoC概览
 
@@ -219,6 +219,44 @@ sequenceDiagram
 
 Cache System Unit，缓存系统单元，并不是arm的名字。实现层，核内实现CHI协议的功能单元，分布在
 功能：管理缓存，包括缓存的命中检测、数据访问、缺失处理，以及根据缓存策略进行数据更新和替换。
+
+
+## 内存属性和CHI的关系
+
+# ARM64 内存属性对照表
+
+| 内存大类 | 子类型 | 全称（英文） | 缓存支持 | 聚合（Gathering） | 重排（Reordering） | 推测执行 | 写合并（Write Combine） | 访问粒度 | 地址对齐要求 | 总线事务类型 | 软件配置方式（Linux） | 典型应用场景 | 备注 |
+|---------|--------|--------------|----------|-------------------|--------------------|----------|-------------------------|----------|--------------|--------------|------------------------|--------------|------|
+| **Normal（常规内存）** | Normal WB | Write-Back, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteBack、Read、ReadUnique | `kmalloc()`、默认页映射 | DRAM数据段、代码段、堆/栈 | 写先更新缓存，替换时写回内存 |
+| | Normal WT | Write-Through, Cacheable | 是 | 是（Cacheline内） | 是 | 是 | 否 | 强制64字节（Cacheline） | 无（硬件自动对齐） | WriteThrough、Read | `ioremap_cache()`（需配置MAIR） | 高频读、低频写的共享数据（如配置表） | 写同时更新缓存和内存 |
+| | Normal NC | Non-Cacheable | 否 | 是（需对齐） | 是 | 是 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Read | `ioremap_wc()`、`memremap_wc()` | PCIe显存、帧缓冲区、DMA非一致性缓冲区 | 合并连续小粒度写为64字节Burst |
+| **Device（设备内存）** | Device_nGnRE | Non-Gathering, Non-Reordering, Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable、Single Read | `ioremap()`、`pci_iomap()` | 外设控制寄存器、时序敏感设备（如中断控制器） | 严格按程序顺序执行，确保原子性 |
+| | Device_nGnRnE | Non-Gathering, Non-Reordering, No Early Ack | 否 | 否 | 否 | 否 | 否 | 实际数据长度（不可合并） | 无（硬件自动拆分） | WriteNonCacheable（需Comp确认） | 设备树：`cache-type = "none"` | 存储类设备（如NAND Flash）、需要写确认的寄存器 | 写完成确认来自设备，无中间缓冲区ack |
+| | Device_GRE | Gathering, Reordering, Early Ack | 否 | 是（需对齐） | 是 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 设备树：`gathering = "true"` | FIFO设备、DMA一致性缓冲区、批量数据传输 | 允许合并和重排，对顺序不敏感 |
+| | Device_GnRE | Gathering, Non-Reordering, Early Ack | 否 | 是（需对齐） | 否 | 否 | 是（需64字节对齐） | 实际数据长度（可合并） | 64字节（合并时） | WriteNonCacheable、Burst Write | 自定义MAIR配置 | 需合并但严格顺序的设备（如流式DMA） | 允许聚合但禁止重排 |
+
+## 关键字段说明
+
+1. **聚合（Gathering）**：是否允许将多个小粒度访问合并为单个总线事务（仅影响写操作）
+2. **重排（Reordering）**：是否允许总线乱序执行访问请求（Normal内存默认允许，Device内存默认禁止）
+3. **推测执行**：CPU是否允许对该内存区域进行推测性访问（Device内存禁止，避免破坏外设状态）
+4. **写合并**：仅特定子类型支持，需满足64字节地址对齐，否则自动拆分事务
+5. **访问粒度**：
+- 「强制64字节」：无论实际访问长度，总线均按Cacheline粒度传输（仅Normal WB/WT）
+- 「实际数据长度」：按代码中指定的长度传输，支持合并时可转为64字节Burst
+6. **总线事务类型**：
+- Burst：多拍传输（如64字节Burst对应8拍64位数据）
+- Single：单拍传输（如4字节写对应1拍32位数据）
+
+## 核心规则总结
+
+1. **缓存行为由「内存大类」决定**：Normal支持缓存，Device禁止缓存
+2. **写合并的两个条件**：
+- 内存属性允许（Normal NC、Device_GRE/GnRE）
+- 访问地址64字节对齐，且在同一Cacheline内
+3. **Cacheline粒度仅适用于「可缓存的Normal内存」**（WB/WT），其他属性均按实际数据长度访问
+4. **Device内存的顺序约束**：`nGnRE/nGnRnE`严格按程序顺序，`GRE/GnRE`可合并/重排（需软件保证逻辑顺序）
+5. **软件配置优先级**：设备树配置 > 内核API映射 > MAIR_ELx寄存器默认值
 
 
 ![flash scp sample](/images/arm_server_flash_scp.png)
