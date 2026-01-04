@@ -59,11 +59,12 @@ flowchart LR
 
 	%% 分支流程：I/O设备发起的地址映射与访问路径
 	Device -->|1.发送IO虚拟地址IOVA请求| IOMMU
-	IOMMU -->|2.地址映射：IOVA → PA| CMN  %% 复用CMN的路由逻辑
+	IOMMU -->|2.地址映射：IOVA → PA| CMN
+	%% 复用CMN的路由逻辑
 	%% 后续流程与CPU侧一致（CMN → HomeNode → DMC → DRAM）
 ```
 
-#CHI展开
+# CHI展开
 
 ## CHI
 
