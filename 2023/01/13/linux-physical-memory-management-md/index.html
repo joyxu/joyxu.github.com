@@ -1,0 +1,1071 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Linux Kernel,memory,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="物理内存管理涉及到物理内存的上报发现、物理内存到逻辑的映射、分配释放、反碎片、迁移等。Linux Kernel中相关的概念有node，pglist_data, zone, memblock，page，page frame，mem_section，，，等。 物理内存上报和发现一般内存物理部署结构如下图，内存可能连在北桥上，也可能直接连到socket上，所有内存都能被socket共用。  物理内存的描">
+<meta name="keywords" content="Linux Kernel,memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux物理内存管理">
+<meta property="og:url" content="http://joyxu.github.io/2023/01/13/linux-physical-memory-management-md/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="物理内存管理涉及到物理内存的上报发现、物理内存到逻辑的映射、分配释放、反碎片、迁移等。Linux Kernel中相关的概念有node，pglist_data, zone, memblock，page，page frame，mem_section，，，等。 物理内存上报和发现一般内存物理部署结构如下图，内存可能连在北桥上，也可能直接连到socket上，所有内存都能被socket共用。  物理内存的描">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_arch.png">
+<meta property="og:image" content="http://joyxu.github.io/images/fixedmap_dtb.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_block_acpi_boot.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_block.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_block_dmesg_debug.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pfn_page.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pagetable_walking.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_page_descriptions.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pagetable_walking2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pagetable_create.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pagetable_kernel_layout_dump.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pagetable_process_layout_dump.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_models.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_models3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pfn2page.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_pfn2page2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_phy2pfn.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_virt2phy.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_ldr3_1501.gif">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_phy2virt2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_models4.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_models2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_physical_models5.png">
+<meta property="og:image" content="http://joyxu.github.io/images/memory_zone_frame_allocator.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.690Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux物理内存管理">
+<meta name="twitter:description" content="物理内存管理涉及到物理内存的上报发现、物理内存到逻辑的映射、分配释放、反碎片、迁移等。Linux Kernel中相关的概念有node，pglist_data, zone, memblock，page，page frame，mem_section，，，等。 物理内存上报和发现一般内存物理部署结构如下图，内存可能连在北桥上，也可能直接连到socket上，所有内存都能被socket共用。  物理内存的描">
+<meta name="twitter:image" content="http://joyxu.github.io/images/memory_physical_arch.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2023/01/13/linux-physical-memory-management-md/">
+
+
+
+
+
+  <title> Linux物理内存管理 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2023/01/13/linux-physical-memory-management-md/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Linux物理内存管理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-01-13T01:14:53+08:00">
+                2023-01-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2023/01/13/linux-physical-memory-management-md/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2023/01/13/linux-physical-memory-management-md/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>物理内存管理涉及到物理内存的上报发现、物理内存到逻辑的映射、分配释放、反碎片、迁移等。<br>Linux Kernel中相关的概念有<code>node</code>，<code>pglist_data</code>, <code>zone</code>, <code>memblock</code>，<code>page</code>，<code>page frame</code>，<code>mem_section</code>，<code></code>，，等。</p>
+<h1 id="物理内存上报和发现"><a href="#物理内存上报和发现" class="headerlink" title="物理内存上报和发现"></a>物理内存上报和发现</h1><p>一般内存物理部署结构如下图，内存可能连在北桥上，也可能直接连到socket上，所有内存都能被socket共用。</p>
+<p><img src="/images/memory_physical_arch.png" alt="physical memory arch"></p>
+<p>物理内存的描述一般用DeviceTree,或者UEFI的<code>get_memory_map</code>以及SRAT表传递给Linux Kernel。</p>
+<h2 id="DeviceTree"><a href="#DeviceTree" class="headerlink" title="DeviceTree"></a>DeviceTree</h2><p>如果是DeviceTree启动的话，一般通过<code>memory</code>节点描述物理内存信息，例子如下:</p>
+<pre><code>memory@80000000 {
+    device_type = &quot;memory&quot;;
+    reg = &lt;0x00000000 0x80000000 0 0x80000000&gt;;
+    /* DRAM space - 1, size : 2 GB DRAM */
+};
+</code></pre><p>Linux Kernel启动过程中，DTB的物理地址作为参数传递给内核，我们先跳过<code>fixmap</code>的概念，了解下DTB发现物理内存大致流程：</p>
+<p><img src="/images/fixedmap_dtb.png" alt="FixedMap DTB Memoryblock"></p>
+<h2 id="UEFI-ACPI"><a href="#UEFI-ACPI" class="headerlink" title="UEFI/ACPI"></a>UEFI/ACPI</h2><p>如果通过UEFI启动的话，Linux Kernel会通过<code>drivers/firmware/efi/libstub</code>中的<code>efi_boot_kernel</code>函数调用UEFI的<code>get_memory_map</code><br>找到物理内存相关信息，并按照<a href="https://kernel.org/doc/html/latest/arm64/booting.html" target="_blank" rel="noopener">UEFI的启动协议</a>，准备或者更新DeviceTree，<br>Linux Kernel通过DTB中的<code>uefi-mmap-start</code>节点得到最终的物理内存信息，注意这个地址里面是一个链表，<br>存放着一组<code>efi_memory_desc_t</code>结构体，这个结构体中描述了每片物理内存的物理起始地址和大小，<br>更详细的可以参考UEFI代码，或者(QEMU代码)[<a href="https://github.com/qemu/qemu/blob/master/hw/arm/virt.c#L2322]" target="_blank" rel="noopener">https://github.com/qemu/qemu/blob/master/hw/arm/virt.c#L2322]</a>, 或者Linux Kernel的Stub代码。</p>
+<p>UEFI启动流程，内存节点上报流程关键调用栈如下:</p>
+<pre><code>efi_boot_kernel
+  efi_bs_call get_memory_map
+    update_fdt
+      start_kernel
+        setup_arch
+          efi_init
+            reserve_regions
+              memblock_add
+</code></pre><p>示例图如下：</p>
+<p><img src="/images/memory_block_acpi_boot.png" alt="memblock boot from acpi"></p>
+<h2 id="fixmap"><a href="#fixmap" class="headerlink" title="fixmap"></a>fixmap</h2><p>所谓<code>fixmap</code>，指的是虚拟地址中的一段区域，该区域中所有地址在编译阶段就已经确定好了，在Linux Kernel启动阶段，<br>内核会把这些虚拟地址映射到物理地址上。之所以引入<code>fixmap</code>，是因为在内核启动过程中，某些模块需要使用虚拟地址，<br>但是这时候内核还没有完全启动，并没有完成虚拟地址到物理地址映射这个复杂的过程，<br>所以一个简化的虚拟内存的分配和管理的机制就被引入了，也就是要说的<code>fixmap</code>。</p>
+<p>比如说启动的时候，虽然传递了DTB的物理地址，但Linux Kernel还没有建立物理地址到虚拟地址的映射，还不能读取，<br>这时候就可以通过<code>fixmap</code>机制，读取解析DTB文件，找到物理内存节点，建立<code>struct memblock</code>，<br>整个流程可以参考<code>DeviceTree</code>章节中的流程图。还比如说早期的<code>early_ioremap</code>来访问外设的寄存器等。<br><code>fixmap</code>中各个地址区间的定义可以参考代码<a href="https://elixir.bootlin.com/linux/v6.1/source/arch/arm64/include/asm/fixmap.h#L103" target="_blank" rel="noopener">fixmap.h</a>。</p>
+<p>上面这个过程结束后，所有的物理内存都可以通过<code>memblock</code>、<code>memblock_region</code>等结构体呈现了，示意图如下：</p>
+<p><img src="/images/memory_block.png" alt="memblock and region"></p>
+<p>配套的日志和debug接口信息如下:</p>
+<p><img src="/images/memory_block_dmesg_debug.png" alt="memblock and region2"></p>
+<p>现在已经可以通过<code>memblock_allock</code>分配物理内存了，但是还不能通过虚拟地址来访问这块物理内存，而且cpu、numa和zone<br>的信息已经可以获取到，接下来就是建立虚拟地址到物理地址的互相映射了，并把物理页面挂到不同cpu节点的zone里面了。</p>
+<h1 id="物理内存到内核逻辑概念的映射"><a href="#物理内存到内核逻辑概念的映射" class="headerlink" title="物理内存到内核逻辑概念的映射"></a>物理内存到内核逻辑概念的映射</h1><p>要想使用物理内存，自然就会想到把这段物理内存地址映射到虚拟地址，于是就有了页表的建立。<br>另外呢，物理内存一般被划分成<code>page frame</code>来管理，对应到内核中的概念<code>struct page</code>。<br>一般一个虚拟地址其实是落到单个<code>struct page</code>中的offset，而物理地址同样也会落到单个<code>page frame</code>中，<br>所以虚拟地址到物理地址的转换，其实也可以复用到<code>page</code>到<code>page frame</code>的映射。</p>
+<p><img src="/images/memory_pfn_page.png" alt="page frame and page"></p>
+<h2 id="虚拟地址和页表"><a href="#虚拟地址和页表" class="headerlink" title="虚拟地址和页表"></a>虚拟地址和页表</h2><p>在ARM64平台上，以4KB页表页表寻址过程如下图:</p>
+<p><img src="/images/memory_pagetable_walking.png" alt="page table walking"></p>
+<p>其中table\block\page描述符和虚拟地址格式如下图：</p>
+<p><img src="/images/memory_page_descriptions.png" alt="page table walking"></p>
+<p>以一个虚拟地址为例话，地址翻译的过程如下：</p>
+<p><img src="/images/memory_pagetable_walking2.png" alt="page table walking"></p>
+<h2 id="建立页表"><a href="#建立页表" class="headerlink" title="建立页表"></a>建立页表</h2><p>建立页表的输入是<code>memblock</code>，也就是物理内存的起始地址和结束地址，输出是空的页表。<br>memblock是在2010年Yinghai提出的。有兴趣的可以看一下当时的邮件列表中的<a href="https://lkml.org/lkml/2010/7/13/114" target="_blank" rel="noopener">讨论</a>。<br>建立页表这个过程发生在<code>paging_init</code>，<code>map_kernel</code>和<code>map_mem</code>几个函数中。<br>其中<code>map_kenrel</code>是完成kernel各个段的映射，虚拟地址的信息也可以从System.map或者vmlinux中查到。<br>而<code>map_mem</code>则完成前面发现的<code>memregion</code>的物理地址到虚拟地址的映射。这两个函数都是通过<code>__create_pgd_mapping</code>创建页表，建立的映射。<br>这时候最底层的页表并没有pte，pte的创建在发生缺页的时候建立。</p>
+<p>具体流程如下：</p>
+<p><img src="/images/memory_pagetable_create.png" alt="page table directory create"></p>
+<h3 id="arm64上页表内存属性设置"><a href="#arm64上页表内存属性设置" class="headerlink" title="arm64上页表内存属性设置"></a>arm64上页表内存属性设置</h3><p>ARM上内存属性主要通过MAIR寄存器来获取。</p>
+<h3 id="dump内核态页表"><a href="#dump内核态页表" class="headerlink" title="dump内核态页表"></a>dump内核态页表</h3><p>kernel的页表，可以通过内核内置的”ptdump”功能导出，它依赖下面的config</p>
+<pre><code>CONFIG_PTDUMP=y
+CONFIG_PTDUMP_DEBUGFS=y
+</code></pre><p>编译好后，使用命令<code>sudo mount -t debugfs none /sys/kernel/debug</code> 挂载到debugfs之后，执行<code>cat /sys/kernel/debug/kernel_page_tables</code>命令会输入页表映射信息。</p>
+<p><img src="/images/memory_pagetable_kernel_layout_dump.png" alt="page table directory create"></p>
+<h3 id="dump用户态指定进程页表"><a href="#dump用户态指定进程页表" class="headerlink" title="dump用户态指定进程页表"></a>dump用户态指定进程页表</h3><p>想要dump指定进程的页表，可以想办法获取进程的”struct mm”，或者解析<code>/proc/pid</code>下的maps、smaps和pagemap获取，<a href="https://www.kernel.org/doc/Documentation/vm/pagemap.txt" target="_blank" rel="noopener">结合<code>/proc/kpageflags</code>解析</a><br>在内核<code>tools/mm</code>下也内置了一个工具<code>page-types</code>，可以dump进程的页表，使用命令<code>make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=../kernel-dev.build tools/mm</code> 编译生成就好。</p>
+<p>或者通过以下shell脚本解析也行。</p>
+<pre><code>#!/bin/bash
+
+cat /proc/$1/maps | while read line
+do
+    echo $1-${line}
+    echo $1-${line} | awk &apos;{print $1}&apos; | (
+        IFS=- read pid start end
+        start=$(( 0x${start} ))
+        end=$(( 0x${end} ))
+        addr=${start}
+        while [ ${addr} -lt ${end} ]
+        do
+            printf &quot;%08x: &quot; ${addr}
+            dd if=/proc/$pid/pagemap bs=8 skip=$(( addr / 4096 )) count=1 2&gt;/dev/null | od -v -t x8 -A none
+            addr=$(( addr + 4096 ))
+        done
+    )
+done
+</code></pre><p><img src="/images/memory_pagetable_process_layout_dump.png" alt="page table directory create"></p>
+<h2 id="page-frame到page的映射"><a href="#page-frame到page的映射" class="headerlink" title="page frame到page的映射"></a>page frame到page的映射</h2><p>页表框架搭起来之后，就到了把物理内存转换到内核物理内存逻辑概念的阶段，目前内核管理物理内存有四种模型，但主要使用sparse模型。</p>
+<p><img src="/images/memory_physical_models.png" alt="physical memory models"></p>
+<p>以ARM64为例，具体函数在<code>bootmem_init</code>，其中：</p>
+<ul>
+<li><code>arm64_numa_init</code> 负责建立numa的cpu节点</li>
+<li><code>arm64_memory_prenset</code> 负责把大的<code>memblock</code>、<code>memblock_region</code>拆成小的<code>mem_section</code>来管理，并和cpu节点关联起来</li>
+<li><code>sparse_init</code> 把物理page frame和<code>mem_section</code>、<code>struct page</code>关联起来，这样通过物理page frame number就可以找到具体的struct page</li>
+<li><code>zone_sizes_init</code>初始化各个cpu节点的zone信息。</li>
+</ul>
+<p>这时候，<code>memblock</code>、<code>memblock_region</code>、<code>mem_section</code>和<code>struct page</code>关系如下：</p>
+<p><img src="/images/memory_physical_models3.png" alt="physical memory model"></p>
+<p>在这种模型下，物理page frame number转换到struct page的过程如下:</p>
+<p><img src="/images/memory_pfn2page.png" alt="physical frame to page"></p>
+<p>一个PFN到Page的运行实例如下图:</p>
+<p><img src="/images/memory_pfn2page2.png" alt="physical frame to page2"></p>
+<h2 id="物理地址到page-frame的转换实例"><a href="#物理地址到page-frame的转换实例" class="headerlink" title="物理地址到page frame的转换实例"></a>物理地址到page frame的转换实例</h2><p>物理地址到PFN的转换按照前面的介绍，就是物理地址左移<code>PAGE_SHIFT</code> page的大小就可以了。以4K为例：</p>
+<p><img src="/images/memory_phy2pfn.png" alt="physical to pfn"></p>
+<h2 id="virtual-address到Physical-address的映射"><a href="#virtual-address到Physical-address的映射" class="headerlink" title="virtual address到Physical address的映射"></a>virtual address到Physical address的映射</h2><p>一个virtual address到Physical address的运行实例如下图:</p>
+<p><img src="/images/memory_virt2phy.png" alt="virtual address to physical address"></p>
+<h3 id="为什么内核中有的物理地址对应到了2个虚拟地址"><a href="#为什么内核中有的物理地址对应到了2个虚拟地址" class="headerlink" title="为什么内核中有的物理地址对应到了2个虚拟地址"></a>为什么内核中有的物理地址对应到了2个虚拟地址</h3><p>内核中虽然只有一份页表，但是有几种映射关系，这也是kernel logic address(kmalloc)和kernel virtual address(vmalloc)，以及kmap之间的关系。</p>
+<p>在<a href="https://makelinux.net/ldd3/chp-15-sect-1.shtml" target="_blank" rel="noopener">LDD3</a>中也有描述：</p>
+<p><img src="/images/memory_ldr3_1501.gif" alt="address types used in linux"></p>
+<p>以jiffies为例，在crash工具中，<code>vtop</code>通常返回<code>kernel logic address</code>，但是可以通过<code>kmem</code>看物理地址对应的虚拟地址。</p>
+<p><img src="/images/memory_phy2virt2.png" alt="address types used in linux2"></p>
+<h2 id="把page加到zone"><a href="#把page加到zone" class="headerlink" title="把page加到zone"></a>把page加到zone</h2><p>接下来就是把<code>struct page</code>放到各个cpu节点zone下面的<code>free_area</code>中，就到了<code>zone page frame allocator</code>阶段。<br>函数调用栈和实例如下：</p>
+<p><img src="/images/memory_physical_models4.png" alt="physical memory model"></p>
+<p>到此，物理内存已经可以基于CPU的拓扑结构，在zone的基础上，基于page来分配了，结构如下:</p>
+<p><img src="/images/memory_physical_models2.png" alt="physical memory model"></p>
+<p>运行实例图如下:</p>
+<p><img src="/images/memory_physical_models5.png" alt="physical memory model"></p>
+<p>后面就是内存伙伴<code>buddy</code>系统的事情了。</p>
+<p><img src="/images/memory_zone_frame_allocator.png" alt="zone frame allocator"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://blog.csdn.net/wwwlyj123321/article/details/128241134" target="_blank" rel="noopener">linux内存管理</a></li>
+<li><a href="https://blog.csdn.net/u011649400/article/details/105984564" target="_blank" rel="noopener">内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)</a></li>
+<li><a href="https://blog.csdn.net/yhb1047818384/article/details/108328097?spm=1001.2014.3001.5501" target="_blank" rel="noopener">Linux内存管理(三)：“看见”物理内存</a></li>
+<li><a href="https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501" target="_blank" rel="noopener">Linux内存管理(四)：paging_init分析</a></li>
+<li><a href="https://www.cnblogs.com/LoyenWang/p/11440957.html" target="_blank" rel="noopener">Linux物理内存初始化</a></li>
+<li><a href="https://landley.net/writing/memory-faq.txt" target="_blank" rel="noopener">Linux Memory Managment Frequently Asked Questions</a></li>
+<li><a href="https://slideshare.net/AdrianHuang/presentations" target="_blank" rel="noopener">Physical Memmory Management</a></li>
+<li><a href="https://blog.csdn.net/jasonactions/article/details/122930298" target="_blank" rel="noopener">setup_arch：bootmem_init : sparse_init</a></li>
+<li><a href="http://www.wowotech.net/memory_management/436.html" target="_blank" rel="noopener">ARM64 Kernel Image Mapping的变化</a></li>
+<li><a href="https://www.jianshu.com/p/20e8fec48419" target="_blank" rel="noopener">内存开机在干嘛？ -memblock</a></li>
+<li><a href="https://blog.csdn.net/yhb1047818384/article/details/109169979?spm=1001.2014.3001.5501" target="_blank" rel="noopener">Linux内存管理(四)：paging_init分析</a></li>
+<li><a href="http://www.wowotech.net/memory_management/fixmap.html" target="_blank" rel="noopener">Fix-Mapped Addresses</a></li>
+<li><a href="https://linux-kernel-labs.github.io/refs/heads/master/lectures/address-space.html" target="_blank" rel="noopener">linux-kernel-labs</a></li>
+<li><a href="https://github.com/0xAX/linux-insides" target="_blank" rel="noopener">A little bit about a linux kernel</a></li>
+<li><a href="https://armv8-ref.codingbelief.com/en/chapter_d4/d42_5_overview_of_the_vmsav8-64_address_translation.html" target="_blank" rel="noopener">d42_5_overview_of_the_vmsav8-64_address_translation</a></li>
+<li><a href="https://documentation-service.arm.com/static/5efa1d23dbdee951c1ccdec5" target="_blank" rel="noopener">Armv8-A Address Translation</a></li>
+<li><a href="https://qiita.com/akachochin/items/121d2bf3aa1cfc9bb95a" target="_blank" rel="noopener">Linuxでのpage構造体群の配置</a></li>
+<li><a href="https://oliveryang.net/2017/03/linux-kernel-memory-hacking/" target="_blank" rel="noopener">Linux Kernel Memory Hacking</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/66288943" target="_blank" rel="noopener">内存是怎么映射到物理地址空间的？内存是连续分布的吗？</a></li>
+<li><a href="https://blog.csdn.net/dog250/article/details/102704164" target="_blank" rel="noopener">Linux crash工具结合/dev/mem任意修改内存</a></li>
+<li><a href="https://www.cnblogs.com/LoyenWang/p/11406693.html" target="_blank" rel="noopener">ARMv8 MMU及Linux页表映射</a></li>
+<li><a href="https://www.cnblogs.com/bigfish0506/p/16273091.html" target="_blank" rel="noopener">用crash tool观察ARM64 Linux地址转换</a></li>
+<li><a href="https://makelinux.net/ldd3/chp-15-sect-1.shtml" target="_blank" rel="noopener">Memory Management in Linux</a></li>
+<li><a href="https://blogs.oracle.com/linux/post/minimizing-struct-page-overhead" target="_blank" rel="noopener">Minimizing struct page overhead</a></li>
+<li><a href="https://blog.csdn.net/u011649400/article/details/105984564" target="_blank" rel="noopener">内存管理源码分析-内核页表的创建以及索引方式(基于ARM64以及4级页表)</a></li>
+<li><a href="https://oliveryang.net/2017/06/linux-memroy-pressure/" target="_blank" rel="noopener">Linux Memory Pressure - 1</a></li>
+<li><a href="https://consen.github.io/2018/02/07/linux-rootkits/" target="_blank" rel="noopener">Linux Rootkits</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1442273" target="_blank" rel="noopener">Linux Kernel中AEP的现状和发展</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1543163" target="_blank" rel="noopener">解决Linux内核问题实用技巧之-dev/mem的新玩法</a></li>
+<li><a href="https://lwn.net/Articles/931662/" target="_blank" rel="noopener">User-space control of memory management</a></li>
+<li><a href="https://lwn.net/Articles/lsfmmbpf2023/" target="_blank" rel="noopener">The 2023 LSFMM+BPF Summit</a></li>
+<li><a href="https://lwn.net/Articles/839737/" target="_blank" rel="noopener">Reducing page structures for huge pages</a></li>
+<li><a href="https://richardweiyang-2.gitbook.io/kernel-exploring/00-memory_a_bottom_up_view/02-memblock" target="_blank" rel="noopener">原始内存分配器–memblock</a></li>
+<li><a href="https://blog.csdn.net/xuelin273/article/details/126599611" target="_blank" rel="noopener">mair_el1和页表关联</a></li>
+<li><a href="https://blog.csdn.net/xuelin273/article/details/127104473?spm=1001.2014.3001.5502" target="_blank" rel="noopener">MAIR_ELX总结</a></li>
+<li><a href="https://blog.csdn.net/xuelin273/article/details/126749937?spm=1001.2014.3001.5502" target="_blank" rel="noopener">armv8 cacheable/shareable</a></li>
+<li><a href="https://krinkinmu.github.io/2024/01/14/aarch64-virtual-memory.html" target="_blank" rel="noopener">AArch64 memory and paging</a></li>
+<li><a href="https://sam4k.com/page-table-kernel-exploitation/" target="_blank" rel="noopener">page-table-kernel-exploitation</a></li>
+<li><a href="https://blog.csdn.net/21cnbao/article/details/108989210" target="_blank" rel="noopener">用户态进程如何得到虚拟地址对应的物理地址</a></li>
+<li><a href="https://frankdenneman.nl/2015/page/3/" target="_blank" rel="noopener">Memory Deep Dive Summary</a></li>
+<li><a href="https://blog.jeffli.me/blog/2015/04/05/dump-pte-with-systemtap/" target="_blank" rel="noopener">Dump PTE with SystemTap</a></li>
+<li><a href="https://www.codedump.info/post/20200503-sgfap-process-systemtap/" target="_blank" rel="noopener">面向应用开发者的系统指南》CPU篇之使用systemtap分析进程的行为</a></li>
+<li><a href="https://github.com/liujunming/Tools/blob/master/linux%20%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E6%8C%87%E6%95%B0.md" target="_blank" rel="noopener">内存碎片指数</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+          
+            <a href="/tags/memory/" rel="tag"># memory</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/07/19/p2p-dma技术分析总结/" rel="next" title="p2p dma技术分析总结">
+                <i class="fa fa-chevron-left"></i> p2p dma技术分析总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/07/18/writing-is-magic/" rel="prev" title="writing-is-magic">
+                writing-is-magic <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2023/01/13/linux-physical-memory-management-md/" data-title="Linux物理内存管理" data-url="http://joyxu.github.io/2023/01/13/linux-physical-memory-management-md/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#物理内存上报和发现"><span class="nav-number">1.</span> <span class="nav-text">物理内存上报和发现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#DeviceTree"><span class="nav-number">1.1.</span> <span class="nav-text">DeviceTree</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UEFI-ACPI"><span class="nav-number">1.2.</span> <span class="nav-text">UEFI/ACPI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fixmap"><span class="nav-number">1.3.</span> <span class="nav-text">fixmap</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#物理内存到内核逻辑概念的映射"><span class="nav-number">2.</span> <span class="nav-text">物理内存到内核逻辑概念的映射</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟地址和页表"><span class="nav-number">2.1.</span> <span class="nav-text">虚拟地址和页表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立页表"><span class="nav-number">2.2.</span> <span class="nav-text">建立页表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#arm64上页表内存属性设置"><span class="nav-number">2.2.1.</span> <span class="nav-text">arm64上页表内存属性设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dump内核态页表"><span class="nav-number">2.2.2.</span> <span class="nav-text">dump内核态页表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dump用户态指定进程页表"><span class="nav-number">2.2.3.</span> <span class="nav-text">dump用户态指定进程页表</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#page-frame到page的映射"><span class="nav-number">2.3.</span> <span class="nav-text">page frame到page的映射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#物理地址到page-frame的转换实例"><span class="nav-number">2.4.</span> <span class="nav-text">物理地址到page frame的转换实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtual-address到Physical-address的映射"><span class="nav-number">2.5.</span> <span class="nav-text">virtual address到Physical address的映射</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么内核中有的物理地址对应到了2个虚拟地址"><span class="nav-number">2.5.1.</span> <span class="nav-text">为什么内核中有的物理地址对应到了2个虚拟地址</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#把page加到zone"><span class="nav-number">2.6.</span> <span class="nav-text">把page加到zone</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

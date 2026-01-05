@@ -1,0 +1,1041 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,gpu,rdma,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="先强调一点，到现在没有任何技术是完全旁路了CPU，控制面上只是尽量让CPU少参与，而不是完全不参与。 GPUDirectGPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepler这一代GPU微架构率先提出来。结合RDMA技术，它允许单机或者网络中的GPU可以互相交换数据，而不用经过CPU/系统内存。结合PCIe的Peer-to-Peer技术，它可以直接访问同一个PCI">
+<meta name="keywords" content="linux,gpu,rdma">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gpu-direct">
+<meta property="og:url" content="http://joyxu.github.io/2022/06/06/gpu-direct/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="先强调一点，到现在没有任何技术是完全旁路了CPU，控制面上只是尽量让CPU少参与，而不是完全不参与。 GPUDirectGPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepler这一代GPU微架构率先提出来。结合RDMA技术，它允许单机或者网络中的GPU可以互相交换数据，而不用经过CPU/系统内存。结合PCIe的Peer-to-Peer技术，它可以直接访问同一个PCI">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/without_gpudirect.png">
+<meta property="og:image" content="http://joyxu.github.io/images/with_gpudirect.png">
+<meta property="og:image" content="http://joyxu.github.io/images/p2p_history.png">
+<meta property="og:image" content="http://joyxu.github.io/images/p2p_history2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/p2p_history3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect4.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect5.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect6.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_gpudirect7.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_nccl.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage.png">
+<meta property="og:image" content="http://joyxu.github.io/images/normal_storage.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage7.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage4.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage5.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpudirect_storage6.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_magnumio.png">
+<meta property="og:image" content="http://joyxu.github.io/images/nvidia_magnumio2.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.689Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="gpu-direct">
+<meta name="twitter:description" content="先强调一点，到现在没有任何技术是完全旁路了CPU，控制面上只是尽量让CPU少参与，而不是完全不参与。 GPUDirectGPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepler这一代GPU微架构率先提出来。结合RDMA技术，它允许单机或者网络中的GPU可以互相交换数据，而不用经过CPU/系统内存。结合PCIe的Peer-to-Peer技术，它可以直接访问同一个PCI">
+<meta name="twitter:image" content="http://joyxu.github.io/images/without_gpudirect.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2022/06/06/gpu-direct/">
+
+
+
+
+
+  <title> gpu-direct | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2022/06/06/gpu-direct/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                gpu-direct
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-06-06T02:15:32+08:00">
+                2022-06-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2022/06/06/gpu-direct/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2022/06/06/gpu-direct/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>先强调一点，到现在没有任何技术是完全旁路了CPU，控制面上只是尽量让CPU少参与，而不是完全不参与。</p>
+<h2 id="GPUDirect"><a href="#GPUDirect" class="headerlink" title="GPUDirect"></a>GPUDirect</h2><p>GPUDirect并不是一门很新的技术了，这个概念由Nvidia在2012年Kepler这一代GPU微架构率先提出来。<br>结合RDMA技术，它允许单机或者网络中的GPU可以互相交换数据，而不用经过CPU/系统内存。<br>结合PCIe的Peer-to-Peer技术，它可以直接访问同一个PCIe rootport下的其它设备，而不用绕一圈到cpu或者系统内存。<br>更形象的看，可以看看下面两个图，做个对比，就更加直观了：</p>
+<p><img src="/images/without_gpudirect.png" alt="without gpudirect"></p>
+<p><img src="/images/with_gpudirect.png" alt="with_gpudirect"></p>
+<p>再深入之前，先了解下P2P技术的几个阶段：</p>
+<p>MLX的roadmap：</p>
+<p><img src="/images/p2p_history.png" alt="p2p history"></p>
+<p>Nvidia的roadmap:</p>
+<p><img src="/images/p2p_history2.png" alt="p2p history2"></p>
+<p>看懂了roadmap，才能理解nvidia背后收购MLX的战略意义。<br>有了P2P之后，作为设备厂商的Nvidia一直想着怎么旁路CPU，抢占intel的市场，推出了各种direct技术。<br>最后发展成nvidia magnum io。后文会围绕这些技术展开。</p>
+<p><img src="/images/p2p_history3.png" alt="p2p history3"></p>
+<h2 id="地址的问题"><a href="#地址的问题" class="headerlink" title="地址的问题"></a>地址的问题</h2><p>GPUDirect要解决的第一个问题，是地址的问题，要保证设备之间地址的一致性，或者说要让其它设备认识GPU的地址。</p>
+<p>在linux kernel中，普通的设备驱动的大致流程，都是用户态把数据读/写到用户态VA，内核把VA转换成PA，<br>驱动程序在把PA转换成IOVA（或者说是DMA地址）。中间过程可能需要pin住或者unpin用户态内存，常见处理都是用<br><code>get_user_pages和put_page</code>等函数。</p>
+<p>那现在要旁路CPU，而GPU中的代码执行的都是GPU的地址，这样就要求和其它设备和GPU是一个地址。<br>前文已经说过，GPU的内存是通过PCIe BAR空间呈现给CPU的，同理，在GPUDirect技术下，这个内存也要让其它<br>设备看看到。</p>
+<h2 id="GPUDirect-with-RDMA"><a href="#GPUDirect-with-RDMA" class="headerlink" title="GPUDirect with RDMA"></a>GPUDirect with RDMA</h2><h3 id="常规RDMA编程"><a href="#常规RDMA编程" class="headerlink" title="常规RDMA编程"></a>常规RDMA编程</h3><p>再解释GPUDirect RDMA之前，先回顾下普通的RDMA程序是怎么写的。一般使用libibverbs这个库提供的API使用RDMA技术，基本分为以下几步：</p>
+<pre><code>* Create an Infiniband context (struct ibv_context* ibv_open_device())
+* Create a protection domain (struct ibv_pd* ibv_alloc_pd())
+* Create a completion queue (struct ibv_cq* ibv_create_cq())
+* Create a queue pair (struct ibv_qp* ibv_create_qp())
+* Exchange identifier information to establish connection
+* Change the queue pair state (ibv_modify_qp()): change the state of the queue pair from RESET to INIT, RTR (Ready to Receive), and finally RTS (Ready to Send) 5
+* Register a memory region (ibv_reg_mr())
+* Exchange memory region information to handle operations
+* Perform data communication
+</code></pre><p>其中最关键一步是register a memory region，用的时候通常是下面这么用，用户需要指定buffer的地址和大小：</p>
+<pre><code>struct ibv_mr* registerMemoryRegion(struct ibv_pd* pd, void* buffer, size_t size) {
+  return ibv_reg_mr(pd, buffer, size, IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE);
+}
+</code></pre><h3 id="GPUDirect-RDMA编程"><a href="#GPUDirect-RDMA编程" class="headerlink" title="GPUDirect RDMA编程"></a>GPUDirect RDMA编程</h3><p>GPUDirect RDMA的发展也分为几个阶段，在初期只是offload数据面，控制面还是在CPU，<br>后面又尽可能把控制面也给GPU，但是还是有小部分处理必须在CPU。</p>
+<p><img src="/images/gpudirect.png" alt="gpudirect"></p>
+<h4 id="GPUDirect-RDMA"><a href="#GPUDirect-RDMA" class="headerlink" title="GPUDirect RDMA"></a>GPUDirect RDMA</h4><p>先看看Nvidia GPUDirect RDMA技术解决的问题：怎么让一个PCIe RP下的RDMA网卡可以直接访问GPU的内存，而避免把数据拷贝多次？</p>
+<p><img src="/images/nvidia_gpudirect.png" alt="nvidia_gpudirect"></p>
+<p>由于GPU内存被RDMA网卡可见，所以写代码的时候，可以少申请一次malloc和memcpy。</p>
+<p><img src="/images/nvidia_gpudirect2.png" alt="nvidia_gpudirect2"></p>
+<p>上面<code>ibv_reg_mr</code>注册内存的时候，居然允许注册GPU(peer to peer设备)的内存。<br>为了做到这一步，MLX做了几下几步：</p>
+<ul>
+<li>引入<code>io_peer_mem</code>这个ko模块，先把peer设备的内存暴露出来，并把peer设备作为client通过<code>ib_register_peer_memory_clent</code>注册到RDMA子系统中</li>
+<li><code>io_peer_mem</code>主要实现三个回调函数:<ul>
+<li>acquire: 判断一个虚拟地址是否属于该peer设备</li>
+<li>get_pages:获取这个memory region的物理地址</li>
+<li>dma_map：获取这个memory region的iova地址</li>
+</ul>
+</li>
+</ul>
+<p>具体流程如下：</p>
+<p><img src="/images/nvidia_gpudirect3.png" alt="nvidia_gpudirect3"></p>
+<p>到这里，已经可以让RDMA网卡访问GPU的内存了，为了让GPU和网卡并行起来，CPU仍然扮演了厚重的调度角色，而且GPU空转时间比较长。</p>
+<p><img src="/images/nvidia_gpudirect4.png" alt="nvidia_gpudirect4"></p>
+<p>有人想把控制面也offload一部分，于是乎GPUDirect Async概念被提了出来。</p>
+<h4 id="GPUDirect-Async"><a href="#GPUDirect-Async" class="headerlink" title="GPUDirect Async"></a>GPUDirect Async</h4><p>整体的逻辑如下:</p>
+<p><img src="/images/nvidia_gpudirect5.png" alt="nvidia_gpudirect5"></p>
+<p>依赖的软件如下：</p>
+<p><img src="/images/nvidia_gpudirect6.png" alt="nvidia_gpudirect6"></p>
+<p>整体软件栈：</p>
+<p><img src="/images/nvidia_gpudirect7.png" alt="nvidia_gpudirect7"></p>
+<p>具体的用户态代码参考<a href="https://github.com/gpudirect/libgdsync/tree/master/src" target="_blank" rel="noopener">libgdsync</a></p>
+<h4 id="Nvidia-NCCL"><a href="#Nvidia-NCCL" class="headerlink" title="Nvidia NCCL"></a>Nvidia NCCL</h4><p>后来Nvidia基于上面互联通信这些技术，又提出了<a href="https://github.com/NVIDIA/nccl" target="_blank" rel="noopener">NCCL概念</a>。</p>
+<p><img src="/images/nvidia_nccl.png" alt="nvidia_nccl"></p>
+<h2 id="GPUDirect-Storage"><a href="#GPUDirect-Storage" class="headerlink" title="GPUDirect Storage"></a>GPUDirect Storage</h2><p>沿着RDMA的思路，在存储上，GPUDirect Storage概念也被提了出来。<br>和传统存储相比，仍然是旁路CPU，具体如下:</p>
+<p><img src="/images/gpudirect_storage.png" alt="gpudirect_storage"></p>
+<p>先还是回顾下linux kernel中普通存储的软件堆栈：</p>
+<p><img src="/images/normal_storage.png" alt="normal_storage"></p>
+<p>Nvidia在虚拟文件系统VFS之上做了一个<a href="https://github.com/NVIDIA/gds-nvidia-fs" target="_blank" rel="noopener">nvidia-fs.ko</a>，<br>负责把GPU的内存（GPU的部分BAR空间）给到文件系统。整个软件栈如下：</p>
+<p><img src="/images/gpudirect_storage2.png" alt="gpudirect_storage2"></p>
+<p>更具体一点：</p>
+<p><img src="/images/gpudirect_storage7.png" alt="gpudirect_storage7"></p>
+<p>用户态的代码写的时候，就变成下面这样了</p>
+<p><img src="/images/gpudirect_storage3.png" alt="gpudirect_storage3"></p>
+<p>其中cudaMalloc/cuFileBufRegister会从GPU内存分配，并调用nvidia-fs.ko做映射，得到一个va和gpu pa/dma、cpu pa的映射，<br>后面再调用cuFileRead/cuFileWrite的时候把这个va传递给虚拟文件系统VFS，并通过kernel的<code>call_write_iter/call_read_iter</code><br>函数进行文件读写，之后底层sas控制器或者nvme控制器的驱动通过dma_map相关函数把这个va又转换成具体的pa，把内容读或者<br>写到这块地址中，具体流程如下：</p>
+<pre><code>nvfs_open
+ nvfs_blk_register_dma_ops
+  register nvfs_dma_rw_ops 
+
+cuFileRead/cuFileWrite
+ nvfs_ioctl
+  nvfs_start_io_op
+   nvfs_direct_io
+    call_write_iter/call_read_iter
+     blk_mq_ops.queue_rq
+      nvme_queue_rq
+       nvme_map_data
+        dma_map_bvec
+     call nvfs register dma callback
+</code></pre><p>具体可以参考代码： <a href="https://github.com/NVIDIA/gds-nvidia-fs/blob/master/src/nvfs-core.c#L981" target="_blank" rel="noopener">https://github.com/NVIDIA/gds-nvidia-fs/blob/master/src/nvfs-core.c#L981</a></p>
+<p><img src="/images/gpudirect_storage4.png" alt="gpudirect_storage4"></p>
+<p>另外nvdia-fs.ko也可以和网络、RDMA结合在一起，配合用户态的cuFile RDMA访问网络上的存储设备。</p>
+<p>cufile的库并没有开源，具体的实现还看不到，主要做了以下事情：</p>
+<p><img src="/images/gpudirect_storage5.png" alt="gpudirect_storage5"></p>
+<p><img src="/images/gpudirect_storage6.png" alt="gpudirect_storage6"></p>
+<h2 id="Nvidia-Magnum-IO"><a href="#Nvidia-Magnum-IO" class="headerlink" title="Nvidia Magnum IO"></a>Nvidia Magnum IO</h2><p>有了上面这些网络加速、IO加速技术之后，Nvidia更进一步提出了Magnum IO技术，把这些都打包在了一起。</p>
+<p><img src="/images/nvidia_magnumio.png" alt="nvidia_magnumio"></p>
+<p><img src="/images/nvidia_magnumio2.png" alt="nvidia_magnumio2"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://docs.nvidia.com/cuda/gpudirect-rdma/" target="_blank" rel="noopener">Developing a Linux Kernel Module using GPUDirect RDMA</a></li>
+<li><a href="https://wrfranklin.org/wiki/ParallelComputingSpring2015/cuda/nvidia/doc/pdf/" target="_blank" rel="noopener">ParallelComputingSpring2015</a></li>
+<li><a href="https://hdfgroup.org/wp-content/uploads/2020/10/GPU_Direct_IO_with_HDF5-_John_Ravi.pdf" target="_blank" rel="noopener">GPU Direct IO with HDF5</a></li>
+<li><a href="https://github.com/NVIDIA/gdrcopy" target="_blank" rel="noopener">gdrcopy</a></li>
+<li><a href="https://on-demand.gputechconf.com/gtc/2013/presentations/S3266-GPUDirect-RDMA-Green-Multi-GPU-Architectures.pdf" target="_blank" rel="noopener">GPUDirect RDMA and Green Multi-GPU Architectures</a></li>
+<li><a href="https://network.nvidia.com/pdf/prod_software/Mellanox_PeerDirect_Asynch_peer-to-peer_device_communication.pdf" target="_blank" rel="noopener">Asynchronous Peer-to-Peer Device Communication</a></li>
+<li><a href="https://mug.mvapich.cse.ohio-state.edu/static/media/mug/presentations/17/nvidia-mug-17.pdf" target="_blank" rel="noopener">Advancing Communication Technologies and System Architecture to Maxime Performance and Scalability of GPU Accelerated Systems</a></li>
+<li><a href="https://insujang.github.io/2020-02-09/introduction-to-programming-infiniband/" target="_blank" rel="noopener">Introduction to Programming Infiniband RDMA</a></li>
+<li><a href="https://downloads.openfabrics.org/ofv/ofv_presentation_GPU.pdf" target="_blank" rel="noopener">OFVWG:GPUDirect and PeerDirect</a></li>
+<li><a href="https://www.sc-asia.org/2018/wp-content/uploads/2018/03/1_1500_Ido_Shamay.pdf" target="_blank" rel="noopener">RDMA over ML/DL and Big Data Frameworks</a></li>
+<li><a href="https://developer.nvidia.com/blog/accelerating-io-in-the-modern-data-center-magnum-io-architecture/" target="_blank" rel="noopener">Accelerating IO in the Modern Data Center: Magnum IO Architecture</a></li>
+<li><a href="https://hdfgroup.org/wp-content/uploads/2020/10/GPU_Direct_IO_with_HDF5-_John_Ravi.pdf" target="_blank" rel="noopener">GPU Direct IO with HDF5</a></li>
+<li><a href="https://docs.baskerville.ac.uk/ofed-gpudirect/" target="_blank" rel="noopener">OFED and GPUDirect</a></li>
+<li><a href="https://marksilberstein.com/wp-content/uploads/2020/04/ross16net.pdf" target="_blank" rel="noopener">GPUrdma: GPU-side library for high performance networking from GPU kernels</a></li>
+<li><a href="https://on-demand.gputechconf.com/supercomputing/2019/pdf/sc1922-gpudirect-storage-transfer-data-directly-to-gpu-memory-alleviating-io-bottlenecks.pdf" target="_blank" rel="noopener">GPUDIRECT STORAGE:A DIRECT GPU-STORAGE DATA PATH</a></li>
+<li><a href="https://docs.nvidia.com/gpudirect-storage/overview-guide/" target="_blank" rel="noopener">NVIDIA Magnum IO GPUDirect Storage Overview Guide</a></li>
+<li><a href="https://www.spectrumscaleug.org/wp-content/uploads/2022/02/episode-18-NVIDIA-GPU-Direct-Storage-with-IBM-Spectrum-Scale.pdf" target="_blank" rel="noopener">NVIDIA GPU Direct Storage with IBM Spectrum Scale</a></li>
+<li><a href="https://docs.nvidia.com/gpudirect-storage/pdf/design-guide.pdf" target="_blank" rel="noopener">NVIDIA Magnum IO GPUDirect Storage design guide</a></li>
+<li><a href="https://blog.csdn.net/hexiaolong2009/article/details/107592704" target="_blank" rel="noopener">DRM 驱动 mmap 详解：（一）预备知识</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/509396439" target="_blank" rel="noopener">GPU Direct Storage</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/gpu/" rel="tag"># gpu</a>
+          
+            <a href="/tags/rdma/" rel="tag"># rdma</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/05/28/cuda分析/" rel="next" title="cuda分析">
+                <i class="fa fa-chevron-left"></i> cuda分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/06/20/network-storage-file-system/" rel="prev" title="支持网络的文件系统底层技术">
+                支持网络的文件系统底层技术 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2022/06/06/gpu-direct/" data-title="gpu-direct" data-url="http://joyxu.github.io/2022/06/06/gpu-direct/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#GPUDirect"><span class="nav-number">1.</span> <span class="nav-text">GPUDirect</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#地址的问题"><span class="nav-number">2.</span> <span class="nav-text">地址的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPUDirect-with-RDMA"><span class="nav-number">3.</span> <span class="nav-text">GPUDirect with RDMA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#常规RDMA编程"><span class="nav-number">3.1.</span> <span class="nav-text">常规RDMA编程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GPUDirect-RDMA编程"><span class="nav-number">3.2.</span> <span class="nav-text">GPUDirect RDMA编程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#GPUDirect-RDMA"><span class="nav-number">3.2.1.</span> <span class="nav-text">GPUDirect RDMA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GPUDirect-Async"><span class="nav-number">3.2.2.</span> <span class="nav-text">GPUDirect Async</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Nvidia-NCCL"><span class="nav-number">3.2.3.</span> <span class="nav-text">Nvidia NCCL</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPUDirect-Storage"><span class="nav-number">4.</span> <span class="nav-text">GPUDirect Storage</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Nvidia-Magnum-IO"><span class="nav-number">5.</span> <span class="nav-text">Nvidia Magnum IO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

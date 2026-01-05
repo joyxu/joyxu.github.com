@@ -1,0 +1,967 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,gpu,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="MESA3D编译架构整个架构如下  如果是Vulkan，shader从SPIRV先编译成NIR，再编译成native。如果是OpenGL，则从GLSL先编译成NIR，再编译成native。 上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。 GLSL转换成GLSL IRGLSL的shader的处理入口在_mesa_glsl_compile_s">
+<meta name="keywords" content="linux,gpu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPU MESA 编译分析">
+<meta property="og:url" content="http://joyxu.github.io/2021/06/15/gpu-mesa-compile/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="MESA3D编译架构整个架构如下  如果是Vulkan，shader从SPIRV先编译成NIR，再编译成native。如果是OpenGL，则从GLSL先编译成NIR，再编译成native。 上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。 GLSL转换成GLSL IRGLSL的shader的处理入口在_mesa_glsl_compile_s">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/gpu_mesa_compile_arch.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.689Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GPU MESA 编译分析">
+<meta name="twitter:description" content="MESA3D编译架构整个架构如下  如果是Vulkan，shader从SPIRV先编译成NIR，再编译成native。如果是OpenGL，则从GLSL先编译成NIR，再编译成native。 上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。 GLSL转换成GLSL IRGLSL的shader的处理入口在_mesa_glsl_compile_s">
+<meta name="twitter:image" content="http://joyxu.github.io/images/gpu_mesa_compile_arch.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2021/06/15/gpu-mesa-compile/">
+
+
+
+
+
+  <title> GPU MESA 编译分析 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2021/06/15/gpu-mesa-compile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                GPU MESA 编译分析
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-06-15T11:09:15+08:00">
+                2021-06-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/06/15/gpu-mesa-compile/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2021/06/15/gpu-mesa-compile/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="MESA3D编译架构"><a href="#MESA3D编译架构" class="headerlink" title="MESA3D编译架构"></a>MESA3D编译架构</h2><p>整个架构如下</p>
+<p><img src="/images/gpu_mesa_compile_arch.png" alt="mesa gpu compile arch"></p>
+<p>如果是Vulkan，shader从SPIRV先编译成NIR，再编译成native。<br>如果是OpenGL，则从GLSL先编译成NIR，再编译成native。</p>
+<p>上图中TGSI基本已经不用，除了在virgl里面还用之外，基本都已经切换到LLVM或者厂家的自研编译器中。</p>
+<h2 id="GLSL转换成GLSL-IR"><a href="#GLSL转换成GLSL-IR" class="headerlink" title="GLSL转换成GLSL IR"></a>GLSL转换成GLSL IR</h2><p>GLSL的shader的处理入口在<code>_mesa_glsl_compile_shader</code>中，shader的源码首先经过词法分析<code>src/compiler/glsl_lexer.ll</code>和<br>语法分析<code>glsl_parser.yy</code>的通用Lex/Yacc处理，输出抽象语法树（AST），在经过<code>ast_to_hir.cpp</code>处理，转成GLSL IR。</p>
+<h2 id="GLSL-IR处理"><a href="#GLSL-IR处理" class="headerlink" title="GLSL IR处理"></a>GLSL IR处理</h2><p>GLSL IR在<code>ir.h</code>中定义了几个重要的类，一般分成指令类，条件控制类和函数类。</p>
+<ul>
+<li><code>exec_node</code>，基础类，作为最小的执行单元，包含前后指针，分别指向之前和之后的指令。</li>
+<li><code>ir_insturction</code>，所有指令的基础类</li>
+<li><code>ir_rvalue</code>，右侧赋值类，是表达式的几率</li>
+<li><code>ir_expression</code>，表达式</li>
+<li><code>ir_texture</code>，纹理</li>
+<li><code>ir_swizzle</code>，向量或者矩阵变换类</li>
+<li><code>ir_dereference</code>，用于访问存在在变量、数组和数据结构中的值</li>
+<li><code>ir_constant</code>，常所有基本类型的常量</li>
+<li><code>ir_variable</code>，变量</li>
+<li><code>ir_loop</code>，循环</li>
+<li><code>ir_if</code>，条件控制</li>
+</ul>
+<p>GLSL的IR调试一般通过<code>MESA_GLSL=dump</code>，比如 <code>MESA_GLSL=dump glmark2</code>。</p>
+<h2 id="GLSL-IR-lower处理"><a href="#GLSL-IR-lower处理" class="headerlink" title="GLSL IR lower处理"></a>GLSL IR lower处理</h2><p>lower处理都在<code>src/glsl/lower_*.cpp</code>文件中，主要作用是重写部分生成的IR。这个过程主要的动作就是遍历IR树，对于所有<br>叶子节点一般都有<code>visit</code>函数，非叶子节点都有<code>vist_enter</code>和<code>visti_leave</code>函数。</p>
+<p>以<code>lower_instructions.cpp</code>为例，一般的优化过程都是用效率高的IR代替生成的IR。</p>
+<h2 id="GLSL-IR转换成NIR"><a href="#GLSL-IR转换成NIR" class="headerlink" title="GLSL IR转换成NIR"></a>GLSL IR转换成NIR</h2><p>这部分的处理在<code>st_link_nir</code>和<code>glsl_to_nir</code>中处理。之后通过<code>st_nir_opts</code>做lower的优化。</p>
+<h2 id="AMD指令转换流程"><a href="#AMD指令转换流程" class="headerlink" title="AMD指令转换流程"></a>AMD指令转换流程</h2><p>NIR -&gt; LLVM -&gt; AMD GPU IR</p>
+<p>AMD直接修改了LLVM源码，具体参考<a href="https://github.com/llvm/llvm-project/tree/main/llvm/lib/Target/AMDGPU" target="_blank" rel="noopener">LLVM AMD GPU改动</a></p>
+<h2 id="ARM-Midgard-Bifrost转换流程"><a href="#ARM-Midgard-Bifrost转换流程" class="headerlink" title="ARM Midgard/Bifrost转换流程"></a>ARM Midgard/Bifrost转换流程</h2><p>NIR -&gt; BIR</p>
+<p>MESA编译过程中会生成<code>bi_builder.h</code>，其中会定义从NIR到BIR指令的映射关系。代码流程如下：</p>
+<pre><code>bifrost_compile_shader_nir
+  emit_cf_list
+    emit_block
+      bi_emit_instr
+        bi_emit_alu
+      bi_fma_to
+</code></pre><h2 id="为什么不直接编译成native-ISA呢？"><a href="#为什么不直接编译成native-ISA呢？" class="headerlink" title="为什么不直接编译成native ISA呢？"></a>为什么不直接编译成native ISA呢？</h2><p>NIR的处理积累了大量经验，包含SSA处理，控制流处理。</p>
+<h2 id="编译优化在后端还是NIR？"><a href="#编译优化在后端还是NIR？" class="headerlink" title="编译优化在后端还是NIR？"></a>编译优化在后端还是NIR？</h2><p>答案是NIR。<br>2019年XDC上intel专家Jason Ekstrand特意强调intel花了4年时间把backend的优化又搬到NIR中来。</p>
+<h2 id="调试方法"><a href="#调试方法" class="headerlink" title="调试方法"></a>调试方法</h2><ul>
+<li>参考<a href="https://docs.mesa3d.org/envvars.html" target="_blank" rel="noopener">mesa 环境变量</a>, 比如加上<code>NIR_PRINT=1</code> 可以导出NIR到SSA的转换过程；<br>加上”AMD_DEBUG=vs”，可以导出NIR到SSA，以及LLVM优化的过程。</li>
+</ul>
+<h2 id="编译性能优化"><a href="#编译性能优化" class="headerlink" title="编译性能优化"></a>编译性能优化</h2><ul>
+<li>最直观，看帧率和效果</li>
+<li>执行shader-db看看前后优化结果</li>
+<li>通过perf抓shader-db编译热点函数，修改对比。</li>
+</ul>
+<h2 id="编译优化趋势"><a href="#编译优化趋势" class="headerlink" title="编译优化趋势"></a>编译优化趋势</h2><p>2019年ACO(AMD compiler)被运营Steam的公司Valve(CS开发公司)提出来后，现在已经合入到MESA主线中，当前只支持AMD GPU。<br>Intel也提出IBC(intel backend-compiler)的概念。<br>优化的维度主要从时间和帧率考虑，使用的测试脚本可以看参考连接。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://gpuopen.com/wp-content/uploads/slides/GPUOpen_Let%E2%80%99sBuild2020_A%20Trip%20Down%20the%20GPU%20Compiler%20Pipeline.pdf" target="_blank" rel="noopener">A TRIP DOWN THE GPU COMPILER PIPELINE</a></li>
+<li><a href="https://elinux.org/images/1/1f/Embedded-drivers-mesa.pdf" target="_blank" rel="noopener">Embedded Graphics Drivers in Mesa</a></li>
+<li><a href="https://xdc2019.x.org/event/5/contributions/325/attachments/416/666/How_to_not_write_a_back-end_compiler.pdf" target="_blank" rel="noopener">How to not write a back-end compiler</a></li>
+<li><a href="http://www.jlekstrand.net/jason/projects/mesa/nir-notes/" target="_blank" rel="noopener">NIR: A new compiler IR for Mesa</a></li>
+<li><a href="https://xdc2020.x.org/event/9/contributions/612/attachments/713/1313/xdc2020-a-year-of-aco.pdf" target="_blank" rel="noopener">A year of ACO</a></li>
+<li><a href="https://blogs.igalia.com/apinheiro/2015/09/optimizing-shader-assembly-instruction-on-mesa-using-shader-db/" target="_blank" rel="noopener">Optimizing shader assembly instruction on Mesa using shader-db</a></li>
+<li><a href="https://blogs.igalia.com/apinheiro/2015/09/optimizing-shader-assembly-instruction-on-mesa-using-shader-db-ii/" target="_blank" rel="noopener">Optimizing shader assembly instruction on Mesa using shader-db (II)</a></li>
+<li><a href="https://segmentfault.com/a/1190000023103508" target="_blank" rel="noopener">火焰图：全局视野的Linux性能剖析</a></li>
+<li><a href="https://blogs.igalia.com/itoral/2015/03/03/an-introduction-to-mesas-glsl-compiler-i/" target="_blank" rel="noopener">An introduction to Mesa’s GLSL compiler (I)</a></li>
+<li><a href="https://www.gamingonlinux.com/2019/09/the-valve-funded-shader-compiler-aco-is-being-queued-up-for-inclusion-in-mesa-directly" target="_blank" rel="noopener">The Valve-funded shader compiler ‘ACO’ is being queued up for inclusion in Mesa directly (updated: merged)</a></li>
+<li><a href="https://lists.freedesktop.org/archives/mesa-dev/2019-July/221006.html" target="_blank" rel="noopener">ACO: A New Compiler Backend for RADV</a></li>
+<li><a href="https://xdc2019.x.org/event/5/contributions/323/attachments/432/685/IanRomanick-XDC2019-Implementing-Optimizations-in-NIR.pdf" target="_blank" rel="noopener">Implementing Optimizations in NIR</a></li>
+<li><a href="https://llvm.org/devmtg/2020-09/slides/Hahnle-Evolving_convergent_Lessons_from_Control_Flow_in_AMDGPU.pdf" target="_blank" rel="noopener">Lessons_from_Control_Flow_in_AMDGPU</a></li>
+<li><a href="https://xdc2018.x.org/slides/optimizing-i965-for-the-future.pdf" target="_blank" rel="noopener">Optimizing i965 for the Future</a></li>
+<li><a href="https://documents.pub/document/shaders-in-radeonsi-dynamic-linking-and-nir-in-radeonsi-dynamic-linking-and-nir.html" target="_blank" rel="noopener">SHADERS IN RADEONSI DYNAMIC LINKING AND NIR IN RADEONSI DYNAMIC LINKING AND NIR</a></li>
+<li><a href="https://winddoing.github.io/post/58638.html" target="_blank" rel="noopener">TGSI for Mesa</a></li>
+<li><a href="https://people.freedesktop.org/~cwabbott0/nir-docs/intro.html" target="_blank" rel="noopener">NIR introduction</a></li>
+<li><a href="https://www.x.org/wiki/Events/XDC2015/Program/turner_glsl_compiler.pdf" target="_blank" rel="noopener">GLSL compiler: Where we’ve been and where we’re going (2015 Edition)</a></li>
+<li><a href="https://archive.fosdem.org/2016/schedule/event/i965_nir/attachments/slides/1113/export/events/attachments/i965_nir/slides/1113/nir_vec4_i965_fosdem_2016_rc1.pdf" target="_blank" rel="noopener">NIR on the Mesa i965 backend End</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/gpu/" rel="tag"># gpu</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/05/28/gpu-amd/" rel="next" title="AMD GPU 分析">
+                <i class="fa fa-chevron-left"></i> AMD GPU 分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/06/21/gpu-debug/" rel="prev" title="GPU 调试">
+                GPU 调试 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2021/06/15/gpu-mesa-compile/" data-title="GPU MESA 编译分析" data-url="http://joyxu.github.io/2021/06/15/gpu-mesa-compile/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MESA3D编译架构"><span class="nav-number">1.</span> <span class="nav-text">MESA3D编译架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GLSL转换成GLSL-IR"><span class="nav-number">2.</span> <span class="nav-text">GLSL转换成GLSL IR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GLSL-IR处理"><span class="nav-number">3.</span> <span class="nav-text">GLSL IR处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GLSL-IR-lower处理"><span class="nav-number">4.</span> <span class="nav-text">GLSL IR lower处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GLSL-IR转换成NIR"><span class="nav-number">5.</span> <span class="nav-text">GLSL IR转换成NIR</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AMD指令转换流程"><span class="nav-number">6.</span> <span class="nav-text">AMD指令转换流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM-Midgard-Bifrost转换流程"><span class="nav-number">7.</span> <span class="nav-text">ARM Midgard/Bifrost转换流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么不直接编译成native-ISA呢？"><span class="nav-number">8.</span> <span class="nav-text">为什么不直接编译成native ISA呢？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编译优化在后端还是NIR？"><span class="nav-number">9.</span> <span class="nav-text">编译优化在后端还是NIR？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调试方法"><span class="nav-number">10.</span> <span class="nav-text">调试方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编译性能优化"><span class="nav-number">11.</span> <span class="nav-text">编译性能优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编译优化趋势"><span class="nav-number">12.</span> <span class="nav-text">编译优化趋势</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">13.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

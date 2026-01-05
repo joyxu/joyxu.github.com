@@ -1,0 +1,1014 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,gpu,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="MALI Panfrost 驱动代码路径在: src/gallium/drivers/panfrost下，官网目前还不太支持Vulkan 最新的开发活动都在：https://gitlab.freedesktop.org/panfrost/mesa里面有部分Vulkan的支持。 主要还是实现pipe screen和pipe context，screen主要体现硬件的能力，创建和管理资源；contex">
+<meta name="keywords" content="linux,gpu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux GPU系列-07-MESA Gallium MALI Panfrost GPU驱动">
+<meta property="og:url" content="http://joyxu.github.io/2021/05/13/gpu07/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="MALI Panfrost 驱动代码路径在: src/gallium/drivers/panfrost下，官网目前还不太支持Vulkan 最新的开发活动都在：https://gitlab.freedesktop.org/panfrost/mesa里面有部分Vulkan的支持。 主要还是实现pipe screen和pipe context，screen主要体现硬件的能力，创建和管理资源；contex">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/driver_pipeline.png">
+<meta property="og:image" content="http://joyxu.github.io/images/pipe_context.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.689Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux GPU系列-07-MESA Gallium MALI Panfrost GPU驱动">
+<meta name="twitter:description" content="MALI Panfrost 驱动代码路径在: src/gallium/drivers/panfrost下，官网目前还不太支持Vulkan 最新的开发活动都在：https://gitlab.freedesktop.org/panfrost/mesa里面有部分Vulkan的支持。 主要还是实现pipe screen和pipe context，screen主要体现硬件的能力，创建和管理资源；contex">
+<meta name="twitter:image" content="http://joyxu.github.io/images/driver_pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2021/05/13/gpu07/">
+
+
+
+
+
+  <title> Linux GPU系列-07-MESA Gallium MALI Panfrost GPU驱动 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2021/05/13/gpu07/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Linux GPU系列-07-MESA Gallium MALI Panfrost GPU驱动
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-05-13T11:57:09+08:00">
+                2021-05-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/05/13/gpu07/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2021/05/13/gpu07/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="MALI-Panfrost-驱动"><a href="#MALI-Panfrost-驱动" class="headerlink" title="MALI Panfrost 驱动"></a>MALI Panfrost 驱动</h1><p>代码路径在: src/gallium/drivers/panfrost下，官网目前还不太支持Vulkan</p>
+<p>最新的开发活动都在：<a href="https://gitlab.freedesktop.org/panfrost/mesa" target="_blank" rel="noopener">https://gitlab.freedesktop.org/panfrost/mesa</a><br>里面有部分Vulkan的支持。</p>
+<p>主要还是实现pipe screen和pipe context，screen主要体现硬件的能力，创建和管理资源；<br>context可以认为是硬件的一个pipe line的实例，涉及到state的设置，fence等。<br>另外让pipe loader选择我们新创建的pipe driver。</p>
+<p><img src="/images/driver_pipeline.png" alt="pipe screen/context/resource用法"></p>
+<h2 id="文件说明"><a href="#文件说明" class="headerlink" title="文件说明"></a>文件说明</h2><p>主要有两个文件夹：</p>
+<p><code>src/gallium/drivers/panfrost</code>：</p>
+<ul>
+<li>pan_screen: 实现了pipe_screen</li>
+<li>pan_context: 实现了pipe_context</li>
+<li>pan_resource: 资源相关的放在这里</li>
+<li>pan_job: 和硬件相关的job放在这里</li>
+</ul>
+<p><code>src/panfrost/lib</code>, 由于当前Vulkan还没有公共框架，所以和Vulkan公共的代码放在这个文件夹下：</p>
+<ul>
+<li>pan_device: 设备管理</li>
+<li>pan_bo: buffer object管理</li>
+<li>pan_shader: shader管理</li>
+<li>pan_tiler:tile管理</li>
+<li>pan_texture: texture管理</li>
+</ul>
+<h2 id="pan-screen"><a href="#pan-screen" class="headerlink" title="pan_screen"></a>pan_screen</h2><p>定义很简单，主要继承下Gallium和device</p>
+<pre><code>struct panfrost_screen {
+    struct pipe_screen base;
+    struct panfrost_device dev;
+};
+</code></pre><h2 id="pan-context"><a href="#pan-context" class="headerlink" title="pan_context"></a>pan_context</h2><p>关键实现如下：</p>
+<pre><code>struct panfrost_context {
+    /* Gallium context */
+    struct pipe_context base;
+
+    /* Upload manager for small resident GPU-internal data structures, like
+     * sampler descriptors. We use an upload manager since the minimum BO
+     * size from the kernel is 4kb */
+    struct u_upload_mgr *state_uploader;
+
+    /* Sync obj used to keep track of in-flight jobs. */
+    uint32_t syncobj;
+
+    /* Bound job batch and map of panfrost_batch_key to job batches */
+    struct panfrost_batch *batch;
+    struct hash_table *batches;
+
+    /* panfrost_bo -&gt; panfrost_bo_access */
+    struct hash_table *accessed_bos;
+    struct pipe_framebuffer_state pipe_framebuffer;
+    struct panfrost_streamout streamout;
+    struct panfrost_constant_buffer constant_buffer[PIPE_SHADER_TYPES];
+    struct panfrost_rasterizer *rasterizer;
+    struct panfrost_shader_variants *shader[PIPE_SHADER_TYPES];
+    struct panfrost_vertex_state *vertex;
+    struct pipe_vertex_buffer vertex_buffers[PIPE_MAX_ATTRIBS];
+    struct pipe_shader_buffer ssbo[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_BUFFERS];
+    struct pipe_image_view images[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_IMAGES];
+    struct panfrost_sampler_state *samplers[PIPE_SHADER_TYPES][PIPE_MAX_SAMPLERS];
+    struct panfrost_sampler_view *sampler_views[PIPE_SHADER_TYPES][PIPE_MAX_SHADER_SAMPLER_VIEWS];
+    struct primconvert_context *primconvert;
+    struct blitter_context *blitter;
+    struct panfrost_blend_state *blend;
+    struct pipe_viewport_state pipe_viewport;
+    struct pipe_scissor_state scissor;
+    struct pipe_blend_color blend_color;
+    struct panfrost_zsa_state *depth_stencil;
+    struct pipe_stencil_ref stencil_ref;
+    ...
+};
+</code></pre><p>基本严格按照渲染的pipeline来的，直观一点如下图：</p>
+<p><img src="/images/pipe_context.png" alt="pipe_contex"></p>
+<h2 id="pan-resource"><a href="#pan-resource" class="headerlink" title="pan_resource"></a>pan_resource</h2><p>引用下pipe_resource，通过pipe_screen的pipe_resource和pan_screen关联起来</p>
+<pre><code>struct panfrost_resource {
+    struct pipe_resource base;
+    ...
+};
+
+void panfrost_resource_screen_init(struct pipe_screen *pscreen)
+{
+    struct panfrost_device *dev = pan_device(pscreen);
+
+    bool fake_rgtc = !panfrost_supports_compressed_format(dev, MALI_BC4_UNORM);
+
+    pscreen-&gt;resource_create_with_modifiers =
+        panfrost_resource_create_with_modifiers;
+    pscreen-&gt;resource_create = u_transfer_helper_resource_create;
+    pscreen-&gt;resource_destroy = u_transfer_helper_resource_destroy;
+    pscreen-&gt;resource_from_handle = panfrost_resource_from_handle;
+    pscreen-&gt;resource_get_handle = panfrost_resource_get_handle;
+    pscreen-&gt;transfer_helper = u_transfer_helper_create(&amp;transfer_vtbl,
+            true, false,
+            fake_rgtc, true);
+}
+</code></pre><p>pipe_context类似：</p>
+<pre><code>void panfrost_resource_context_init(struct pipe_context *pctx)
+{
+    pctx-&gt;transfer_map = u_transfer_helper_transfer_map;
+    pctx-&gt;transfer_unmap = u_transfer_helper_transfer_unmap;
+    pctx-&gt;create_surface = panfrost_create_surface;
+    pctx-&gt;surface_destroy = panfrost_surface_destroy;
+    pctx-&gt;resource_copy_region = util_resource_copy_region;
+    pctx-&gt;blit = panfrost_blit;
+    pctx-&gt;generate_mipmap = panfrost_generate_mipmap;
+    pctx-&gt;flush_resource = panfrost_flush_resource;
+    pctx-&gt;invalidate_resource = panfrost_invalidate_resource;
+    pctx-&gt;transfer_flush_region = u_transfer_helper_transfer_flush_region;
+    pctx-&gt;buffer_subdata = u_default_buffer_subdata;
+    pctx-&gt;texture_subdata = u_default_texture_subdata;
+}
+</code></pre><h2 id="pan-job"><a href="#pan-job" class="headerlink" title="pan_job"></a>pan_job</h2><p>job都是一批一批提交的，所以主要是panfrost_batch结构，一般属于某个context，实现和硬件强相关。</p>
+<pre><code>struct panfrost_batch {
+    struct panfrost_context *ctx;
+    ...
+}
+</code></pre><h2 id="winsys-接口"><a href="#winsys-接口" class="headerlink" title="winsys 接口"></a>winsys 接口</h2><p><code>winsys/panfrost/drm</code>，只用对接drm，创建并返回pipe screen。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/gpu/" rel="tag"># gpu</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/05/13/gpu06/" rel="next" title="Linux GPU系列-06-MESA Gallium Virtio GPU驱动">
+                <i class="fa fa-chevron-left"></i> Linux GPU系列-06-MESA Gallium Virtio GPU驱动
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/05/21/gpu08/" rel="prev" title="Linux GPU系列-GPU驱动到底做什么">
+                Linux GPU系列-GPU驱动到底做什么 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2021/05/13/gpu07/" data-title="Linux GPU系列-07-MESA Gallium MALI Panfrost GPU驱动" data-url="http://joyxu.github.io/2021/05/13/gpu07/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MALI-Panfrost-驱动"><span class="nav-number">1.</span> <span class="nav-text">MALI Panfrost 驱动</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#文件说明"><span class="nav-number">1.1.</span> <span class="nav-text">文件说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pan-screen"><span class="nav-number">1.2.</span> <span class="nav-text">pan_screen</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pan-context"><span class="nav-number">1.3.</span> <span class="nav-text">pan_context</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pan-resource"><span class="nav-number">1.4.</span> <span class="nav-text">pan_resource</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pan-job"><span class="nav-number">1.5.</span> <span class="nav-text">pan_job</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#winsys-接口"><span class="nav-number">1.6.</span> <span class="nav-text">winsys 接口</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

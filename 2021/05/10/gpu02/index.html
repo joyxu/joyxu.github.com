@@ -1,0 +1,957 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,gpu,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="先讲讲ARM MALI GPU的工作流程，为后续做下铺垫。 GPU工作流程-pipeline介绍GPU的工作流程，一般都是介绍GPU的pipeline，主要包括三部分：  Vertex处理，做MPV（Model，View， Project trasform）和Screen mapping坐标变换，clip裁剪 Rasterization处理，主要遍历三角形 Fragment处理，差值计算处理顶点颜">
+<meta name="keywords" content="linux,gpu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux GPU系列-02-ARM MALI GPU工作流程介绍">
+<meta property="og:url" content="http://joyxu.github.io/2021/05/10/gpu02/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="先讲讲ARM MALI GPU的工作流程，为后续做下铺垫。 GPU工作流程-pipeline介绍GPU的工作流程，一般都是介绍GPU的pipeline，主要包括三部分：  Vertex处理，做MPV（Model，View， Project trasform）和Screen mapping坐标变换，clip裁剪 Rasterization处理，主要遍历三角形 Fragment处理，差值计算处理顶点颜">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/gpu_pipeline.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpu_pipeline2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/gpu_internal.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cpu_gpu_com1.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cpu_gpu_com2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cpu_gpu_com3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/t880_tile.png">
+<meta property="og:image" content="http://joyxu.github.io/images/t880_pipeline.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_blocks.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_jobs_interface.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_jobs.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_job_dispatch.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_opengl.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_midgard_opengl_driver.png">
+<meta property="og:image" content="http://joyxu.github.io/images/mali_pass.png">
+<meta property="og:image" content="http://joyxu.github.io/images/adreno_pass.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.689Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux GPU系列-02-ARM MALI GPU工作流程介绍">
+<meta name="twitter:description" content="先讲讲ARM MALI GPU的工作流程，为后续做下铺垫。 GPU工作流程-pipeline介绍GPU的工作流程，一般都是介绍GPU的pipeline，主要包括三部分：  Vertex处理，做MPV（Model，View， Project trasform）和Screen mapping坐标变换，clip裁剪 Rasterization处理，主要遍历三角形 Fragment处理，差值计算处理顶点颜">
+<meta name="twitter:image" content="http://joyxu.github.io/images/gpu_pipeline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2021/05/10/gpu02/">
+
+
+
+
+
+  <title> Linux GPU系列-02-ARM MALI GPU工作流程介绍 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2021/05/10/gpu02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Linux GPU系列-02-ARM MALI GPU工作流程介绍
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-05-10T01:30:11+08:00">
+                2021-05-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/05/10/gpu02/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2021/05/10/gpu02/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>先讲讲ARM MALI GPU的工作流程，为后续做下铺垫。</p>
+<h2 id="GPU工作流程-pipeline"><a href="#GPU工作流程-pipeline" class="headerlink" title="GPU工作流程-pipeline"></a>GPU工作流程-pipeline</h2><p>介绍GPU的工作流程，一般都是介绍GPU的pipeline，主要包括三部分：</p>
+<ul>
+<li>Vertex处理，做MPV（Model，View， Project trasform）和Screen mapping坐标变换，clip裁剪</li>
+<li>Rasterization处理，主要遍历三角形</li>
+<li>Fragment处理，差值计算处理顶点颜色，纹理贴图等</li>
+</ul>
+<p>整个流程如下图所示：<br><img src="/images/gpu_pipeline.png" alt="GPU pipeline"></p>
+<p><img src="/images/gpu_pipeline2.png" alt="GPU pipeline2"></p>
+<h2 id="GPU内部组成"><a href="#GPU内部组成" class="headerlink" title="GPU内部组成"></a>GPU内部组成</h2><p>为了完成上述流程，把GPU内部模块按照功能划分的话，如下图所示：</p>
+<p><img src="/images/gpu_internal.png" alt="GPU_internal"></p>
+<h2 id="CPU和GPU交互"><a href="#CPU和GPU交互" class="headerlink" title="CPU和GPU交互"></a>CPU和GPU交互</h2><p>CPU和GPU交互内容如下，不同的GPU卡不完全相同，但是总体还是一致的。</p>
+<p><img src="/images/cpu_gpu_com1.png" alt="cpu_gpu_com1"></p>
+<p><img src="/images/cpu_gpu_com2.png" alt="cpu_gpu_com2"></p>
+<p><img src="/images/cpu_gpu_com3.png" alt="cpu_gpu_com3"></p>
+<h2 id="ARM-MALI-GPU工作流程"><a href="#ARM-MALI-GPU工作流程" class="headerlink" title="ARM MALI GPU工作流程"></a>ARM MALI GPU工作流程</h2><p>由于MALI是基于TBR(Tiled based rendering)所以多一个Tiling或者binning的步骤。</p>
+<p>如下图</p>
+<p><img src="/images/t880_tile.png" alt="ARM T880 Tile"></p>
+<p>Tile和Vertext、Fragement间的交互如下：</p>
+<p><img src="/images/t880_pipeline.png" alt="ARM T880 pipeline"></p>
+<h2 id="ARM-MALI-Midgard硬件单元框架"><a href="#ARM-MALI-Midgard硬件单元框架" class="headerlink" title="ARM MALI Midgard硬件单元框架"></a>ARM MALI Midgard硬件单元框架</h2><p><img src="/images/mali_midgard_blocks.png" alt="Midgard的逻辑框图"></p>
+<p><img src="/images/mali_midgard_jobs_interface.png" alt="Midgard软件接口"></p>
+<p>驱动把job提交给job manager，再由job manager分发给具体的硬件单元执行;job存在之前说的ring buffer中。<br>job有几种类型：</p>
+<p><img src="/images/mali_midgard_jobs.png" alt="Midgard软件接口"></p>
+<p>job manager根据job类型分发：</p>
+<p><img src="/images/mali_midgard_job_dispatch.png" alt="Midgard软件接口"></p>
+<h2 id="结合OpenGL-api观察整个流程"><a href="#结合OpenGL-api观察整个流程" class="headerlink" title="结合OpenGL api观察整个流程"></a>结合OpenGL api观察整个流程</h2><p><img src="/images/mali_midgard_opengl.png" alt="Midgard软件接口"></p>
+<p>OpenGL API主要组织好job所需的数据，为后续的shader core计算做好准备。<br><img src="/images/mali_midgard_opengl_driver.png" alt="Midgard软件接口"></p>
+<h2 id="再补充些概念"><a href="#再补充些概念" class="headerlink" title="再补充些概念"></a>再补充些概念</h2><ul>
+<li>binning pass:对于TBR来说，就是拆成primitive的过程</li>
+<li><p>rendering pass：对每个primitive进行渲染着色的过程，一个rendering pass可以有多个sub pass，更精准的描述可以参考下面stackflow的答复</p>
+<p>  The term “render pass” is more nebulous. The most common meaning refers to multipass rendering techniques.<br>  In multipass techniques, you render the same “object” multiple times, with each rendering of the object doing<br>  a separate computation that gets accumulated into the final value. Each rendering of the object with a particular<br>  set of state is called a “pass” or “render pass”.</p>
+<p>  Note that a render pass is not necessarily a draw call. Objects could require multiple draw calls to render.<br>  While this is typically slower than making a single draw call, it may be necessary for various reasons.</p>
+</li>
+<li><p>draw call：对应到Open GL里面gl<em>Draw</em>这样的API，这些API的调用触发vertex被渲染，但是同时针对一个vertex调用多次API，仍然是一个draw call。</p>
+</li>
+</ul>
+<p><img src="/images/mali_pass.png" alt="MALI PASS"></p>
+<p><img src="/images/adreno_pass.png" alt="QCOM Adreno PASS"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://elinux.org/images/4/42/Elce-2019-gfx-101-boris.pdf" target="_blank" rel="noopener">Open Source Graphics 101</a><br><a href="https://hushengstudent.blog.csdn.net/article/details/59122183" target="_blank" rel="noopener">Shader Learing Render Pipeline篇</a><br><a href="https://pdfs.semanticscholar.org/6eea/4efe677304b6c77008e15d34ac39f1164e9e.pdf" target="_blank" rel="noopener">T880 Mobile GPU</a><br><a href="https://fileadmin.cs.lth.se/cs/Education/EDAN35/guestLectures/ARM-Mali.pdf" target="_blank" rel="noopener">ARM Midgard Architecture</a><br><a href="https://old.hotchips.org/wp-content/uploads/hc_archives/hc28/HC28.22-Monday-Epub/HC28.22.10-GPU-HPC-Epub/HC28.22.110-Bifrost-JemDavies-ARM-v04-9.pdf" target="_blank" rel="noopener">The Bifrost GPU architecture and the ARM Mali-G71 GPU</a><br><a href="https://zeux.io/data/gdc2020_arm.pdf" target="_blank" rel="noopener">Optimizing Roblox: Vulkan Best Practices for Mobile Developers</a><br><a href="https://blog.csdn.net/Q1302182594/article/details/82767719" target="_blank" rel="noopener">Adreno GPU Architecture</a><br><a href="https://stackoverflow.com/questions/34196144/what-exactly-is-a-gpu-binning-pass" target="_blank" rel="noopener">What exactly is a GPU binning pass</a><br><a href="https://stackoverflow.com/questions/34382340/what-is-a-renderpass" target="_blank" rel="noopener">What is a renderpass?</a><br><a href="https://www.cnblogs.com/llstart-new0201/p/11949743.html" target="_blank" rel="noopener">渲染流程</a><br><a href="https://blog.csdn.net/linjf520/article/details/113702206?spm=1001.2014.3001.5501" target="_blank" rel="noopener">Unity - DrawCall, Batch, SetPassCall区别</a><br><a href="http://simonschreibt.de/gat/renderhell/" target="_blank" rel="noopener">Render Hell 2.0</a><br><a href="https://chamilo.grenoble-inp.fr/main/document/document.php?cidReq=ENSIMAG4MMG3D6&amp;id=216740&amp;" target="_blank" rel="noopener">3D computer graphics</a></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/gpu/" rel="tag"># gpu</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/05/09/gpu01/" rel="next" title="Linux GPU系列-01-GPU物理模型">
+                <i class="fa fa-chevron-left"></i> Linux GPU系列-01-GPU物理模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/05/11/gpu03/" rel="prev" title="Linux GPU系列-03-图形软件栈">
+                Linux GPU系列-03-图形软件栈 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2021/05/10/gpu02/" data-title="Linux GPU系列-02-ARM MALI GPU工作流程介绍" data-url="http://joyxu.github.io/2021/05/10/gpu02/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#GPU工作流程-pipeline"><span class="nav-number">1.</span> <span class="nav-text">GPU工作流程-pipeline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPU内部组成"><span class="nav-number">2.</span> <span class="nav-text">GPU内部组成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU和GPU交互"><span class="nav-number">3.</span> <span class="nav-text">CPU和GPU交互</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM-MALI-GPU工作流程"><span class="nav-number">4.</span> <span class="nav-text">ARM MALI GPU工作流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM-MALI-Midgard硬件单元框架"><span class="nav-number">5.</span> <span class="nav-text">ARM MALI Midgard硬件单元框架</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结合OpenGL-api观察整个流程"><span class="nav-number">6.</span> <span class="nav-text">结合OpenGL api观察整个流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#再补充些概念"><span class="nav-number">7.</span> <span class="nav-text">再补充些概念</span></a></li></ol><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number"></span> <span class="nav-text">参考</span></a></li></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

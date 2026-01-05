@@ -1,0 +1,1042 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Linux Kernel,QEMU,VFIO,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="什么是热迁移虚拟机的迁移可以分为两大类: 离线迁移(Offline Migration)和热迁移(Live Migration)。离线迁移是指在迁移之前, 将虚拟机暂停, 拷贝其状态到目的主机,在目的主机主机重新建立运行状态, 恢复执行。这种迁移技术适用于对服务可用性要求不高的场合。热迁移, 是在保证虚拟机中服务正常运行的同时, 把虚拟机从一个物理主机拷贝到另一个物理主机。整个迁移过程对用户是透明">
+<meta name="keywords" content="Linux Kernel,QEMU,VFIO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="QEMU虚拟机热迁移">
+<meta property="og:url" content="http://joyxu.github.io/2025/02/08/QEMU虚拟机热迁移/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="什么是热迁移虚拟机的迁移可以分为两大类: 离线迁移(Offline Migration)和热迁移(Live Migration)。离线迁移是指在迁移之前, 将虚拟机暂停, 拷贝其状态到目的主机,在目的主机主机重新建立运行状态, 恢复执行。这种迁移技术适用于对服务可用性要求不高的场合。热迁移, 是在保证虚拟机中服务正常运行的同时, 把虚拟机从一个物理主机拷贝到另一个物理主机。整个迁移过程对用户是透明">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_big_picture.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_big_picture_vdpa.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_big_picture_vfio.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_big_picture_vfio2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_vfio_qemu.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_vfio_e810.png">
+<meta property="og:image" content="http://joyxu.github.io/images/qemu_live_migration_vfio_qemu2.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="QEMU虚拟机热迁移">
+<meta name="twitter:description" content="什么是热迁移虚拟机的迁移可以分为两大类: 离线迁移(Offline Migration)和热迁移(Live Migration)。离线迁移是指在迁移之前, 将虚拟机暂停, 拷贝其状态到目的主机,在目的主机主机重新建立运行状态, 恢复执行。这种迁移技术适用于对服务可用性要求不高的场合。热迁移, 是在保证虚拟机中服务正常运行的同时, 把虚拟机从一个物理主机拷贝到另一个物理主机。整个迁移过程对用户是透明">
+<meta name="twitter:image" content="http://joyxu.github.io/images/qemu_live_migration_big_picture.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2025/02/08/QEMU虚拟机热迁移/">
+
+
+
+
+
+  <title> QEMU虚拟机热迁移 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2025/02/08/QEMU虚拟机热迁移/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                QEMU虚拟机热迁移
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-02-08T01:41:52+08:00">
+                2025-02-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2025/02/08/QEMU虚拟机热迁移/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2025/02/08/QEMU虚拟机热迁移/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="什么是热迁移"><a href="#什么是热迁移" class="headerlink" title="什么是热迁移"></a>什么是热迁移</h1><p>虚拟机的迁移可以分为两大类: 离线迁移(Offline Migration)和热迁移(Live Migration)。<br>离线迁移是指在迁移之前, 将虚拟机暂停, 拷贝其状态到目的主机,在目的主机主机重新建立运行状态, 恢复执行。这种迁移技术适用于对服务可用性要求不高的场合。<br>热迁移, 是在保证虚拟机中服务正常运行的同时, 把虚拟机从一个物理主机拷贝到另一个物理主机。整个迁移过程对用户是透明的, 即用户感觉不到虚拟机位置的变化。</p>
+<h1 id="QEMU虚机热迁移基本流程"><a href="#QEMU虚机热迁移基本流程" class="headerlink" title="QEMU虚机热迁移基本流程"></a>QEMU虚机热迁移基本流程</h1><p>QEMU虚拟机热迁移是指在host上QEMU命令行中使用<code>migrate</code>命令把指定的虚拟机从一个host迁移到另外一个host。<br>热迁移过程中会有短暂的停机时间，但目的是尽可能减少停机时间。<br>热迁移的性能好坏，一般会考虑3个指标：</p>
+<ul>
+<li>整体迁移时间：越长越差</li>
+<li>停机时间：越长越差</li>
+<li>对业务性能的影响：迁移对于虚机中运行的服务的影响程度，可以通过每秒指令数来观察业务被中断的时间。</li>
+</ul>
+<p><img src="/images/qemu_live_migration_big_picture.png" alt="热迁移完整流程"></p>
+<p>流程基本如下：</p>
+<ol>
+<li>Setup</li>
+</ol>
+<p>Start guest on destination, connect, enable dirty page logging and more</p>
+<ol start="2">
+<li><p>Transfer Memory</p>
+<ul>
+<li>Guest continues to run</li>
+<li>Bandwidth limitation (controlled by the user)</li>
+<li>First transfer the whole memory</li>
+<li>Iteratively transfer all dirty pages (pages that were written to by the guest).</li>
+</ul>
+</li>
+<li><p>Stop the guest</p>
+<ul>
+<li>sync VM image(s) (guest’s hard drives).</li>
+</ul>
+</li>
+<li><p>Transfer State</p>
+<ul>
+<li>As fast as possible (no bandwidth limitation)</li>
+<li>All VM devices’ state and dirty pages yet to be transferred</li>
+</ul>
+</li>
+<li><p>Continue the guest</p>
+<ul>
+<li>On destination upon success,broadcast “I’m over here” Ethernet packet to announce new location of NIC(s).</li>
+<li>On source upon failure (with one exception).</li>
+</ul>
+</li>
+</ol>
+<h1 id="QEMU虚机热迁移实现"><a href="#QEMU虚机热迁移实现" class="headerlink" title="QEMU虚机热迁移实现"></a>QEMU虚机热迁移实现</h1><p>热迁移关键stage是上图中的stage2、3和5,QEMU中对应的实现如下：</p>
+<ol>
+<li>将虚拟机所有RAM pages设置成dirty，主要函数<code>ram_save_setup</code></li>
+<li>持续迭代将虚拟机的dirty pages发送到dst，直到达到一定条件，比如dirty pages数量比较少, 主要涉及函数<code>migration_thread</code>中的whille循环中的<code>migration_iteration_run</code>以及内存保存函数<code>ram_save_iterate</code></li>
+<li>停止src上面的guest，把剩下的dirty pages发送到dst，之后发送设备状态，主要函数<code>qemu_savevm_state_complete_precopy</code></li>
+</ol>
+<p>其中1和2是上图中的灰色区域，3是灰色和左边的区域。<br>之后就可以在dst上面继续运行qemu程序了。</p>
+<h2 id="源端的关键实现"><a href="#源端的关键实现" class="headerlink" title="源端的关键实现"></a>源端的关键实现</h2><pre><code>migration_thread
+ qemu_savevm_state_setup //标记所有RAM pages为dirty
+  ram_save_setup[save_setup]
+   ram_init_all
+    ram_init_bitmaps
+     ram_list_init_bitmaps
+      bitmap_newjiangp
+      bitmap_set
+
+migration_iteration_run //快速迭代拷贝脏内存，当剩余脏页量小于bandwidht * downtime时，进入停机拷贝阶段，参数可以参考hmp_info_migrate
+ qemu_savevm_state_pending
+  ram_save_pending[save_live_pending] //确定还要传输的字节数
+ qemu_savevm_state_iterate
+  ram_save_iterate[save_live_iterate] //把dirty pages传到dst上面
+   ram_find_and_save_block
+    send //调用具体的传输方法，比如TCP、RDMA等
+
+migration_completion
+ vm_stop_force_state
+ qemu_savevm_state_complete_precopy
+  qemu_savevm_state_complete_precopy_iterable
+   ram_save_complete[save_live_complete_precopy]
+    ram_find_and_save_block //拷贝最后的脏内存
+</code></pre><h2 id="目的端的关键实现"><a href="#目的端的关键实现" class="headerlink" title="目的端的关键实现"></a>目的端的关键实现</h2><pre><code>migration_incoming_process
+ qemu_loadvm_state 
+  qemu_loadvm_section_start_full
+   find_se //处理源端发过来的各个section
+   vmstate_load
+    ram_load[load_state] //接收到的数据拷贝到目的端虚拟机的内存上
+     ram_load_precopy
+      qemu_get_buffer
+</code></pre><h2 id="QEMU-VDPA设备热迁移"><a href="#QEMU-VDPA设备热迁移" class="headerlink" title="QEMU VDPA设备热迁移"></a>QEMU VDPA设备热迁移</h2><p>vdpa当前支持virtio-net，这块的迁移流程已经很成熟，因为virito设备的规范已经有virtio spec覆盖。</p>
+<p><img src="/images/qemu_live_migration_big_picture_vdpa.png" alt="VDPA直通设备热迁移完整流程"></p>
+<h2 id="VFIO设备热迁移"><a href="#VFIO设备热迁移" class="headerlink" title="VFIO设备热迁移"></a>VFIO设备热迁移</h2><p>VFIO直通设备在热迁移过程中，首先要求设备停流排空，把流量收敛住，进入一个稳态，过程中已经在路上的流量就涉及到DMA内存标脏，进入稳态之后，设备需要保存和恢复状态。</p>
+<p>在热迁移过程中涉及到很多回调，QEMU中主要涉及到<code>SaveVMHandlers</code>结构体，针对内存的回调基本在<code>savevm_ram_handlers</code>中。<br>那如果虚机中有VFIO直通设备，同样也需要实现针对VFIO设备的<code>savevm_vfio_handlers</code>回调, 另外也要实现<code>qdev_add_vm_change_state_handler_full</code> 和 <code>migration_add_notifier</code> 这两个回调。</p>
+<ul>
+<li><code>SaveVMHandlers</code> 是数据面，它定义了设备状态如何被持久化传输，没有它，设备状态就无法迁移，解决 “我的状态是什么？怎么存？怎么读？” 的问题。</li>
+<li><code>qdev_add_vm_change_state_handler_full</code> 是控制面，它允许设备在迁移过程的关键节点（开始前、完成后、失败时、加载前后等）执行管理操作，确保设备在迁移前后行为正确，但这些操作本身不产生迁移流数据。它调用 SaveVMHandlers 来传输实际状态。解决 “VM 要暂停/恢复了，我需要做点啥准备/收尾？” 的问题（特别是与迁移相关的暂停/恢复）。</li>
+<li><code>migration_add_notifier</code> 是错误处理，它提供系统级别对迁移状态变化的感知，针对VFIO设备，主要执行设备状态回滚操作。解决 “迁移这个事儿本身现在怎么样了？（开始了吗？成功了吗？失败了吗？）” 的问题。</li>
+</ul>
+<p>内核态的vfio厂商驱动中，也要对应实现上面的ioctl，以及migration序列化结构体，结构体中除了保存寄存器以外，还有硬件上不是通过寄存器呈现的硬件状态，比如通过mailbox下发给硬件的DMA地址。</p>
+<p><img src="/images/qemu_live_migration_big_picture_vfio.png" alt="VFIO直通设备热迁移完整流程"></p>
+<p><img src="/images/qemu_live_migration_big_picture_vfio2.png" alt="VFIO直通设备热迁移完整流程2"></p>
+<p>在QEMU的官网上，针对VFIO设备迁移在QEMU内的实现，专门有一段描述:(括号中的状态，分别代表 VM状态，迁移状态，VFIO设备状态)</p>
+<p><img src="/images/qemu_live_migration_vfio_qemu.png" alt="VFIO直通设备热迁移QEMU流程"></p>
+<h3 id="intel-E810网卡的VF热迁移实际流程"><a href="#intel-E810网卡的VF热迁移实际流程" class="headerlink" title="intel E810网卡的VF热迁移实际流程"></a>intel E810网卡的VF热迁移实际流程</h3><p><img src="/images/qemu_live_migration_vfio_e810.png" alt="intel E810 VFIO直通设备热迁移完整流程"></p>
+<h3 id="停机时间优化-通过pre-copy减少停机时间"><a href="#停机时间优化-通过pre-copy减少停机时间" class="headerlink" title="停机时间优化-通过pre-copy减少停机时间"></a>停机时间优化-通过pre-copy减少停机时间</h3><p>由于设备的状态保存和恢复发生在停机阶段，为了尽可能减少虚机停机时间，也会考虑pre-copy。</p>
+<p><img src="/images/qemu_live_migration_vfio_qemu2.png" alt="直通设备热迁移流程"></p>
+<h3 id="VFIO设备迁移相关patchset"><a href="#VFIO设备迁移相关patchset" class="headerlink" title="VFIO设备迁移相关patchset"></a>VFIO设备迁移相关patchset</h3><p>VFIO热迁移的历史可以追踪一下patch set:</p>
+<ul>
+<li><a href="https://patchwork.kernel.org/project/netdevbpf/patch/20220220095716.153757-10-yishaih@nvidia.com/#24749543" target="_blank" rel="noopener">vfio: Define device migration protocol v2</a></li>
+<li><a href="https://lore.kernel.org/all/20230622214845.3980-1-joao.m.martins@oracle.com/" target="_blank" rel="noopener">vfio: VFIO migration support with vIOMMU</a></li>
+<li><a href="https://lore.kernel.org/all/cover.1738171076.git.maciej.szmigiero@oracle.com/" target="_blank" rel="noopener">Multifd: device state transfer support with VFIO consumer</a></li>
+</ul>
+<p>内核态的驱动适配可以参考这个patch set:</p>
+<ul>
+<li><a href="https://patchwork.kernel.org/project/linux-pci/patch/20220308184902.2242-1-shameerali.kolothum.thodi@huawei.com/" target="_blank" rel="noopener">vfio/hisilicon: add ACC live migration driver</a></li>
+</ul>
+<h1 id="未来演进"><a href="#未来演进" class="headerlink" title="未来演进"></a>未来演进</h1><ul>
+<li>ARM架构特性演进，比如在iommu侧也实现mmu侧的相关特性，比如：FEAT_TLBIRANG减少TLBI次数，FEAT_BBM=2, MMU/IOMMU硬件标脏等。</li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://kvm-forum.qemu.org/2021/Live%20Migrating%20VFIO%2C%20vhost-user%2C%20and%20vfio-user%20Devices.pdf" target="_blank" rel="noopener">Live Migrating VFIO, vhost-user,and vfio-user Devices</a></li>
+<li><a href="https://dl.acm.org/doi/abs/10.5555/1251203.1251223#core-collateral-purchase-access" target="_blank" rel="noopener">Live Migration of Virtual Machines</a></li>
+<li><a href="https://developers.redhat.com/blog/2015/03/24/live-migrating-qemu-kvm-virtual-machines" target="_blank" rel="noopener">Live Migrating QEMU-KVM Virtual Machines</a></li>
+<li><a href="https://www.cnblogs.com/yuquanlaobo/archive/2013/01/17/2863040.html" target="_blank" rel="noopener">论文笔记 Live Migration of Virtual Machines NSDI, 2005</a></li>
+<li><a href="https://terenceli.github.io/%E6%8A%80%E6%9C%AF/2018/03/01/qemu-live-migration" target="_blank" rel="noopener">qemu热迁移简介</a></li>
+<li><a href="https://netdevconf.info/0x18/docs/netdev-0x18-paper22-talk-paper.pdf" target="_blank" rel="noopener">Journey of advancing device migration for virtio PCI hardware devices</a></li>
+<li><a href="https://netdevconf.info/0x18/docs/netdev-0x18-paper22-talk-slides/virtio-live-migratation-slides.pdf" target="_blank" rel="noopener">Journey of advancing virtio live migration</a></li>
+<li><a href="https://www.qemu.org/docs/master/devel/migration/vfio.html" target="_blank" rel="noopener">VFIO device migration</a></li>
+<li><a href="https://liujunming.top/2022/05/21/A-Perfect-Solution-for-Live-Migration-with-Pass-through-Devices-by-Quan-Xu/" target="_blank" rel="noopener">A Perfect Solution for Live Migration with Pass-through Devices by Quan Xu</a></li>
+<li><a href="https://liujunming.top/2023/10/05/%E5%9F%BA%E4%BA%8EE810%E7%BD%91%E5%8D%A1%E7%9A%84VF%E7%83%AD%E8%BF%81%E7%A7%BB/" target="_blank" rel="noopener">基于E810网卡的VF热迁移</a></li>
+<li><a href="https://cshuo.top/2016/09/10/live_migration/" target="_blank" rel="noopener">VM 热迁移详解</a></li>
+<li><a href="https://kvm-forum.qemu.org/2024/KVM_Forum_2024_-_VFIO_5LSTtyJ.pdf" target="_blank" rel="noopener">Unleashing VFIO’s Potential: Code Refactoring and New Frontiers in Device Virtualization</a></li>
+<li><a href="https://kvm-forum.qemu.org/2024/kvm-forum-2024-multifd-device-state-transfer_3K5EQIG.pdf" target="_blank" rel="noopener">QEMU live migration device state transfer parallelization via multifd channels</a></li>
+<li><a href="https://kvm-forum.qemu.org/2024/Unleashing_SR-IOV_on_Virtual_Machines_qSX9OJ9.pdf" target="_blank" rel="noopener">virtio-net: add support for SR-IOV emulation</a></li>
+<li><a href="https://netdevconf.info/0x17/docs/netdev-0x17-paper30-talk-slides/idpf_live_migration_support.pdf" target="_blank" rel="noopener">IDPF Live Migration Support</a></li>
+<li><a href="https://www.patchew.org/2022/KVM22-Migratable-Vhost-vDPA.pdf/" target="_blank" rel="noopener">Hardware Friendly Vhost vDPA Towards an Efficient and Migratable Device Model</a></li>
+<li><a href="https://kvm-forum.qemu.org/2023/vDPA_sw_lm_-_KVM2023_6Ix6R5i.pdf" target="_blank" rel="noopener">vDPA-net live migration with Shadow Virtqueue</a></li>
+<li><a href="https://www.linux-kvm.org/images/f/fa/Live_migration_with_mdev_device_-_2017_0.pdf" target="_blank" rel="noopener">Live Migration with Mediated Device</a></li>
+<li><a href="https://netdevconf.info/0x18/sessions/talk/vdpa-live-migration-downtime-improvements-for-net-devices.html" target="_blank" rel="noopener">vDPA Live Migration Downtime improvements for net devices</a></li>
+<li><a href="https://www.dpdk.org/wp-content/uploads/sites/35/2018/12/XiaoWang-DPDK-US-Summit-SW-assisted-VDPA-for-LM-v2.pdf" target="_blank" rel="noopener">SW Assisted vDPA for Live Migration</a></li>
+<li><a href="https://developers.redhat.com/articles/2024/02/21/virtio-live-migration-technical-deep-dive" target="_blank" rel="noopener">Virtio live migration technical deep dive</a></li>
+<li><a href="https://blogs.oracle.com/cloud-infrastructure/post/first-principles-eliminating-vm-downtime-with-ocis-live-migration" target="_blank" rel="noopener">First Principles: Eliminating VM downtime with OCI’s live migration</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+          
+            <a href="/tags/QEMU/" rel="tag"># QEMU</a>
+          
+            <a href="/tags/VFIO/" rel="tag"># VFIO</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2024/08/31/软件探测cpu微架构和性能/" rel="next" title="软件探测cpu微架构和性能">
+                <i class="fa fa-chevron-left"></i> 软件探测cpu微架构和性能
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2025/08/05/linux功耗控制/" rel="prev" title="linux功耗控制">
+                linux功耗控制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2025/02/08/QEMU虚拟机热迁移/" data-title="QEMU虚拟机热迁移" data-url="http://joyxu.github.io/2025/02/08/QEMU虚拟机热迁移/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是热迁移"><span class="nav-number">1.</span> <span class="nav-text">什么是热迁移</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#QEMU虚机热迁移基本流程"><span class="nav-number">2.</span> <span class="nav-text">QEMU虚机热迁移基本流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#QEMU虚机热迁移实现"><span class="nav-number">3.</span> <span class="nav-text">QEMU虚机热迁移实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源端的关键实现"><span class="nav-number">3.1.</span> <span class="nav-text">源端的关键实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#目的端的关键实现"><span class="nav-number">3.2.</span> <span class="nav-text">目的端的关键实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#QEMU-VDPA设备热迁移"><span class="nav-number">3.3.</span> <span class="nav-text">QEMU VDPA设备热迁移</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#VFIO设备热迁移"><span class="nav-number">3.4.</span> <span class="nav-text">VFIO设备热迁移</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#intel-E810网卡的VF热迁移实际流程"><span class="nav-number">3.4.1.</span> <span class="nav-text">intel E810网卡的VF热迁移实际流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#停机时间优化-通过pre-copy减少停机时间"><span class="nav-number">3.4.2.</span> <span class="nav-text">停机时间优化-通过pre-copy减少停机时间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VFIO设备迁移相关patchset"><span class="nav-number">3.4.3.</span> <span class="nav-text">VFIO设备迁移相关patchset</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#未来演进"><span class="nav-number">4.</span> <span class="nav-text">未来演进</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

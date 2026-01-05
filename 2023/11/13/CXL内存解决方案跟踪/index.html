@@ -1,0 +1,977 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Linux Kernel,CXL,memory,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="随着新型CXL内存设备的出现，Linux Kernel中出现了很多内存技术相关的变化，比如：  基于种内存设备类型的Tiered Memory 用户态内存监控管理机制DAMON  更多的可以参考最近几年的LSFMM议题，特别是2023年的，LWN也专门做了一个专题The 2023 LSFMM+BPF Summit SMDK三星是内存和nvme的大厂，从设备厂商的角度，自然就推了一套结合自己设备的竞">
+<meta name="keywords" content="Linux Kernel,CXL,memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CXL内存解决方案跟踪">
+<meta property="og:url" content="http://joyxu.github.io/2023/11/13/CXL内存解决方案跟踪/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="随着新型CXL内存设备的出现，Linux Kernel中出现了很多内存技术相关的变化，比如：  基于种内存设备类型的Tiered Memory 用户态内存监控管理机制DAMON  更多的可以参考最近几年的LSFMM议题，特别是2023年的，LWN也专门做了一个专题The 2023 LSFMM+BPF Summit SMDK三星是内存和nvme的大厂，从设备厂商的角度，自然就推了一套结合自己设备的竞">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/cxl_smdk_overview.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cxl_smdk_overview2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cxl_pmem_overview.png">
+<meta property="og:image" content="http://joyxu.github.io/images/cxl_pmem_devdax_usage.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CXL内存解决方案跟踪">
+<meta name="twitter:description" content="随着新型CXL内存设备的出现，Linux Kernel中出现了很多内存技术相关的变化，比如：  基于种内存设备类型的Tiered Memory 用户态内存监控管理机制DAMON  更多的可以参考最近几年的LSFMM议题，特别是2023年的，LWN也专门做了一个专题The 2023 LSFMM+BPF Summit SMDK三星是内存和nvme的大厂，从设备厂商的角度，自然就推了一套结合自己设备的竞">
+<meta name="twitter:image" content="http://joyxu.github.io/images/cxl_smdk_overview.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2023/11/13/CXL内存解决方案跟踪/">
+
+
+
+
+
+  <title> CXL内存解决方案跟踪 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2023/11/13/CXL内存解决方案跟踪/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                CXL内存解决方案跟踪
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-11-13T03:24:00+08:00">
+                2023-11-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2023/11/13/CXL内存解决方案跟踪/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2023/11/13/CXL内存解决方案跟踪/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>随着新型CXL内存设备的出现，Linux Kernel中出现了很多内存技术相关的变化，比如：</p>
+<ul>
+<li>基于种内存设备类型的Tiered Memory</li>
+<li>用户态内存监控管理机制DAMON</li>
+</ul>
+<p>更多的可以参考最近几年的LSFMM议题，特别是2023年的，LWN也专门做了一个专题<a href="https://lwn.net/Articles/lsfmmbpf2023/" target="_blank" rel="noopener">The 2023 LSFMM+BPF Summit</a></p>
+<h1 id="SMDK"><a href="#SMDK" class="headerlink" title="SMDK"></a>SMDK</h1><p>三星是内存和nvme的大厂，从设备厂商的角度，自然就推了一套结合自己设备的竞争力方案<a href="https://github.com/OpenMPDK/SMDK" target="_blank" rel="noopener">SMDK</a>。<br>整个方案简单讲，提供了两种使用CXL内存设备的方式：</p>
+<ul>
+<li>用户态不感知CXL内存设备，保证兼容原有用户态程序，通过C库和内核来做CXL内存和普通DDR的管理控制</li>
+<li>用户态感知CXL内存，需要显式传递 <code>MAP_EXMEM</code> 给<code>mmap</code></li>
+</ul>
+<p>整体架构如下：</p>
+<p><img src="/images/cxl_smdk_overview.png" alt="SMDK overview"></p>
+<p>一层细节如下:</p>
+<p><img src="/images/cxl_smdk_overview2.png" alt="SMDK overview2"></p>
+<p>由于该技术引入了一个新的zone,<code>ZONE_EXMEM</code>的概念，在社区里面引起了比较大的争议，主要认为zone是内核内部的概念，不应该暴露在<br>核心代码以外，CXL内存用<code>ZONE_MOVABLE</code>就可以了，增加zone只会增加复杂性，并不会带来任何新的东西。<br>但是SMDK的maintainer认为，现有的zone的概念不能正确表达CXL内存设备的特点，<code>ZONE_NORMAL</code>不允许插拔，<code>ZONE_MOVABLE</code>不允许固定，<code>ZONE_DEVICE</code>不允许进行页面分配。</p>
+<h2 id="代码细节"><a href="#代码细节" class="headerlink" title="代码细节"></a>代码细节</h2><p>因为整个代码树已经没有了具体的commit历史信息了，看代码的时候建议以<code>ZONE_EXMEM</code>或者<code>CONFIG_EXMEM</code>来看，比较方便。</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>内核中内存初始化的建议流程如下：</p>
+<pre><code>cxl_pci_probe
+  cxl_dvsec_rr_decode
+    register_cxl_dvsec_ranges
+      update_or_add_cxl_meminfo (内存起始地址，范围，numa节点)
+        request_mem_region
+        add_subzone
+        add_memory_driver_managed
+          mem_hotplug_begin
+          memblock_add_node (添加CXL物理内存)
+          __try_online_node
+             hotadd_init_pgdat (建立CXL内存的struct page到物理内存的映射)
+</code></pre><h1 id="基于PMEM的扩展"><a href="#基于PMEM的扩展" class="headerlink" title="基于PMEM的扩展"></a>基于PMEM的扩展</h1><p>虽然intel已经放弃了PMEM，但是<code>PMEM.io</code>仍在发展，很多原先基于PMEM的技术，仍然适用于CXL内存设备。<br>在CXL官网上也重点介绍了CXL内存技术，而且这个技术栈似乎也在成为主流，该技术把CXL内存也作为两种设备对上层呈现：</p>
+<ul>
+<li>类似系统内存模式，仅仅创建内存、构造cpuless numa节点的模式，用户态程序可以不用修改</li>
+<li>继承pmem的设备，对外呈现<code>/dev/dax</code>设备节点的模式，用户态基于已有的libmemkind从该设备分配CXL内存</li>
+</ul>
+<h2 id="整体架构"><a href="#整体架构" class="headerlink" title="整体架构"></a>整体架构</h2><p><img src="/images/cxl_pmem_overview.png" alt="PMEM CXL overview"></p>
+<h2 id="devdax使用模式"><a href="#devdax使用模式" class="headerlink" title="devdax使用模式"></a>devdax使用模式</h2><p><img src="/images/cxl_pmem_devdax_usage.png" alt="PMEM CXL devdax usage"></p>
+<h2 id="system-ram使用缺陷"><a href="#system-ram使用缺陷" class="headerlink" title="system ram使用缺陷"></a>system ram使用缺陷</h2><p>cpuless NUMA节点的形式出现，Linux Kernel就可以分配PMEM上的memory，这样和使用一般DRAM没什么区别，但只是解决了第一步的问题，怎么把PMEM“用好”的问题还没有解决。<br>比如，当内核分配内存时，如果从PMEM上分配了memory，并且这块内存上的数据是被经常访问的，那么由于物理特性上的差异，一般应用都会体会到性能的下降。<br>那么怎么更明智的使用PMEM就是一个待解决的问题。</p>
+<p>吴峰光的一组patch <a href="https://lore.kernel.org/linux-mm/20190202065741.GA1011@xz-x1/T/" target="_blank" rel="noopener">PMEM NUMA node and hotness accounting/migration</a> 尝试解决这个问题。</p>
+<p>这组patch主要提供了下面几个功能：</p>
+<ol>
+<li>隔离DRAM和PMEM。为PMEM单独构造了一个zonelist，这样一般的内存分配是不会分配到PMEM上的。</li>
+<li>跟踪内存的冷热。利用内核中已经有的idle page tracking功能（目前主线内核只支持系统全局的tracking），在per process的粒度上跟踪内存的冷热。</li>
+<li>利用现有的page reclaim，在reclaim时将冷内存迁移到PMEM上（只能迁移匿名页）。</li>
+<li>利用一个userspace的daemon和idle page tracking，来将热内存（在PMEM上的）迁移到DRAM中。</li>
+</ol>
+<p>这组patch发到LKML以后，引来了很激烈的讨论，主要集中在两个方面：</p>
+<ol>
+<li>为什么要单独构造一个zonelist把PMEM和DRAM分开？</li>
+</ol>
+<p>目前的NUMA API只能控制从哪个node分配，但是不能控制比例，比如mbind()，只能告诉进程这段VMA可以用哪些node，但是不能控制具体多少memory从哪个node来。<br>要想做到更细粒度的控制，需要改造目前的NUMA API。<br>另外目前memory hierarchy越来越复杂，比如device memory，这都是目前的NUMA API所不能很好解决的。</p>
+<ol start="2">
+<li>能不能把冷热内存迁移通用化？</li>
+</ol>
+<p>冷热内存迁移这个方向是没有问题的，问题在于该patch中的处理太过于PMEM specific了。<br>内核中的NUMA balancing是把“热”内存迁移到最近的NUMA node来提高性能。但是却没有对“冷”内存的处理。所以能不能实现一种更通用的NUMA rebalancing?<br>比如在reclaim时候，不是直接reclaim内存，而是把内存迁移到一个远端的，或者空闲的，或者低速的NUMA node，类似于NUMA balancing所做的，只不过是往相反的方向。</p>
+<p>这个patch <a href="https://lore.kernel.org/linux-mm/1554955019-29472-1-git-send-email-yang.shi@linux.alibaba.com/" target="_blank" rel="noopener">Another Approach to Use PMEM as NUMA Node</a> 就体现了这种思路。<br>利用Kernel中已经很成熟的memory reclaim路径把“冷”内存迁移到PMEM node中，NUMA Balancing访问到这个page的时候可以选择是否把这个页迁移回DRAM，相当于是一种比较粗粒度的“热”内存识别。</p>
+<p>社区中还有一种更加激进的想法就是不区分PMEM和DRAM，在memory reclaim时候只管把“冷”内存迁移到最近的remote node，如果target node也有内存压力，那就在target node上做同样的迁移。<br>但是这种方法有可能引入一个内存迁移“环”，导致内存在NUMA node中间不停地迁移，有可能引入unbounded time问题。而且一旦node增多，可能会迅速恶化问题。</p>
+<p>在内存回收方面还有一个更可能立竿见影的方案就是把PMEM用作swap设备或者swap文件。目前swap的最大问题就是传统磁盘的延迟问题，很容易造成系统无响应，这也是为什么有zswap这样的技术出现。<br>PMEM的低延迟特性完全可以消除swap的延迟问题。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://lwn.net/Articles/931416/" target="_blank" rel="noopener">Memory-management changes for CXL</a></li>
+<li><a href="https://lwn.net/Articles/720380/" target="_blank" rel="noopener">RFC - Coherent Device Memory</a></li>
+<li><a href="https://lwn.net/Articles/713035/" target="_blank" rel="noopener">Define coherent device memory node</a></li>
+<li><a href="https://pmem.io/blog/2023/05/exploring-the-software-ecosystem-for-compute-express-link-cxl-memory/" target="_blank" rel="noopener">EXPLORING THE SOFTWARE ECOSYSTEM FOR COMPUTE EXPRESS LINK (CXL) MEMORY</a></li>
+<li><a href="https://lore.kernel.org/linux-mm/20210325230938.30752-1-joao.m.martins@oracle.com/" target="_blank" rel="noopener">把THP的tail page保存到/dev/dax这种慢速内存设备上</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/1442273" target="_blank" rel="noopener">Linux Kernel中AEP的现状和发展</a></li>
+<li><a href="https://pmem.io/blog/2020/01/memkind-support-for-kmem-dax-option/" target="_blank" rel="noopener">MEMKIND SUPPORT FOR KMEM DAX OPTION</a></li>
+<li><a href="https://www.fujitsu.com/jp/documents/products/software/os/linux/catalog/NVMSA_CXL_overview_and_the_status_of_Linux.pdf" target="_blank" rel="noopener">Compute Express Link(CXL), the next generation interconnect – Overview and the status of Linux</a></li>
+<li><a href="https://lore.kernel.org/linux-cxl/646e7f96f33e2_33fb3294c1@dwillia2-xfh.jf.intel.com.notmuch/T/#m8f3dd3d916600cce4ea088588add5501870c5241" target="_blank" rel="noopener">CXL device (type 3 memory) hotplug</a></li>
+<li><a href="https://lwn.net/Articles/894598/" target="_blank" rel="noopener">CXL 1: Management and tiering</a></li>
+<li><a href="https://lwn.net/Articles/894626/" target="_blank" rel="noopener">CXL 2: Pooling, sharing, and I/O-memory resources</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+          
+            <a href="/tags/CXL/" rel="tag"># CXL</a>
+          
+            <a href="/tags/memory/" rel="tag"># memory</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/08/29/ARM服务器软件栈系列1/" rel="next" title="ARM服务器软件栈系列1">
+                <i class="fa fa-chevron-left"></i> ARM服务器软件栈系列1
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/11/28/设备虚拟化/" rel="prev" title="设备虚拟化">
+                设备虚拟化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2023/11/13/CXL内存解决方案跟踪/" data-title="CXL内存解决方案跟踪" data-url="http://joyxu.github.io/2023/11/13/CXL内存解决方案跟踪/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SMDK"><span class="nav-number">1.</span> <span class="nav-text">SMDK</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#代码细节"><span class="nav-number">1.1.</span> <span class="nav-text">代码细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#初始化"><span class="nav-number">1.1.1.</span> <span class="nav-text">初始化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基于PMEM的扩展"><span class="nav-number">2.</span> <span class="nav-text">基于PMEM的扩展</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#整体架构"><span class="nav-number">2.1.</span> <span class="nav-text">整体架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#devdax使用模式"><span class="nav-number">2.2.</span> <span class="nav-text">devdax使用模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#system-ram使用缺陷"><span class="nav-number">2.3.</span> <span class="nav-text">system ram使用缺陷</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">3.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

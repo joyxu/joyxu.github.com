@@ -1,0 +1,1116 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="arm64,SoC,CSU,CHI,Cache,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="目的本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识，主要围绕read/write，以及衍生出来的write combine/merge等。 SoC概览通常一颗arm64 SoC使用的IP如下： graph TD     A[Cortex-A710处理器] --&amp;gt;|CHI接口| B(CMN-600)     B --&amp;gt;|CHI协议| C[DMC-1000内存控制器]">
+<meta name="keywords" content="arm64,SoC,CSU,CHI,Cache">
+<meta property="og:type" content="article">
+<meta property="og:title" content="arm64 cache和总线总结">
+<meta property="og:url" content="http://joyxu.github.io/2025/12/30/arm64-cache和总线总结/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="目的本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识，主要围绕read/write，以及衍生出来的write combine/merge等。 SoC概览通常一颗arm64 SoC使用的IP如下： graph TD     A[Cortex-A710处理器] --&amp;gt;|CHI接口| B(CMN-600)     B --&amp;gt;|CHI协议| C[DMC-1000内存控制器]">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/arm_server_flash_scp.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="arm64 cache和总线总结">
+<meta name="twitter:description" content="目的本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识，主要围绕read/write，以及衍生出来的write combine/merge等。 SoC概览通常一颗arm64 SoC使用的IP如下： graph TD     A[Cortex-A710处理器] --&amp;gt;|CHI接口| B(CMN-600)     B --&amp;gt;|CHI协议| C[DMC-1000内存控制器]">
+<meta name="twitter:image" content="http://joyxu.github.io/images/arm_server_flash_scp.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2025/12/30/arm64-cache和总线总结/">
+
+
+
+
+
+  <title> arm64 cache和总线总结 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2025/12/30/arm64-cache和总线总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                arm64 cache和总线总结
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2025-12-30T02:57:07+08:00">
+                2025-12-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2025/12/30/arm64-cache和总线总结/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2025/12/30/arm64-cache和总线总结/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h1><p>本文主要作为自己的一个总结，用于记录一些arm64 cache和总线相关的知识，主要围绕read/write，以及衍生出来的write combine/merge等。</p>
+<h1 id="SoC概览"><a href="#SoC概览" class="headerlink" title="SoC概览"></a>SoC概览</h1><p>通常一颗arm64 SoC使用的IP如下：</p>
+<pre class="mermaid">graph TD
+    A[Cortex-A710处理器] -->|CHI接口| B(CMN-600)
+    B -->|CHI协议| C[DMC-1000内存控制器]
+    B -->|CHI协议| D[PCIe控制器]
+    B -->|CHI协议| E[GPU]
+    C -->|DDR接口| F[内存]
+    D -->|PCIe接口| G[外设]
+    E -->|CHI协议| B</pre>
+
+<p>片上地址翻译流程基本如下：</p>
+<pre class="mermaid">flowchart TD
+    %% 定义组件（按数据流向布局）
+    subgraph "发起端"
+        CPU["CPU发起虚拟地址(VA)请求"]
+        Device["I/O 设备(如PCIe外设)"]
+    end
+
+    subgraph "地址转换层"
+        MMU["MMU(CPU内置)VA → 物理地址(PA)"]
+        IOMMU["IOMMU IOVA → 物理地址(PA)"]
+    end
+
+    subgraph "互连与地址路由层"
+        CMN["CMN(互连控制器)核心功能：1. 解析PA2. 系统地址映射(SAM)3. 路由至Home Node"]
+        HomeNode["Home Node核心功能：1. PA → 目录条目映射2. 缓存一致性协调3. 转发PA至内存控制器"]
+    end
+
+    subgraph "存储层"
+        DMC["内存控制器(DMC)PA → DRAM行列地址访问物理内存"]
+        DRAM["DRAM存储数据"]
+    end</pre>
+
+
+<h1 id="CHI展开"><a href="#CHI展开" class="headerlink" title="CHI展开"></a>CHI展开</h1><h2 id="CHI"><a href="#CHI" class="headerlink" title="CHI"></a>CHI</h2><p>协议层，Coherent Hub Interface，一种缓存一致性协议。<br>功能：维护系统的缓存一致性，在多个组件（如处理器、缓存、内存控制器等）之间传输数据，确保数据操作的顺序一致性。</p>
+<p>CHI 协议通常定义了请求（REQ）、数据（DAT）和响应（RSP）三大通道，实现极致并发+高带宽+不阻塞。</p>
+<ul>
+<li>请求通道（REQ）：声明我要干什么，操作类型+地址+事务ID(TxnID)。用于发送读 / 写请求、缓存维护请求和DVM请求等，是发起数据操作的起始通道。例如，CPU 需要从内存读取数据时，就会通过 REQ 通道发送相应的读请求。</li>
+<li>数据通道（DAT）：真正的数据搬运，会带上DBID。包括写数据通道（WDAT）和读数据通道（RDAT）。WDAT 用于传输写数据、原子数据、监听数据和转发数据等；RDAT 用于接收读数据和原子数据等，负责实际数据的传输。</li>
+<li>响应通道（RSP）：状态与完成。包括发送响应通道（SRSP）和接收响应通道（CRSP）。SRSP 用于发送监听响应和完成确认等；CRSP 用于接收来自完成者（Completer）的响应，用于反馈请求的处理结果，确保数据操作的完整性和一致性。</li>
+</ul>
+<p>以core写pcie设备bar空间mmio寄存器为例：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Core as CPU Core
+    participant CSU as CSU
+    participant CHI_REQ as CHI (REQ)
+    participant CHI_DAT as CHI (DAT)
+    participant CHI_RSP as CHI (RSP)
+    participant RC as PCIe RC
+    participant EP as PCIe EP
+
+    %% 第一阶段：Core 发起写请求，CSU 代为管理
+    Core->>CSU: 1. 发起写请求 (REQ, TxnID, BAR_ADDR, W_DATA)
+    Note over CSU: 2. CSU 判断为 Non-Cacheable<br>暂存 W_DATA，接管事务
+    CSU->>CHI_REQ: 3. CSU 发起 CHI 写请求 (REQ, TxnID, BAR_ADDR)
+    CHI_REQ->>RC: 4. REQ 通道路由
+    RC->>EP: 5. CHI→PCIe TLP 转换
+    EP-->>RC: 6. 接收请求→生成就绪响应
+    RC-->>CHI_RSP: 7. PCIe→CHI RSP 转换 (带 DBID)
+    CHI_RSP-->>CSU: 8. RSP 通道回传 DBID
+    Note over CSU: 9. CSU 接收并持有 DBID
+
+    %% 第二阶段：CSU 作为发起者，通过 DAT 通道完成写入
+    CSU->>CHI_DAT: 10. CSU 发起 CHI 写数据 (DAT, TxnID, DBID, W_DATA)
+    CHI_DAT->>RC: 11. DAT 通道路由到 PCIe RC
+    RC->>EP: 12. CHI→PCIe TLP 转换
+    EP-->>RC: 13. 写入 MMIO 寄存器→生成完成响应
+    RC-->>CHI_RSP: 14. PCIe→CHI RSP 转换 (带 TxnID)
+    CHI_RSP-->>CSU: 15. RSP 通道回传完成确认 (Completion)
+    Note over CSU: 16. CSU 处理 Completion<br>匹配 TxnID 并释放资源
+    CSU-->>Core: 17. 通知 Core 事务完成
+    Note over Core: 18. Core 确认并继续执行</pre>
+
+<p>多core之间访问同一个数据时为例：</p>
+<pre class="mermaid">sequenceDiagram
+    participant CoreA as Core A
+    participant CoreB as Core B
+    participant CSUA as CSU (A)
+    participant CSUB as CSU (B)
+    participant ICN as ICN (CHI)
+    participant HN as Home Node (HN)
+
+    %% 初始状态：Core A 已将数据从内存加载到其缓存中
+    Note over CoreA, HN: 初始状态：数据在 Core A 的缓存中，状态为 Shared (S)
+
+    %% 场景一：Core B 读取已被 Core A 缓存的共享数据
+    CoreB->>CSUB: 1. 发起读请求 (Data_X)
+    CSUB->>ICN: 2. 缓存未命中，发送 ReadNoSnp 请求
+    ICN->>HN: 3. 路由请求到 Home Node
+    HN-->>ICN: 4. 查询目录，发现 Core A 有副本
+    ICN->>CSUA: 5. 发送 Snoop 请求 (ReadClean)
+    CSUA-->>ICN: 6. Snoop 响应：提供数据，状态保持 Shared (S)
+    ICN-->>CSUB: 7. 转发数据给 Core B
+    CSUB-->>CoreB: 8. 数据加载到 Core B 缓存，状态为 Shared (S)
+    Note over CoreA, CoreB: 场景一结束：数据在 A 和 B 中均为 Shared (S) 状态
+
+    %% 场景二：Core B 尝试写入已被 Core A 缓存的共享数据
+    CoreB->>CSUB: 9. 发起写请求 (Data_X)
+    CSUB->>ICN: 10. 缓存命中 (S)，发送 MakeUnique 请求
+    ICN->>HN: 11. 路由请求到 Home Node
+    HN-->>ICN: 12. 查询目录，发现 Core A 有副本
+    ICN->>CSUA: 13. 发送 Snoop 请求 (MakeInvalid)
+    CSUA-->>ICN: 14. Snoop 响应：确认无效化，状态变为 Invalid (I)
+    ICN-->>CSUB: 15. 发送 MakeUnique 响应 (Grant)
+    CSUB-->>CoreB: 16. Core B 写入数据，缓存状态变为 Modified (M)
+    Note over CoreA, CoreB: 场景二结束：Core B 缓存状态为 Modified (M)，Core A 为 Invalid (I)</pre>
+
+<h2 id="CMN"><a href="#CMN" class="headerlink" title="CMN"></a>CMN</h2><p>CHI协议片上网络实现层，Coherent mesh network，是arm定义的一个互联硬件架构，包括home node, snoop filter node, router等概念，负载消息路由、缓存目录维护和一致性控制等。</p>
+<h3 id="CCI-amp-CCN-amp-CMN的演进"><a href="#CCI-amp-CCN-amp-CMN的演进" class="headerlink" title="CCI &amp; CCN &amp; CMN的演进"></a>CCI &amp; CCN &amp; CMN的演进</h3><pre><code>+----------------+--------------------------------+----------------+----------------------+----------------+------------------------+----------------+------------------------+----------------+------------------------+
+| IP 系列        | 全称                           | 发布时间       | 拓扑结构             | 协议           | Snooping 机制          | 核心数支持     | 典型应用               | 功耗           | 演进关系               |
++================+================================+================+======================+================+========================+================+========================+================+========================+
+| CMN            | Coherent Mesh Network          | 2016-至今      | 网状（Mesh）         | AMBA5 CHI      | 组播（目录驱动）       | 64-256+核      | 数据中心、HPC、边缘计算| 高（高性能）   | 新一代，取代 CCN       |
++----------------+--------------------------------+----------------+----------------------+----------------+------------------------+----------------+------------------------+----------------+------------------------+
+| CCI            | Cache Coherent Interconnect    | 2011-2015      | 环形总线（Ring Bus） | AMBA4 ACE      | 广播（Snoop Filter优化）| 8-24核        | 手机、平板、嵌入式设备 | 低（移动优化） | 早期技术，逐渐淘汰     |
++----------------+--------------------------------+----------------+----------------------+----------------+------------------------+----------------+------------------------+----------------+------------------------+
+| CCN            | Cache Coherent Network         | 2012-2014      | 分布式架构           | AMBA4 ACE扩展  | 混合（部分组播+广播兜底）| 16-48核      | 早期服务器、网络设备   | 中等（平衡）   | 过渡方案，被 CMN 取代  |
++----------------+--------------------------------+----------------+----------------------+----------------+------------------------+----------------+------------------------+----------------+------------------------+
+</code></pre><p>在CCN和CMN中引入了Directory-based coherence目录缓存机制，用一个目录来记录每一块内存数据的缓存状态，从而实现精准的通信，而避免了全局广播snoop。</p>
+<ol>
+<li>目录（Directory）的角色</li>
+</ol>
+<p>位置：在 CMN 中，目录信息通常分布式地存储在 Home Node 中。每个 Home Node 负责管理一个特定地址范围的内存块。<br>内容：对于它管理的每一个缓存行（Cache Line），目录会记录一个状态，这个状态至少包含：</p>
+<pre><code>状态位：例如，该缓存行是 Exclusive（独占）、Shared（共享） 还是 Modified（已修改）。
+共享者列表（Sharers List）：如果状态是 Shared，这个列表会精确地指出哪些核心（或缓存）当前持有该缓存行的副本。
+</code></pre><ol start="2">
+<li>工作流程（以 CMN 为例）<br>假设核心 A 想要修改一个被核心 B 和 C 共享的数据块：</li>
+</ol>
+<pre class="mermaid">sequenceDiagram
+    participant CoreA as Core A
+    participant CoreB as Core B
+    participant CoreC as Core C
+    participant HomeNode as Home Node (目录)
+    participant CHI as CHI Network
+
+    %% 1. 核心 A 发起写请求
+    CoreA->>CHI: 发起写请求 (e.g., WriteUnique)
+    CHI->>HomeNode: 将请求路由到 Home Node
+
+    %% 2. Home Node 查询目录
+    HomeNode->>HomeNode: 查询目录，发现数据被 Core B 和 C 共享
+
+    %% 3. Home Node 发起精准的 Snoop 请求 (组播)
+    HomeNode->>CHI: 发送 Snoop 请求，目标为 Core B 和 C (Multicast)
+    CHI->>CoreB: Snoop Invalidate
+    CHI->>CoreC: Snoop Invalidate
+
+    %% 4. 目标核心响应并使缓存无效
+    CoreB->>CHI: 确认无效化 (Ack)
+    CoreC->>CHI: 确认无效化 (Ack)
+    CHI->>HomeNode: 汇总确认信息
+
+    %% 5. Home Node 授权并提供数据
+    HomeNode->>CHI: 授权 Core A 独占写入，并发送数据
+    CHI->>CoreA: 提供数据和独占权
+
+    %% 6. Core A 完成写入
+    CoreA->>CoreA: 修改数据，状态变为 Modified</pre>
+
+<h2 id="CSU"><a href="#CSU" class="headerlink" title="CSU"></a>CSU</h2><p>Cache System Unit，缓存系统单元，并不是arm的名字。实现层，核内实现CHI协议的功能单元，分布在<br>功能：管理缓存，包括缓存的命中检测、数据访问、缺失处理，以及根据缓存策略进行数据更新和替换。</p>
+<h1 id="内存属性和CHI的关系"><a href="#内存属性和CHI的关系" class="headerlink" title="内存属性和CHI的关系"></a>内存属性和CHI的关系</h1><h2 id="ARM64-内存属性对照表"><a href="#ARM64-内存属性对照表" class="headerlink" title="ARM64 内存属性对照表"></a>ARM64 内存属性对照表</h2><pre><code>+----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+| 内存大类       | 子类型                | 全称（英文）                                  | 缓存支持 | 聚合（Gathering） | 重排（Reordering） | 投机执行 | 写合并（Write Combine） | 访问粒度               | 地址对齐要求       | 总线事务类型                          | 软件配置方式（Linux）                 | 典型应用场景                          | 备注                                  |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+| Normal常规内存 | Normal WB             | Write-Back, Cacheable                         | 是       | 是（Cacheline内） | 是                 | 是       | 否                      | 强制64字节（Cacheline）| 无（硬件自动对齐） | WriteBack、Read、ReadUnique           | kmalloc()、默认页映射                 | DRAM数据段、代码段、堆/栈             | 写先更缓存，替换时写回内存            |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+|                | Normal WT             | Write-Through, Cacheable                      | 是       | 是（Cacheline内） | 是                 | 是       | 否                      | 强制64字节（Cacheline）| 无（硬件自动对齐） | WriteThrough、Read                    | ioremap_cache()（需配MAIR）           | 高频读、低频写共享数据（配置表）      | 写同时更新缓存和内存                  |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+|                | Normal NC             | Non-Cacheable                                 | 否       | 是（需对齐）      | 是                 | 是       | 是（需64字节对齐）      | 实际数据长度（可合并） | 64字节（合并时）   | WriteNonCacheable、Burst Read         | ioremap_wc()、memremap_wc()           | PCIe显存、帧缓冲区、DMA非一致性缓冲区 | 合并小粒度写为64字节Burst             |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+| Device设备内存 | Device_nGnRE          | Non-Gathering, Non-Reordering, Early Ack      | 否       | 否                | 否                 | 否       | 否                      | 实际数据长度（不可合并 | 无（硬件自动拆分） | WriteNonCacheable、Single Read        | ioremap()、pci_iomap()                | 外设控制寄存器、时序敏感设备（中断控制器） | 严格按程序顺序，确保原子性       |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+|                | Device_nGnRnE         | Non-Gathering, Non-Reordering, No Early Ack   | 否       | 否                | 否                 | 否       | 否                      | 实际数据长度（不可合并 | 无（硬件自动拆分） | WriteNonCacheable（需Comp确认）       | 设备树：cache-type=&quot;none&quot;             | 存储类设备(NAND Flash)需写确认寄存器  | 写完成确认来自设备，无中间ack         |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+|                | Device_GRE            | Gathering, Reordering, Early Ack              | 否       | 是（需对齐）      | 是                 | 否       | 是（需64字节对齐）      | 实际数据长度（可合并） | 64字节（合并时）   | WriteNonCacheable、Burst Write        | 设备树：gathering=&quot;true&quot;              | FIFO设备、DMA一致性缓冲区、批量传输   | 允许合并重排，对顺序不敏感            |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+|                | Device_GnRE           | Gathering, Non-Reordering, Early Ack          | 否       | 是（需对齐）      | 否                 | 否       | 是（需64字节对齐）      | 实际数据长度（可合并） | 64字节（合并时）   | WriteNonCacheable、Burst Write        | 自定义MAIR配置                        | 需合并但严格顺序的设备（流式DMA）     | 允许聚合，禁止重排                    |
++----------------+-----------------------+-----------------------------------------------+----------+-------------------+--------------------+----------+-------------------------+------------------------+--------------------+---------------------------------------+---------------------------------------+---------------------------------------+---------------------------------------+
+</code></pre><h3 id="关键字段说明"><a href="#关键字段说明" class="headerlink" title="关键字段说明"></a>关键字段说明</h3><ol>
+<li><strong>聚合（Gathering）</strong>：是否允许将多个小粒度访问合并为单个总线事务（仅影响写操作）</li>
+<li><strong>重排（Reordering）</strong>：是否允许总线乱序执行访问请求（Normal内存默认允许，Device内存默认禁止）</li>
+<li><strong>投机执行</strong>：CPU是否允许对该内存区域进行推测性访问（Device内存禁止，避免破坏外设状态）</li>
+<li><strong>写合并</strong>：仅特定子类型支持，需满足64字节地址对齐，否则自动拆分事务</li>
+<li><p><strong>访问粒度</strong>：</p>
+<ul>
+<li>「强制64字节」：无论实际访问长度，总线均按Cacheline粒度传输（仅Normal WB/WT）</li>
+<li>「实际数据长度」：按代码中指定的长度传输，支持合并时可转为64字节Burst</li>
+</ul>
+</li>
+<li><p><strong>总线事务类型</strong>：</p>
+<ul>
+<li>Burst：多拍传输（如64字节Burst对应8拍64位数据）</li>
+<li>Single：单拍传输（如4字节写对应1拍32位数据）</li>
+</ul>
+</li>
+</ol>
+<h2 id="核心规则总结"><a href="#核心规则总结" class="headerlink" title="核心规则总结"></a>核心规则总结</h2><ol>
+<li><strong>缓存行为由「内存大类」决定</strong>：Normal支持缓存，Device禁止缓存</li>
+<li><strong>写合并的两个条件</strong>：</li>
+</ol>
+<ul>
+<li>内存属性允许（Normal NC、Device_GRE/GnRE）</li>
+<li>访问地址64字节对齐，且在同一Cacheline内</li>
+</ul>
+<ol start="3">
+<li><strong>Cacheline粒度仅适用于「可缓存的Normal内存」</strong>（WB/WT），其他属性均按实际数据长度访问</li>
+<li><strong>Device内存的顺序约束</strong>：<code>nGnRE/nGnRnE</code>严格按程序顺序，<code>GRE/GnRE</code>可合并/重排（需软件保证逻辑顺序）</li>
+<li><strong>软件配置优先级</strong>：设备树配置 &gt; 内核API映射 &gt; MAIR_ELx寄存器默认值</li>
+</ol>
+<p><img src="/images/arm_server_flash_scp.png" alt="flash scp sample"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://developer.arm.com/documentation/102337/0000/Software-stack/About-the-software?lang=en" target="_blank" rel="noopener">Arm Neoverse N2 reference design Technical Overview</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/arm64/" rel="tag"># arm64</a>
+          
+            <a href="/tags/SoC/" rel="tag"># SoC</a>
+          
+            <a href="/tags/CSU/" rel="tag"># CSU</a>
+          
+            <a href="/tags/CHI/" rel="tag"># CHI</a>
+          
+            <a href="/tags/Cache/" rel="tag"># Cache</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2025/08/05/linux功耗控制/" rel="next" title="linux功耗控制">
+                <i class="fa fa-chevron-left"></i> linux功耗控制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2025/12/30/arm64-cache和总线总结/" data-title="arm64 cache和总线总结" data-url="http://joyxu.github.io/2025/12/30/arm64-cache和总线总结/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#目的"><span class="nav-number">1.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SoC概览"><span class="nav-number">2.</span> <span class="nav-text">SoC概览</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CHI展开"><span class="nav-number">3.</span> <span class="nav-text">CHI展开</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#CHI"><span class="nav-number">3.1.</span> <span class="nav-text">CHI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CMN"><span class="nav-number">3.2.</span> <span class="nav-text">CMN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CCI-amp-CCN-amp-CMN的演进"><span class="nav-number">3.2.1.</span> <span class="nav-text">CCI &amp; CCN &amp; CMN的演进</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CSU"><span class="nav-number">3.3.</span> <span class="nav-text">CSU</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存属性和CHI的关系"><span class="nav-number">4.</span> <span class="nav-text">内存属性和CHI的关系</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ARM64-内存属性对照表"><span class="nav-number">4.1.</span> <span class="nav-text">ARM64 内存属性对照表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#关键字段说明"><span class="nav-number">4.1.1.</span> <span class="nav-text">关键字段说明</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核心规则总结"><span class="nav-number">4.2.</span> <span class="nav-text">核心规则总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">5.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

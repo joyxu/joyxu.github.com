@@ -1,0 +1,960 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="写作,转载,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="今天转载一篇非常喜欢的文章，也是为什么坚持写作的原因。原文出处：[译] 长文写作的魔力（2022） —以下是译者序— 译者序本文翻译自 2022 年的一篇文章： Writing Is Magic。 作者 Marc Brooker 在 AWS，是 databases, serverless, EC2, EBS 等多个领域的专家。 译者水平有限，不免存在遗漏或错误之处。如有疑问，敬请查阅原文。 —以下">
+<meta name="keywords" content="写作,转载">
+<meta property="og:type" content="article">
+<meta property="og:title" content="writing-is-magic">
+<meta property="og:url" content="http://joyxu.github.io/2023/07/18/writing-is-magic/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="今天转载一篇非常喜欢的文章，也是为什么坚持写作的原因。原文出处：[译] 长文写作的魔力（2022） —以下是译者序— 译者序本文翻译自 2022 年的一篇文章： Writing Is Magic。 作者 Marc Brooker 在 AWS，是 databases, serverless, EC2, EBS 等多个领域的专家。 译者水平有限，不免存在遗漏或错误之处。如有疑问，敬请查阅原文。 —以下">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.691Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="writing-is-magic">
+<meta name="twitter:description" content="今天转载一篇非常喜欢的文章，也是为什么坚持写作的原因。原文出处：[译] 长文写作的魔力（2022） —以下是译者序— 译者序本文翻译自 2022 年的一篇文章： Writing Is Magic。 作者 Marc Brooker 在 AWS，是 databases, serverless, EC2, EBS 等多个领域的专家。 译者水平有限，不免存在遗漏或错误之处。如有疑问，敬请查阅原文。 —以下">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2023/07/18/writing-is-magic/">
+
+
+
+
+
+  <title> writing-is-magic | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2023/07/18/writing-is-magic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                writing-is-magic
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2023-07-18T02:24:40+08:00">
+                2023-07-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2023/07/18/writing-is-magic/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2023/07/18/writing-is-magic/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>今天转载一篇非常喜欢的文章，也是为什么坚持写作的原因。<br>原文出处：<a href="https://arthurchiao.art/blog/writing-is-magic-zh/" target="_blank" rel="noopener">[译] 长文写作的魔力（2022）</a></p>
+<p>—以下是译者序—</p>
+<h2 id="译者序"><a href="#译者序" class="headerlink" title="译者序"></a>译者序</h2><p>本文翻译自 2022 年的一篇文章： Writing Is Magic。</p>
+<p>作者 Marc Brooker 在 AWS，是 databases, serverless, EC2, EBS 等多个领域的专家。</p>
+<p>译者水平有限，不免存在遗漏或错误之处。如有疑问，敬请查阅原文。</p>
+<p>—以下是译文—</p>
+<p>有时人们会来咨询我一些工作上的建议，我会用很长的邮件来回复他们 —— 这其中有些内容非常通常和有趣，比如本文 —— 所以我愿意分享出来，希望可以帮助到更多的人。<br>几天前，有人问我下面几个问题：</p>
+<ul>
+<li>如何更好地传达自己的想法和意见，</li>
+<li>如何扩大自己的影响力，以及</li>
+<li>如何促成共识。</li>
+</ul>
+<p>下面是我的回复。</p>
+<h2 id="提升影响力的方式"><a href="#提升影响力的方式" class="headerlink" title="提升影响力的方式"></a>提升影响力的方式</h2><p>产生影响力有很多方式。比如，</p>
+<ul>
+<li>施展社交能力，混人际关系；</li>
+<li>组织会议，拉团队或个人讨论；</li>
+<li>展现技术实力，请别人 code review；</li>
+<li>Slack 中就某些问题公开发表自己的想法。</li>
+</ul>
+<p>只要场合适当，这些方式都是有价值的，但我最常用的方式是另一种：写长文（long-form writing）。</p>
+<h2 id="写（文档和长文）的好处"><a href="#写（文档和长文）的好处" class="headerlink" title="写（文档和长文）的好处"></a>写（文档和长文）的好处</h2><p>写（writing）是一件非常神奇的事情，是我知道的东西中最接近魔术的。 几乎每次需要做出艰难或有争议的决定时，我都会写一份文档 —— 可能是 半页，六页（six pages），甚至更长 —— 尽管我知道简洁的价值。 这种方式的一些好处让我对其爱不释手。</p>
+<h3 id="让自己真正想透问题（clarity）"><a href="#让自己真正想透问题（clarity）" class="headerlink" title="让自己真正想透问题（clarity）"></a>让自己真正想透问题（clarity）</h3><pre><code>“一旦开始写下来，就会意识到自己原来的想法有多草率”。 [1]
+</code></pre><p>我经常经历这样的时刻：洗澡时把一件事情想得明明白白，但坐下来开始写时， 才意识到之前的“想得明明白白”是多么肤浅。</p>
+<p>试着写下来时，对事情的认识和理解会发生很大变化。所以写真的是一个强大的工具， 可以帮助你（主动或被动地）迭代想法、理清思路、强化论点、寻找不同的解释角度等等。 而只有真正做到了自己思路清晰，才能解释给其他人或说服他们。</p>
+<h3 id="让受众思考更专注（attention）"><a href="#让受众思考更专注（attention）" class="headerlink" title="让受众思考更专注（attention）"></a>让受众思考更专注（attention）</h3><p>在如今这个信息爆炸的时代，让人全神贯注地跟着你的思路思考非常困难的： 一个消息或邮件弹窗、切换一个浏览器页面、无意识地解锁一下手机等等，思维可能就开小差了。 那这种问题怎么解决呢？</p>
+<p>读文档是少数有效解决方案之一 —— 前提是你们团队有很好的文档文化。 给大家几页内容，最好是打印出来的纸质材料，他们就可能会沉静下来， 至少在接下来的几分钟内专注于理解你的想法，这样你的想法才会真正进入他们的头脑中。 在这样的环境中，你提出的论点、讲的故事、提供的数据，或者咨询他们的意见就会非常有效。</p>
+<pre><code>Amazon 的特色之一就是 6-page，会议内容、答辩材料等等都写成文档打印出来， 会上每个人发一份，离线读材料和讨论问题。译注。
+</code></pre><p>几乎没有其他方法可以做到这一点。</p>
+<h3 id="让时间和空间影响力更大（scale）"><a href="#让时间和空间影响力更大（scale）" class="headerlink" title="让时间和空间影响力更大（scale）"></a>让时间和空间影响力更大（scale）</h3><p>根据时效性，文档也分为两类：</p>
+<ul>
+<li>有效期很短，可能一个小时。这样的文档是为了推动决策（例如提供支撑数据），一旦决策定了，文档也就没用了；</li>
+<li>有效期或生命力非常长，远远超出了最初的想象。</li>
+</ul>
+<p>根据我的经验，第二种更常见。比如，</p>
+<ul>
+<li>有时会有人跑过来问我十年前写的文档中的某些问题，这说明这些文档今天仍然有用。</li>
+<li>从自身来说，我也喜欢阅读那些在我出生之前就已经发表的经典 CS 论文。</li>
+</ul>
+<p>因此，这种在时间和空间维度的延伸能力，有时可能会大大超出你的预期，</p>
+<ul>
+<li>从时间维度来说，写的生命力比读要长得多。</li>
+<li>从空间维度来说，写的延伸能力（最初受众、团队、利益相关方、开源社区等）也比几乎所有其他方式都要有效得多。</li>
+</ul>
+<h3 id="让结果固化为标准（authority）"><a href="#让结果固化为标准（authority）" class="headerlink" title="让结果固化为标准（authority）"></a>让结果固化为标准（authority）</h3><p>出于某种原因，人们更倾向于相信我写的而不是我说的东西。 也许正是我花了时间写这一事实，让他们觉得花时间读也是值得的。 其实在写下来之前，我已经一遍又一遍重复过同样的话，但作用不大；而一旦我把内容写下来， 它们突然就变成了大家都会去遵循的事实标准。</p>
+<pre><code>但这里要格外小心：
+
+变成事实标准也不一定是好事，它可能扼杀讨论和交流，人们教条式地遵循你设定的东西 [2]；
+有时你写的也可能是没有效果的东西，实际上不起作用。但这种情况我比较少见。
+</code></pre><h3 id="让自己可以回看和复盘（memory）"><a href="#让自己可以回看和复盘（memory）" class="headerlink" title="让自己可以回看和复盘（memory）"></a>让自己可以回看和复盘（memory）</h3><p>不知道大家的记忆力怎么样，反正我是经常忘事。我能清楚地记得 30 年前小学小卖部的每样东西分别卖多少钱，但并不总能记得上周的会上推动作出某个决定的理由。 从这一点来说，写作是我记录自己做过的重要事情的方式： 可以随时回过头去看看当时在想什么，以及这些想法现在是否还正确； 有时我会发现两周前的自己比现在聪明得多，有时则恰恰相反。</p>
+<p>不管怎么样，记录下来的都是我觉得有价值的东西。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>写东西需要花时间，写好就更花时间了。但从结果来说，写出来的东西几乎永远更清晰， 有时甚至直接就是事实标准了。</p>
+<p>在我的职业生涯中，来来回回讨论问题最终还是没有达成共识的经历太多了， 浪费的时间比我写有价值的文档多十倍；而花时间写某些东西最终却没有产生什么回报的事情非常少（也有，但在我身上发生的次数并不多）， 所以它们都是我很好的时间投资。</p>
+<p>最后一点是关于阅读文化：坐下来阅读，真正为了理解而阅读，是一种需要学习的技能。 这也是我建议每个人都在自己的公司或组织中去实践和树立榜样的事情。</p>
+<p>另一方面，我反对人们直接在文档页面争论问题，也特别不鼓励人们吹毛求疵。 阅读的重点应该是文档中的思想，而不是文档本身的一些语法错误等细节， 但对于读者来说，挑语法错误要比深入思考容易得多， 所以我建议限时收集反馈意见，以及让争论的人移步群聊。</p>
+<p>人生苦短，多写多读。</p>
+<h2 id="脚注"><a href="#脚注" class="headerlink" title="脚注"></a>脚注</h2><ul>
+<li>Lamport attributes this to Dick Guindon, but there are other credible attributions out there. No matter who said it first, it seems true.</li>
+<li>Lev Grossman’s Magicians series has this ongoing theme about how dangerous magic is to the people to practice it, and a lot of the difficulty isn’t in harnessing power, its in having that power not destroy you when you do. I think about that a lot. Influence is something worth becoming great at, and I really admire some of the people who are the best at it, but you need to be really careful.</li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/写作/" rel="tag"># 写作</a>
+          
+            <a href="/tags/转载/" rel="tag"># 转载</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/01/13/linux-physical-memory-management-md/" rel="next" title="Linux物理内存管理">
+                <i class="fa fa-chevron-left"></i> Linux物理内存管理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2023/07/18/io-uring-ebpf-and-kTLS/" rel="prev" title="io_uring, ebpf and kTLS">
+                io_uring, ebpf and kTLS <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2023/07/18/writing-is-magic/" data-title="writing-is-magic" data-url="http://joyxu.github.io/2023/07/18/writing-is-magic/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#译者序"><span class="nav-number">1.</span> <span class="nav-text">译者序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提升影响力的方式"><span class="nav-number">2.</span> <span class="nav-text">提升影响力的方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#写（文档和长文）的好处"><span class="nav-number">3.</span> <span class="nav-text">写（文档和长文）的好处</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#让自己真正想透问题（clarity）"><span class="nav-number">3.1.</span> <span class="nav-text">让自己真正想透问题（clarity）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#让受众思考更专注（attention）"><span class="nav-number">3.2.</span> <span class="nav-text">让受众思考更专注（attention）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#让时间和空间影响力更大（scale）"><span class="nav-number">3.3.</span> <span class="nav-text">让时间和空间影响力更大（scale）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#让结果固化为标准（authority）"><span class="nav-number">3.4.</span> <span class="nav-text">让结果固化为标准（authority）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#让自己可以回看和复盘（memory）"><span class="nav-number">3.5.</span> <span class="nav-text">让自己可以回看和复盘（memory）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#脚注"><span class="nav-number">5.</span> <span class="nav-text">脚注</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

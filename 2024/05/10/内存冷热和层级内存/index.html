@@ -1,0 +1,1044 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="memory,swap,tired memeory,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="背景知识内存分配 - linux kernel lazy memory allocationGlibc的malloc首先会通过syscall brk来分配内存，失败的时候fallback到mmap分配。但是这两个syscall都没有分配真实的物理内存，只是找到一段空闲的虚拟内存VMA（do_brk中不会调用alloc_page分配物理内存）。只有当这块VMA被访问的时候，由于没有映射到真实的物理内">
+<meta name="keywords" content="memory,swap,tired memeory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内存冷热和层级内存">
+<meta property="og:url" content="http://joyxu.github.io/2024/05/10/内存冷热和层级内存/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="背景知识内存分配 - linux kernel lazy memory allocationGlibc的malloc首先会通过syscall brk来分配内存，失败的时候fallback到mmap分配。但是这两个syscall都没有分配真实的物理内存，只是找到一段空闲的虚拟内存VMA（do_brk中不会调用alloc_page分配物理内存）。只有当这块VMA被访问的时候，由于没有映射到真实的物理内">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-malloc.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-pte-format.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-pte-arm64.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-page-fault.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-lruvec-pagevec.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-reclaim.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-swap-example.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-swap.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-swap2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-pcp-list.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-alloc.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-rmqueue.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-overview.png">
+<meta property="og:image" content="http://joyxu.github.io/images/hot-n-cold-memory-promotion.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.691Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="内存冷热和层级内存">
+<meta name="twitter:description" content="背景知识内存分配 - linux kernel lazy memory allocationGlibc的malloc首先会通过syscall brk来分配内存，失败的时候fallback到mmap分配。但是这两个syscall都没有分配真实的物理内存，只是找到一段空闲的虚拟内存VMA（do_brk中不会调用alloc_page分配物理内存）。只有当这块VMA被访问的时候，由于没有映射到真实的物理内">
+<meta name="twitter:image" content="http://joyxu.github.io/images/hot-n-cold-memory-malloc.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2024/05/10/内存冷热和层级内存/">
+
+
+
+
+
+  <title> 内存冷热和层级内存 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2024/05/10/内存冷热和层级内存/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                内存冷热和层级内存
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-05-10T02:31:10+08:00">
+                2024-05-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2024/05/10/内存冷热和层级内存/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2024/05/10/内存冷热和层级内存/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="内存分配-linux-kernel-lazy-memory-allocation"><a href="#内存分配-linux-kernel-lazy-memory-allocation" class="headerlink" title="内存分配 - linux kernel lazy memory allocation"></a>内存分配 - linux kernel lazy memory allocation</h2><p>Glibc的malloc首先会通过syscall brk来分配内存，失败的时候fallback到mmap分配。<br>但是这两个syscall都没有分配真实的物理内存，只是找到一段空闲的虚拟内存VMA（<code>do_brk</code>中不会调用<code>alloc_page</code>分配物理内存）。<br>只有当这块VMA被访问的时候，由于没有映射到真实的物理内存，而产生page fault事件，在<code>handle_mm_fault</code>中调用<code>alloc_pages</code>来分配真实的物理内存，创建PTE页表项。</p>
+<p><img src="/images/hot-n-cold-memory-malloc.png" alt="malloc process"></p>
+<h2 id="使用内存-缺页处理-Page-Faults"><a href="#使用内存-缺页处理-Page-Faults" class="headerlink" title="使用内存-缺页处理 - Page Faults"></a>使用内存-缺页处理 - Page Faults</h2><p>从总体上来讲引起缺页中断的原因分为两大类:</p>
+<h3 id="缺页虚拟内存地址背后映射的物理内存页不在内存中"><a href="#缺页虚拟内存地址背后映射的物理内存页不在内存中" class="headerlink" title="缺页虚拟内存地址背后映射的物理内存页不在内存中"></a>缺页虚拟内存地址背后映射的物理内存页不在内存中</h3><ul>
+<li>缺页虚拟内存地址在进程页表中间页目录对应的页目录项 <code>pmd_t</code> 是空的，我们可以通过<code>pmd_none</code>方法来判断。</li>
+<li>对应的<code>pmd_t</code>虽然不是空的，页表也存在，但是address对应在页表中的pte是空的。内核中通过<code>pte_offset_map</code>定位address在页表中的pte </li>
+</ul>
+<p>既然之前都没有被映射，那就建立映射就好了，有四种内存映射方式：私有匿名映射，私有文件映射，共享文件映射，共享匿名映射。这四种内存映射方式从总体上来说分为两类：一类是匿名映射，另一类是文件映射。<br>在处理文件映射的代码中，内核调用了一个叫<code>call_mmap</code>的函数，内核在该函数中将虚拟内存的相关操作函数<code>vma-&gt;vm_ops</code>映射成了文件相关的操作函数，比如<code>ext4_file_vm_ops</code>。正因为如此，后续进程读写这块虚拟内存就相当于读写文件了。<br>而在处理匿名映射的代码中，内核调用了一个叫做<code>vma_set_anonymous</code>的函数，在这里会将<code>vma-&gt;vm_ops</code>设置为 null ，因为这里映射的匿名内存页，背后并没有文件来支撑。</p>
+<ul>
+<li>虚拟内存地址address在进程页表中的页表项pte不是空的，但是其背后映射的物理内存页被内核<code>swap out</code>到磁盘上了，CPU 访问的时候依然会产生缺页。</li>
+</ul>
+<p>X86上pte的第0个比特位表示该pte映射的物理内存页是否在内存中，值为1表示物理内存页在内存中驻留，值为0表示物理内存页不在内存中，可能被 swap 到磁盘上了。</p>
+<p><img src="/images/hot-n-cold-memory-pte-format.png" alt="x86 page table entry format"></p>
+<p>ARM64上PTE稍有不同，格式如下:</p>
+<p><img src="/images/hot-n-cold-memory-pte-arm64.png" alt="arm64 page table entry format"></p>
+<h3 id="缺页虚拟内存地址背后映射的物理内存页在内存中"><a href="#缺页虚拟内存地址背后映射的物理内存页在内存中" class="headerlink" title="缺页虚拟内存地址背后映射的物理内存页在内存中"></a>缺页虚拟内存地址背后映射的物理内存页在内存中</h3><ul>
+<li>NUMA Balance导致的。NUMA Balancing会周期性扫描进程虚拟内存地址空间，如果发现虚拟内存背后映射的物理内存页不在当前CPU本地NUMA节点的时候，就会把对应的页表项pte标记为<code>PAGE_NONE</code>，随后会将pte的<code>Present</code>位置为0，导致缺页中断。</li>
+</ul>
+<p>这里需要调用 do_numa_page，将这个远程 NUMA 节点上的物理内存页迁移到当前 CPU 的本地 NUMA 节点上，从而加快进程访问内存的速度。</p>
+<ul>
+<li>写时复制（Copy On Write， COW），这种场景和 NUMA Balancing 一样，都属于缺页虚拟内存地址背后映射的物理内存页在内存中而引起的缺页中断。</li>
+</ul>
+<p>写时复制应用场景中都有一个共同的特点，就是进程的虚拟内存区域vma的权限是可写的，但是其对应在页表中的pte却是只读的，而pte映射的物理内存页也在内存中。</p>
+<p>缺页处理的整体流程如下：</p>
+<p><img src="/images/hot-n-cold-memory-page-fault.png" alt="page fault handle"></p>
+<h2 id="内存回收-内存不够时怎么办？"><a href="#内存回收-内存不够时怎么办？" class="headerlink" title="内存回收 - 内存不够时怎么办？"></a>内存回收 - 内存不够时怎么办？</h2><p>这里的内存回收不是说内存释放(free)。<br>内存回收建立在LRU链表(lruvec)和LRU缓存(pagevec)两个数据结构的概念之上，lruvec站在numa节点的角度，而pagevec站在cpu节点的角度，<br>同时，可以认为pagevec是per cpu的lru cache，页面先放入当前CPU的lru cache(pagevec)中，直到pagevec中已经积累了<code>PAGEVEC_SIZE</code>（15）个页面，再获取<code>lruvec</code>的lru_lock，将这些页面批量放入lruvec中。</p>
+<p>它们间的关系如下:</p>
+<p><img src="/images/hot-n-cold-memory-lruvec-pagevec.png" alt="lruvec and pagevec"></p>
+<p>那页面回收时，实际上就是以numa node为基础，针对lruvec进行页面回收。<br>回收的算法就叫做PFRA(page frame reclaiming algorithm)，这个算法主要要做的就是：</p>
+<ul>
+<li>回收什么样的页面</li>
+<li>什么时候回收 &amp;如何回收</li>
+</ul>
+<h3 id="回收什么样的页"><a href="#回收什么样的页" class="headerlink" title="回收什么样的页"></a>回收什么样的页</h3><h4 id="不可回收页"><a href="#不可回收页" class="headerlink" title="不可回收页"></a>不可回收页</h4><ul>
+<li><p>空闲页：已经在伙伴系统中的页，如前边分析，我们回收页的最终去向是伙伴系统，因此已经在<code>free_list</code>中的页是不无须也无法再回收的。</p>
+</li>
+<li><p>保留页：被标记为<code>PG_reserved</code>的页，一般这些用都是用来重要部分的内存，例如内核镜像位置、驱动的重要区域</p>
+</li>
+<li><p>锁定页: 被标记为<code>PG_locked</code>的页，锁定页通常是正在使用的页，比如正在写入或者读取的page cache页，这种页由于正在使用中，所以也不能进行操作。</p>
+</li>
+</ul>
+<p>另外下边这些页由于是在内核态，涉及到操作系统本身的运行，因此也是不可以回收的：</p>
+<ul>
+<li><p>内核动态分配页：用kmalloc申请的内存和slab中已经分配的内存（被标记为<code>PG_slab</code>）。</p>
+</li>
+<li><p>进程内核态堆栈页：<code>task_struct</code>对应的内存空间，释放了就找不到进程对应的信息了。</p>
+</li>
+</ul>
+<h4 id="可回收页"><a href="#可回收页" class="headerlink" title="可回收页"></a>可回收页</h4><ul>
+<li><p>可回收页：匿名页，通常就是有malloc申请出来的页，一般通过检查<code>PAGE_MAPPING_ANON</code>来看是否是匿名页；还有Tmpfs文件系统的映射页</p>
+</li>
+<li><p>可同步页：通过执行sync操作把页的内容写回到磁盘中，再进行回收利用，也被叫做脏页，包括：映射页、存有磁盘文件数据且在页高速缓存中的页、块设备缓冲区页和某些磁盘高速缓存的页（如索引节点高速缓存）。</p>
+</li>
+<li><p>可丢弃页: 内存高速缓存中的未使用页（如slab分配器高速缓存），分配在slab中，但是还空闲没有被使用的部分，可以被系统通过slab分配器主动回收; 目录项高速缓存的未使用页，用于缓存文件系统中的目录项（dentry）。目录项表示了文件系统中文件和目录的结构。</p>
+</li>
+</ul>
+<h3 id="什么时候回收-amp-如何回收"><a href="#什么时候回收-amp-如何回收" class="headerlink" title="什么时候回收&amp;如何回收"></a>什么时候回收&amp;如何回收</h3><p>有两种回收方式，直接回收和异步周期回收。<br>异步周期回收一般就是kswapd，当空间内存低于水位时，开始执行。<br>直接回收是在<code>alloc_page</code>时，且水位低于min时，直接调用kswap，回收内存。</p>
+<p>整体如下：</p>
+<p><img src="/images/hot-n-cold-memory-reclaim.png" alt="reclaim overall process"></p>
+<p>详细的代码流程可以参考 <a href="https://www.cnblogs.com/LoyenWang/p/11827153.html" target="_blank" rel="noopener">Linux内存管理 - zoned page frame allocator - 5 </a></p>
+<h3 id="swap"><a href="#swap" class="headerlink" title="swap"></a>swap</h3><p>由于内存和磁盘的读写性能差异较大，Linux会在内存充裕时将空闲内存用于缓存磁盘数据，以提高I/O性能。相对的在内存紧张时Linux会将这些缓存回收，将脏页回写到磁盘中。<br>而在进程的地址空间中，如heap，stack等匿名页，在磁盘上并没有对应的文件，但同样有回收到磁盘上以释放出空闲内存的需求。<br>swap机制通过在磁盘上开辟专用的swap分区作为匿名页的backing storage，满足了这一需求。</p>
+<p>Linux中存在两种形式的swap分区：swap disk和swap file。前者是一个专用于做swap的块设备，作为裸设备提供给swap机制操作；后者则是存放在文件系统上的一个特定文件，其实现依赖于不同的文件系统，会有所区别。</p>
+<p>通过mkswap命令可以将一个swap disk或swap file转换为swap分区的格式。随后可通过swapon和swapoff命令开启或关闭对应的swap分区。通过cat /proc/swaps或swapon -s可以查看使用中的swap分区的状态。</p>
+<p><img src="/images/hot-n-cold-memory-swap-example.png" alt="swap disk example"></p>
+<p>一个<code>swap_info_struct</code>对应一个swap分区。如下图所示，swap分区内部会以page大小为单位划分出多个swap slot，同时通过swap_map对每个slot的使用情况进行记录，为0代表空闲，大于0则代表该slot被map的进程数量。</p>
+<p><img src="/images/hot-n-cold-memory-swap.png" alt="swap overview"></p>
+<p>swap流程如下：</p>
+<p><img src="/images/hot-n-cold-memory-swap2.png" alt="swap process"></p>
+<h1 id="内存冷热"><a href="#内存冷热" class="headerlink" title="内存冷热"></a>内存冷热</h1><p>所谓冷热是针对处理器中的cache来说的，冷就是页不大可能在cache中，热就是有很大几率在cache中。</p>
+<p>cold page和hot page的概念可以参考LWN的文章<a href="http://lwn.net/Articles/14768/" target="_blank" rel="noopener">Hot and cold pages</a>,从2.5.45内核，Martin Bligh和Andrew Morton提交了一个内核分配器patch，引入了hot-n-cold pages的概念。<br>该patch在 <code>struct zone</code> 下引入了 <code>struct per_cpu_pages</code>，同时修改了内存分配的流程，加快了分配速度。<br>内存分配的修改主要是优先从PCP中分配order为0的page，细节流程如下：</p>
+<p><img src="/images/hot-n-cold-memory-pcp-list.png" alt="alloc process"></p>
+<p><img src="/images/hot-n-cold-memory-alloc.png" alt="alloc process2"></p>
+<p>把<code>rmqueue</code>打开，更细的流程如下：</p>
+<p><img src="/images/hot-n-cold-memory-rmqueue.png" alt="rmqueue process"></p>
+<p>当kernel需要分配一个page时，通常会从per-CPU的hot list获取页面。当然也有些情况下，申请hot page不会获得性能上的提高，只要申请cold page就可以了。比如DMA读操作需要的内存分配，设备会直接修改内存并且无效相应的cache，所以内核分配器提供了GFP_COLD分配标记来声明从cold page链表分配内存。<br><code>buffered_rmqueue</code>用于从冷热分配器中分配单页的缓存页。如果<code>gfp_flags</code>中指定的<code>__GFP_COLD</code>，则从冷缓存中分配一页，否则，从热缓存中分配。</p>
+<h2 id="remove-GFP-COLD"><a href="#remove-GFP-COLD" class="headerlink" title="remove GFP COLD"></a>remove GFP COLD</h2><p>2017年11月，Gormen在内核4.14里面又删掉了<code>GFP_COLD</code>的概念，详细参考这个patch <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/mm/page_alloc.c?id=453f85d43fa9ee243f0fc3ac4e1be45615301e3f" target="_blank" rel="noopener">mm: remove __GFP_COLD</a>。<br>但是PCP的概念仍然保留，这样分配单页仍然会先走PCP，释放的时候也会释放到PCP中。</p>
+<h1 id="层级内存-demotion-amp-promotion"><a href="#层级内存-demotion-amp-promotion" class="headerlink" title="层级内存 demotion &amp; promotion"></a>层级内存 demotion &amp; promotion</h1><p>现在有了层级内存之后，实际上就是在swap之前，把这个页移动到延迟更大的内存上，整体思路如下：</p>
+<p><img src="/images/hot-n-cold-memory-overview.png" alt="tire memory overview"></p>
+<h2 id="demotion"><a href="#demotion" class="headerlink" title="demotion"></a>demotion</h2><p>demotion的关键patch是这个<a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/mm/vmscan.c?id=26aa2d199d6f2cfa6f2ef2a5dfe891f2250e71a0" target="_blank" rel="noopener">mm/migrate: demote pages during reclaim</a>。<br>道理很简单，就是在<code>shrink_folio_list</code>中，swap之前，找到一个可以demote的numa node，然后通过<code>migrate_pages</code>把页面迁移过去。</p>
+<pre><code>shrink_folio_list
+  can_demote
+    demote_folio_list
+      migrate_pages
+</code></pre><p>完整的逻辑可以参考这个patch set <a href="https://lore.kernel.org/lkml/20220818131042.113280-1-aneesh.kumar@linux.ibm.com/" target="_blank" rel="noopener">mm/demotion: Memory tiers and demotion</a></p>
+<h2 id="promotion"><a href="#promotion" class="headerlink" title="promotion"></a>promotion</h2><p>promotion主要还是基于前面讲的page fault中的numa balance。</p>
+<p><img src="/images/hot-n-cold-memory-promotion.png" alt="promotion"></p>
+<p>为了优化性能，社区有做了些优化</p>
+<ul>
+<li>慢速内存判热promotion: <a href="https://lwn.net/ml/linux-kernel/20220622083519.708236-1-ying.huang@intel.com/" target="_blank" rel="noopener">memory tiering: hot page selection</a></li>
+<li>迁移过程中，减少TLB miss: <a href="https://lore.kernel.org/lkml/20240531092001.30428-1-byungchul@sk.com/" target="_blank" rel="noopener">LUF(Lazy Unmap Flush) reducing tlb numbers over 90%</a></li>
+</ul>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://lpc.events/event/11/contributions/967/attachments/811/1654/Optimize%20Page%20Placement%20in%20Tiered%20Memory%20System.pdf" target="_blank" rel="noopener">Optimize Page Placement in Tiered Memory System</a></li>
+<li><a href="https://arxiv.org/html/2312.04789v1/#S9" target="_blank" rel="noopener">Lightweight Frequency-Based Tiering for CXL Memory Systems</a></li>
+<li><a href="https://kernel.org/doc/gorman/" target="_blank" rel="noopener">Understanding the Linux Virtual Memory Manager</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/492098912" target="_blank" rel="noopener">Linux进程的内存管理之malloc和mmap</a></li>
+<li><a href="https://objectkuan.gitbooks.io/ucore-docs/content/" target="_blank" rel="noopener">uCore OS实验指导书和源码网址</a></li>
+<li><a href="https://www.cnblogs.com/binlovetech/p/17918733.html" target="_blank" rel="noopener">一文聊透 Linux 缺页异常的处理 —— 图解 Page Faults</a></li>
+<li><a href="https://www.kernel.org/doc/gorman/html/understand/understand005.html" target="_blank" rel="noopener">Describing Physical Memory</a></li>
+<li><a href="https://www.povcfe.site/post/kernel_mm/" target="_blank" rel="noopener">linux内核(5.4.81)—内存管理模块源码分析</a></li>
+<li><a href="https://blog.csdn.net/u010923083/article/details/115874004" target="_blank" rel="noopener">[内核内存] 伙伴系统5—buffered_rmqueue(页面分配核心函数)</a></li>
+<li><a href="https://ieeexplore.ieee.org/document/8478216" target="_blank" rel="noopener">A Hybrid Swapping Scheme Based On Per-Process Reclaim for Performance Improvement of Android Smartphones (August 2018)</a></li>
+<li><a href="https://www.cnblogs.com/Linux-tech/p/14110331.html" target="_blank" rel="noopener">Linux Swap 介绍</a></li>
+<li><a href="https://www.cnblogs.com/LoyenWang/p/11827153.html" target="_blank" rel="noopener">Linux内存管理 - zoned page frame allocator - 5 </a></li>
+<li><a href="https://wiki.ubc.ca/Better_caching_using_reinforcement_learning" target="_blank" rel="noopener">Better caching using reinforcement learning</a></li>
+<li><a href="https://kernel-recipes.org/en/2017/talks/20-years-of-linux-virtual-memory/" target="_blank" rel="noopener">20 YEARS OF LINUX VIRTUAL MEMORY</a></li>
+<li><a href="https://archive.fosdem.org/2017/schedule/event/iaas_20yealin/" target="_blank" rel="noopener">20 YEARS OF LINUX VIRTUAL MEMORY</a></li>
+<li><a href="https://www.cnblogs.com/pwl999/p/15534977.html" target="_blank" rel="noopener">Linux mem 2.4 Buddy 内存管理机制</a></li>
+<li><a href="https://www.korantli.com.cn/nei-cun-guan-li-4-ye-mian-hui-shou/" target="_blank" rel="noopener">内存管理4-页面回收</a></li>
+<li><a href="https://blog.csdn.net/u012489236/article/details/120587124" target="_blank" rel="noopener">linux内存回收(一）—kswapd回收</a></li>
+<li><a href="https://events.linuxfoundation.org/wp-content/uploads/2021/10/LF_Live_memoptimizer.pdf" target="_blank" rel="noopener">Memoptimizer watches your memory usage so you don’t have to!</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/340985476" target="_blank" rel="noopener">一张图看懂linux内核中percpu变量的实现</a></li>
+<li><a href="https://schspa.tk/2019/08/28/arm64-page-flags.html" target="_blank" rel="noopener">ARM64 Page type</a></li>
+<li><a href="https://blog.csdn.net/qq1798831241/article/details/128921810" target="_blank" rel="noopener">linux kernel 宏展开</a></li>
+<li><a href="https://www.cnblogs.com/wodemia/p/17747271.html" target="_blank" rel="noopener">冷热页机制</a></li>
+<li><a href="https://developer.aliyun.com/article/674429" target="_blank" rel="noopener">单机Mem冷热追踪</a></li>
+<li><a href="https://xiaolincoding.com/os/3_memory/mem_reclaim.html#%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9A%84%E8%BF%87%E7%A8%8B%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84" target="_blank" rel="noopener">内存满了，会发生什么？</a></li>
+<li><a href="https://stevescargall.com/blog/2022/06/using-linux-kernel-memory-tiering/" target="_blank" rel="noopener">Using Linux Kernel Memory Tiering</a></li>
+<li><a href="https://blog.csdn.net/qq_37517281/article/details/134533485" target="_blank" rel="noopener">linux 内存回收lru算法代码注释1</a></li>
+<li><a href="https://blog.csdn.net/qkhhyga2016/article/details/88722458?spm=1001.2014.3001.5501" target="_blank" rel="noopener">Linux Swap 从 userspace 到 kernel详解</a></li>
+<li><a href="https://bluepuni.com/archives/linux-memory-reclaim/" target="_blank" rel="noopener">Linux 内核的内存回收机制</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/70964195" target="_blank" rel="noopener">Linux中的内存回收</a></li>
+<li><a href="https://hhb584520.github.io/kvm_blog/2017/03/06/kernel-memory.html" target="_blank" rel="noopener">内存</a></li>
+<li><a href="https://blog.csdn.net/qq_42800075/article/details/105117009" target="_blank" rel="noopener">15-内存管理篇(Part1: 原理 + page.s + swap.c)</a></li>
+<li><a href="https://manybutfinite.com/post/how-the-kernel-manages-your-memory/" target="_blank" rel="noopener">How The Kernel Manages Your Memory</a></li>
+<li><a href="https://www.cnblogs.com/-9-8/p/8427402.html" target="_blank" rel="noopener">armv8 memory system</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/memory/" rel="tag"># memory</a>
+          
+            <a href="/tags/swap/" rel="tag"># swap</a>
+          
+            <a href="/tags/tired-memeory/" rel="tag"># tired memeory</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2024/01/30/linux-kernel-debug/" rel="next" title="linux kernel调试">
+                <i class="fa fa-chevron-left"></i> linux kernel调试
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2024/08/31/软件探测cpu微架构和性能/" rel="prev" title="软件探测cpu微架构和性能">
+                软件探测cpu微架构和性能 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2024/05/10/内存冷热和层级内存/" data-title="内存冷热和层级内存" data-url="http://joyxu.github.io/2024/05/10/内存冷热和层级内存/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景知识"><span class="nav-number">1.</span> <span class="nav-text">背景知识</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#内存分配-linux-kernel-lazy-memory-allocation"><span class="nav-number">1.1.</span> <span class="nav-text">内存分配 - linux kernel lazy memory allocation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用内存-缺页处理-Page-Faults"><span class="nav-number">1.2.</span> <span class="nav-text">使用内存-缺页处理 - Page Faults</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#缺页虚拟内存地址背后映射的物理内存页不在内存中"><span class="nav-number">1.2.1.</span> <span class="nav-text">缺页虚拟内存地址背后映射的物理内存页不在内存中</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#缺页虚拟内存地址背后映射的物理内存页在内存中"><span class="nav-number">1.2.2.</span> <span class="nav-text">缺页虚拟内存地址背后映射的物理内存页在内存中</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存回收-内存不够时怎么办？"><span class="nav-number">1.3.</span> <span class="nav-text">内存回收 - 内存不够时怎么办？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#回收什么样的页"><span class="nav-number">1.3.1.</span> <span class="nav-text">回收什么样的页</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#不可回收页"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">不可回收页</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#可回收页"><span class="nav-number">1.3.1.2.</span> <span class="nav-text">可回收页</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么时候回收-amp-如何回收"><span class="nav-number">1.3.2.</span> <span class="nav-text">什么时候回收&amp;如何回收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#swap"><span class="nav-number">1.3.3.</span> <span class="nav-text">swap</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#内存冷热"><span class="nav-number">2.</span> <span class="nav-text">内存冷热</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#remove-GFP-COLD"><span class="nav-number">2.1.</span> <span class="nav-text">remove GFP COLD</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#层级内存-demotion-amp-promotion"><span class="nav-number">3.</span> <span class="nav-text">层级内存 demotion &amp; promotion</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#demotion"><span class="nav-number">3.1.</span> <span class="nav-text">demotion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#promotion"><span class="nav-number">3.2.</span> <span class="nav-text">promotion</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

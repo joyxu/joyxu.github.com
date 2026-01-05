@@ -1,0 +1,972 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,storage,compute,p2pdma,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="感觉这年头干啥芯片的都想把计算绑定在一起，之前有网卡把计算绑一起，现在也有把存储和计算绑一起。 什么是计算存储其实这要从NVME说起，从NVME 1.2规范引入CMB(Controller Memory Buffer)这个概念起，就慢慢有了变革的火种。CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念，也是通过PCIe BAR空间对CPU可见，一开始主要是把NVME涉及到的SQ和CQ放">
+<meta name="keywords" content="linux,storage,compute,p2pdma">
+<meta property="og:type" content="article">
+<meta property="og:title" content="computational storage计算存储">
+<meta property="og:url" content="http://joyxu.github.io/2022/07/12/computational-storage/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="感觉这年头干啥芯片的都想把计算绑定在一起，之前有网卡把计算绑一起，现在也有把存储和计算绑一起。 什么是计算存储其实这要从NVME说起，从NVME 1.2规范引入CMB(Controller Memory Buffer)这个概念起，就慢慢有了变革的火种。CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念，也是通过PCIe BAR空间对CPU可见，一开始主要是把NVME涉及到的SQ和CQ放">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/compute_storage1.png">
+<meta property="og:image" content="http://joyxu.github.io/images/compute_storage_card.png">
+<meta property="og:image" content="http://joyxu.github.io/images/compute_storage3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/compute_storage2.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.688Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="computational storage计算存储">
+<meta name="twitter:description" content="感觉这年头干啥芯片的都想把计算绑定在一起，之前有网卡把计算绑一起，现在也有把存储和计算绑一起。 什么是计算存储其实这要从NVME说起，从NVME 1.2规范引入CMB(Controller Memory Buffer)这个概念起，就慢慢有了变革的火种。CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念，也是通过PCIe BAR空间对CPU可见，一开始主要是把NVME涉及到的SQ和CQ放">
+<meta name="twitter:image" content="http://joyxu.github.io/images/compute_storage1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2022/07/12/computational-storage/">
+
+
+
+
+
+  <title> computational storage计算存储 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2022/07/12/computational-storage/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                computational storage计算存储
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-07-12T03:46:28+08:00">
+                2022-07-12
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2022/07/12/computational-storage/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2022/07/12/computational-storage/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>感觉这年头干啥芯片的都想把计算绑定在一起，之前有网卡把计算绑一起，现在也有把存储和计算绑一起。</p>
+<h2 id="什么是计算存储"><a href="#什么是计算存储" class="headerlink" title="什么是计算存储"></a>什么是计算存储</h2><p>其实这要从NVME说起，从NVME 1.2规范引入CMB(Controller Memory Buffer)这个概念起，就慢慢有了变革的火种。<br>CMB是一段放在NVME卡上的内存，有点类似于独显的显存的概念，也是通过PCIe BAR空间对CPU可见，一开始主要是<br>把NVME涉及到的SQ和CQ放在这个内存区域，避免访问系统DDR，而起到减小延迟的效果。</p>
+<p>那现在有了内存，为什么不参考下GPU，把计算core放进去呢，这样就有了computational storage的概念。<br>借用下SNIA组织的图，更形象的说明下什么是computational storage：</p>
+<p><img src="/images/compute_storage1.png" alt="compute storage"></p>
+<h2 id="代表公司和产品"><a href="#代表公司和产品" class="headerlink" title="代表公司和产品"></a>代表公司和产品</h2><p>推动computational storage的主要有三家初创公司: Eideticom, NGD和scaleflux。<br>当然还有传统的nvme存储公司比如美光和三星，这几家里面我认为软件生态做的最好的是Eideticom。<br>它的CTO Stephen Bates在2015年就提出了Donard系统的概念，这个系统当时就把GPGPU、NVMe SSD和RDMA串在了一起，<br>旁路了CPU，可以认为这是Eideticom的起源之一，感兴趣的朋友可以看看本文的参考资料。</p>
+<p>为了对这种产品形态有更直观的感受，放个Eideticom卡的图</p>
+<p><img src="/images/compute_storage_card.png" alt="compute storage"></p>
+<p>典型的用户场景是通过减少数据移动，把一些原先要在cpu和nvme路径上执行的任务，直接卸载到computational storage processor里面来，提升效率。比如：</p>
+<ul>
+<li>数据库场景中数据的压缩计算</li>
+<li>网络数据的存储，这个有点类似于nvme over rdma，且把计算也offload到nvme卡上，具体示意如下:</li>
+</ul>
+<p><img src="/images/compute_storage3.png" alt="compute storage"></p>
+<h2 id="p2pdma"><a href="#p2pdma" class="headerlink" title="p2pdma"></a>p2pdma</h2><p>为了让NMVE卡上的这块内存可以被使用，就不得不提p2pdma这个上了linux和qemu主线的方案，<br>前面也介绍过mlx 的peer to peer direct技术，也介绍过nvidia的 gpudirect技术，但是它们目前都没上linux主线。</p>
+<p>p2pdma在内核的pci驱动目录中的p2pdma.c中，从4.20开始被支持，想了解历史的看看这组patch和相关作者的一个总结:</p>
+<ul>
+<li><a href="https://patchwork.kernel.org/project/linux-nvdimm/cover/20181004212747.6301-1-logang@deltatee.com/" target="_blank" rel="noopener">Copy Offload in NVMe Fabrics with P2P PCI Memory</a></li>
+<li><a href="https://www.eideticom.com/media-news/blog/33-p2pdma-in-linux-kernel-4-20-rc1-is-here.html" target="_blank" rel="noopener">p2pdma in Linux kernel 4.20-rc1 is here!</a></li>
+<li><a href="https://lwn.net/Articles/767281/" target="_blank" rel="noopener">Device-to-device memory-transfer offload with P2PDMA</a></li>
+</ul>
+<p>在这个总结中，作者有提到在arm64上还需要加上ioremap相关的patch才能正常工作，不知道现状如何了。</p>
+<p>卡上的内存暴露出来之后，下一步就是怎么把这块内存给用起来。<br>当前能直接使用p2pdma技术的主要有SPDK，以及Eideticom自家的libnoload。</p>
+<p><img src="/images/compute_storage2.png" alt="compute storage"></p>
+<h2 id="SPDK"><a href="#SPDK" class="headerlink" title="SPDK"></a>SPDK</h2><p>这里以SPDK为例，由于spdk是用户态的，所以kernel把bar空间映射到用户态以后，主要是bar，doorbell的操作。<br>感兴趣的可以直接看spdk中的 <a href="https://github.com/spdk/spdk/blob/master/examples/nvme/cmb_copy/cmb_copy.c#L80" target="_blank" rel="noopener">cmb_copy.c</a>，感觉用起来还是很简单的。</p>
+<pre><code>spdk_nvme_ctrlr_map_cmb
+ nvme_transport_ctrlr_map_cmb
+  spdk_nvme_transport_ops.ctrlr_map_cmb
+   nvme_pcie_ctrlr_map_io_cmb
+    nvme_pcie_ctrlr_get_cmbsz
+     spdk_mmio_read
+    根据暴露出来的bar_va, 计算buf
+    spdk_mem_register(buf)
+
+spdk_nvme_ns_cmd_read
+ nvme_qpair_submit_request
+  nvme_transport_qpair_submit_request
+   spdk_nvme_transport_ops.qpair_submit_request
+    nvme_pcie_qpair_submit_request
+     nvme_pcie_qpair_submit_tracker
+      nvme_pcie_qpair_ring_sq_doorbell
+       nvme_pcie_qpair_update_mmio_required
+</code></pre><h2 id="把算力用起来"><a href="#把算力用起来" class="headerlink" title="把算力用起来"></a>把算力用起来</h2><p>要把算力用起来，就要借助一个其它的PCIe 设备，比如网卡，可以参考下面的仓库，看看怎么用起来的，主要是把网卡的收到的NVMe包，直接放到NVME卡的CMB中：</p>
+<ul>
+<li><a href="https://github.com/lsgunth/linux/tree/max-mlnx-offload-p2pdma" target="_blank" rel="noopener">Offload+p2pdma kernel code</a></li>
+<li><a href="https://github.com/Mellanox/NVMEoF-P2P" target="_blank" rel="noopener">A fork of the Linux kernel for NVMEoF target driver using PCI P2P capabilities for full I/O path offloading</a></li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.snia.org/education/what-is-computational-storage" target="_blank" rel="noopener">What Is Computational Storage?</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/457874205" target="_blank" rel="noopener">NVME CMB详解</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDC/2018/presentations/Storage_Architecture/Bates_Stephen_Accelerating_Storage_with_NVM_Express_SSDs_and_P2PDMA.pdf" target="_blank" rel="noopener">Accelerating Storage with NVM Express SSDs and P2PDMA</a></li>
+<li><a href="https://lpc.events/event/2/contributions/136/attachments/164/379/p2pdma__why_how_what_.pdf" target="_blank" rel="noopener">p2pdma__why_how_what</a></li>
+<li><a href="https://github.com/sbates130272/linux-p2pmem" target="_blank" rel="noopener">p2pmem github code repo</a></li>
+<li><a href="https://www.eideticom.com/uploads/attachments/2019/07/31/noload_csp_u2_product_brief.pdf" target="_blank" rel="noopener">NoLoad U.2 Computational Storage Processor</a></li>
+<li><a href="https://nvmexpress.org/wp-content/uploads/Session-2-Enabling-the-NVMe-CMB-and-PMR-Ecosystem-Eideticom-and-Mell....pdf" target="_blank" rel="noopener">Enabling the NVMe™ CMB and PMR Ecosystem</a></li>
+<li><a href="https://patchwork.kernel.org/project/linux-rdma/list/?series=&amp;submitter=50181&amp;state=*&amp;q=Peer+Memory&amp;archive=both&amp;delegate=" target="_blank" rel="noopener">MLX peer memory patch set upstreaming history</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDC15_presentations/nvme_fab/StephenBates_Donard_NVM_Express_Peer-2_Peer.pdf" target="_blank" rel="noopener">Donard: NVM Express for Peer-2-Peer between SSDs and other PCIe Devices</a></li>
+<li><a href="https://www.flashmemorysummit.com/English/Collaterals/Proceedings/2018/20180809_ENST-301A-1_Gibb.pdf" target="_blank" rel="noopener">An NVMe-based FPGA Storage Workload Accelerator</a></li>
+<li><a href="https://usenix.org/sites/default/files/conference/protected-files/atc17_slides_bergman.pdf" target="_blank" rel="noopener">Seamless Operating System Integration of Peer-to-Peer DMA Between SSDs and GPUs</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/430101220" target="_blank" rel="noopener">浅谈GPU通信和PCIe P2P DMA</a></li>
+<li><a href="https://lpc.events/event/9/contributions/617/attachments/705/1303/xdc2020_p2p_dma_v4_20200915_clean.pdf" target="_blank" rel="noopener">Why is Peer to Peer DMA so hard on Linux?</a></li>
+<li><a href="https://openamp.github.io/docs/mca/coprocessor-memory-definition-v6.pdf" target="_blank" rel="noopener">Coprocessor memory definition</a></li>
+<li><a href="https://www.microsemi.com/document-portal/doc_download/136008-microsemi-pcie-switch-rdma" target="_blank" rel="noopener">Microsemi PCIE Switch+RDMA</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/storage/" rel="tag"># storage</a>
+          
+            <a href="/tags/compute/" rel="tag"># compute</a>
+          
+            <a href="/tags/p2pdma/" rel="tag"># p2pdma</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/06/20/network-storage-file-system/" rel="next" title="支持网络的文件系统底层技术">
+                <i class="fa fa-chevron-left"></i> 支持网络的文件系统底层技术
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/07/19/p2p-dma技术分析总结/" rel="prev" title="p2p dma技术分析总结">
+                p2p dma技术分析总结 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2022/07/12/computational-storage/" data-title="computational storage计算存储" data-url="http://joyxu.github.io/2022/07/12/computational-storage/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是计算存储"><span class="nav-number">1.</span> <span class="nav-text">什么是计算存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代表公司和产品"><span class="nav-number">2.</span> <span class="nav-text">代表公司和产品</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#p2pdma"><span class="nav-number">3.</span> <span class="nav-text">p2pdma</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SPDK"><span class="nav-number">4.</span> <span class="nav-text">SPDK</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#把算力用起来"><span class="nav-number">5.</span> <span class="nav-text">把算力用起来</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

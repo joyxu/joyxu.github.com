@@ -1,0 +1,1014 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="kernel,debug,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="引言这个文章主要总结下，除了加打印，还有什么偷懒的办法来调试内核。性能调试之前务必先学习USE和TSA方法。务必多读读Brendan Gregg的博客，可以说他是这个领域的第一人，另外也请多读阿里云杨勇的博客，他系统整理了性能观测的流程。 静态调试是指不修改应用的源码，只是观察系统的运行状态，来了解当前的问题。 系统负载通常有问题的时候，系统负载都是高的，一般可以通过top、w、uptime或者c">
+<meta name="keywords" content="kernel,debug">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux kernel调试">
+<meta property="og:url" content="http://joyxu.github.io/2024/01/30/linux-kernel-debug/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="引言这个文章主要总结下，除了加打印，还有什么偷懒的办法来调试内核。性能调试之前务必先学习USE和TSA方法。务必多读读Brendan Gregg的博客，可以说他是这个领域的第一人，另外也请多读阿里云杨勇的博客，他系统整理了性能观测的流程。 静态调试是指不修改应用的源码，只是观察系统的运行状态，来了解当前的问题。 系统负载通常有问题的时候，系统负载都是高的，一般可以通过top、w、uptime或者c">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-load.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-flow.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-load2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-top.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-perf-top.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-nop-ipc.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-perf-report.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-debug-top-iowait.png">
+<meta property="og:image" content="http://joyxu.github.io/images/linux-tracing-big-picture.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.690Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux kernel调试">
+<meta name="twitter:description" content="引言这个文章主要总结下，除了加打印，还有什么偷懒的办法来调试内核。性能调试之前务必先学习USE和TSA方法。务必多读读Brendan Gregg的博客，可以说他是这个领域的第一人，另外也请多读阿里云杨勇的博客，他系统整理了性能观测的流程。 静态调试是指不修改应用的源码，只是观察系统的运行状态，来了解当前的问题。 系统负载通常有问题的时候，系统负载都是高的，一般可以通过top、w、uptime或者c">
+<meta name="twitter:image" content="http://joyxu.github.io/images/linux-debug-load.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2024/01/30/linux-kernel-debug/">
+
+
+
+
+
+  <title> linux kernel调试 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2024/01/30/linux-kernel-debug/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                linux kernel调试
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-01-30T03:38:00+08:00">
+                2024-01-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2024/01/30/linux-kernel-debug/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2024/01/30/linux-kernel-debug/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>这个文章主要总结下，除了加打印，还有什么偷懒的办法来调试内核。<br>性能调试之前务必先学习USE和TSA方法。<br>务必多读读Brendan Gregg的博客，可以说他是这个领域的第一人，另外也请多读阿里云杨勇的博客，他系统整理了性能观测的流程。</p>
+<h2 id="静态调试"><a href="#静态调试" class="headerlink" title="静态调试"></a>静态调试</h2><p>是指不修改应用的源码，只是观察系统的运行状态，来了解当前的问题。</p>
+<h3 id="系统负载"><a href="#系统负载" class="headerlink" title="系统负载"></a>系统负载</h3><p>通常有问题的时候，系统负载都是高的，一般可以通过top、w、uptime或者<code>cat /proc/loadavg</code>来了解系统的负载和负载趋势。<br>这个负载表示的是task数/core数，具体可以参考代码:<a href="https://elixir.bootlin.com/linux/v6.7/source/kernel/sched/loadavg.c" target="_blank" rel="noopener">loadaverage.c</a>,<br>task数包括D状态(uninterruptible)和R状态(running)的task，所以这个负载已经不是单纯cpu的负载了，而是系统的负载,<br>也可以通过man命令 <code>man proc | sed -n &#39;/loadavg/,/^$/ p&#39;</code> 来了解具体含义。</p>
+<pre><code>/proc/loadavg
+The first three fields in this file are load average figures giving the number of jobs in the run queue (state R) or waiting for disk I/O (state D) averaged over 1, 5, and 15 minutes.  They are the same as the load
+average  numbers  given  by uptime(1) and other programs.  The fourth field consists of two numbers separated by a slash (/).  The first of these is the number of currently runnable kernel scheduling entities (pro‐
+cesses, threads).  The value after the slash is the number of kernel scheduling entities that currently exist on the system.  The fifth field is the PID of the process that was most recently created on the system.
+</code></pre><p>关于D状态的故事，可以参考Brendan写的一个小故事<a href="https://www.brendangregg.com/blog/2017-08-08/linux-load-averages.html" target="_blank" rel="noopener">Linux Load Averages: Solving the Mystery</a>中的<code>Searching for an ancient Linux patch</code>章节。</p>
+<p><img src="/images/linux-debug-load.png" alt="linux debug load"></p>
+<p>如果1分钟的负载比5或者15分钟高，说明系统负载在增加，否则在减少。如果数值大于cpu数量(<code>cat /proc/cpuinfo</code>)，或许系统有问题。<br>既然R和D都给系统负载做了贡献，分析系统高负载的问题，首先要清楚是R带来的，还是D带来的。<br>整个debug流程大致如下：</p>
+<p><img src="/images/linux-debug-flow.png" alt="linux debug loadflow"></p>
+<h3 id="R状态和D状态task变化趋势"><a href="#R状态和D状态task变化趋势" class="headerlink" title="R状态和D状态task变化趋势"></a>R状态和D状态task变化趋势</h3><p>可以通过以下ps命令观察R和D状态的变化</p>
+<pre><code>ps -eo s,user,cmd | grep “^[RD]” | sort | uniq -c | sort -nbr | head -20
+</code></pre><p>也可以通过我工具箱里的psn观察</p>
+<p><img src="/images/linux-debug-load2.png" alt="linux debug load_sample"></p>
+<h3 id="top"><a href="#top" class="headerlink" title="top"></a>top</h3><p>之后再通过top命令观测下cpu的执行时间变化趋势，是用户态占比多，还是内核态占比多，还是iowait或者idle占比多。<br>结合前面R和D的变化趋势，如果发现R的任务占比多，则是通常说的cpu bound，开始进行on cpu分析；<br>如果D任务占比多，则要进行off cpu分析。</p>
+<p><img src="/images/linux-debug-top.png" alt="linux debug top"></p>
+<p>之后可以通过工具箱里的psn，或者通过<code>perf top</code>命令，找到热点应用和函数。</p>
+<p><img src="/images/linux-debug-perf-top.png" alt="linux debug perf top"></p>
+<h4 id="IPC状态"><a href="#IPC状态" class="headerlink" title="IPC状态"></a>IPC状态</h4><p>cpu bound的，也可以深入再看看和cpu微架构相关的指标，这时候首先要知道当前cpu的理论IPC值。</p>
+<h5 id="理论IPC值"><a href="#理论IPC值" class="headerlink" title="理论IPC值"></a>理论IPC值</h5><p>当前并没有工具可以直接获取cpu的理论IPC值，Brendan写了一个通过nop来获取IPC值的文章:<a href="https://www.brendangregg.com/blog/2014-04-26/the-noploop-cpu-benchmark.html" target="_blank" rel="noopener">The noploop CPU Benchmark</a><br>参考这个逻辑，通过工具箱里的<code>stress-ng</code>其实也可以来获取这个值，具体命令如下：</p>
+<pre><code>sudo perf stat -d ./benchmark/stress-ng/stress-ng --nop 1 --timeout 5 --taskset 0
+</code></pre><p>结果如下图：</p>
+<p><img src="/images/linux-debug-nop-ipc.png" alt="linux debug nop ipc"></p>
+<p>另外，如果是在ARM64平台上，也可以通过sysfs下的pmu的slot文件来判断，具体路径在<code>/sys/devices/armv8_pmuv3/caps/slots</code>，虚拟机上由于还不支持，获取的信息是0，具体如下：</p>
+<pre><code>root@localhost:~# cat /sys/devices/armv8_pmuv3/caps/slots
+0x00000000
+</code></pre><h4 id="内存观测工具free"><a href="#内存观测工具free" class="headerlink" title="内存观测工具free"></a>内存观测工具free</h4><p>A buffer is something that has yet to be “written” to disk.<br>A cache is something that has been “read” from the disk and stored for later use.</p>
+<h3 id="oncpu-分析"><a href="#oncpu-分析" class="headerlink" title="oncpu 分析"></a>oncpu 分析</h3><h4 id="perf"><a href="#perf" class="headerlink" title="perf"></a>perf</h4><p>perf是用的最多的，除了直接用<code>perf top</code>看热点以外，通常先抓perf的trace数据，再转换成火焰图。<br>主要通过以下两个命令：</p>
+<pre><code>sudo perf record -F 99 -p 指定进程号 -g -- sleep 30
+sudo perf record -F 99 -a -g -- sleep 30  //-a 表示整个系统
+</code></pre><p>perf record 表示采集系统事件, 没有使用 -e 指定采集事件, 则默认采集 cycles(即 CPU clock 周期), -F 99 表示每秒 99次,<br>-p  指定进程号, 即对哪个进程进行分析, -g 表示记录调用栈, sleep 30 则是持续 30 秒。</p>
+<p>之后再用<code>sudo perf report -n --stdio</code> 查看结果，可以统计每个调用栈出现的百分比, 然后从高到低排列。</p>
+<p>但是这种不太直观，一般会把record记录下来的<code>perf.data</code>转换成火焰图，可以直接使用下面的命令，其中FlameGraph取自Brendan的<a href="https://github.com/brendangregg/FlameGraph" target="_blank" rel="noopener">仓库</a></p>
+<pre><code>perf script | FlameGraph/stackcollapse-perf.pl | FlameGraph/flamegraph.pl &gt; process.svg
+</code></pre><p><img src="/images/linux-debug-perf-report.png" alt="linux debug perf report"></p>
+<h3 id="offcpu-分析"><a href="#offcpu-分析" class="headerlink" title="offcpu 分析"></a>offcpu 分析</h3><p>offcpu分析务必先看Brendan的<a href="https://www.brendangregg.com/offcpuanalysis.html" target="_blank" rel="noopener">Off-CPU Analysis</a>。</p>
+<h4 id="cpu-iowait高"><a href="#cpu-iowait高" class="headerlink" title="cpu iowait高"></a>cpu iowait高</h4><p>offcpu分析时，要理解linux kernel怎么计算idle和iowait的，比如下面这个场景</p>
+<p><img src="/images/linux-debug-top-iowait.png" alt="linux top iowait"></p>
+<p>实际上iowait，CPU也是什么都没干的，也是在执行idle线程，只是idle线程里面针对<code>idle</code>和<code>iowait</code>分别计数。</p>
+<pre><code>/*       
+ * Account multiple ticks of idle time.
+ * @ticks: number of stolen ticks
+ */   
+void account_idle_ticks(unsigned long ticks)
+{        
+
+    if (sched_clock_irqtime) {
+        irqtime_account_idle_ticks(ticks);
+        return;
+    }   
+
+    account_idle_time(jiffies_to_cputime(ticks));                                                                                                                                                       
+}        
+
+
+/*
+ * Account for idle time.
+ * @cputime: the cpu time spent in idle wait
+ */
+void account_idle_time(cputime_t cputime)                                                                                                                                                               
+{
+    u64 *cpustat = kcpustat_this_cpu-&gt;cpustat;
+    struct rq *rq = this_rq();
+
+    if (atomic_read(&amp;rq-&gt;nr_iowait) &gt; 0)
+        cpustat[CPUTIME_IOWAIT] += (__force u64) cputime;
+    else
+        cpustat[CPUTIME_IDLE] += (__force u64) cputime;
+}
+</code></pre><p>而 Linux IO 栈和文件系统的代码则会调用 io_schedule，等待磁盘 IO 的完成。<br>这时候，对 CPU 时间被记为 iowait 起关键计数的原子变量 rq-&gt;nr_iowait 则会在睡眠前被增加。<br>注意，io_schedule 在被调用前，通常 caller 会先将任务显式地设置成 TASK_UNINTERRUPTIBLE 状态</p>
+<h2 id="动态跟踪调试-tracing"><a href="#动态跟踪调试-tracing" class="headerlink" title="动态跟踪调试(tracing)"></a>动态跟踪调试(tracing)</h2><p>是指通过动态跟踪工具，动态掌握执行的状态，来理解当前的问题。在linux上，tracing的全景图如下:</p>
+<p><img src="/images/linux-tracing-big-picture.png" alt="linux tracing arch"></p>
+<p>个人推荐的是bpftrace和systemtap。</p>
+<h3 id="systemtap"><a href="#systemtap" class="headerlink" title="systemtap"></a>systemtap</h3><p>systemtap的历史比较悠久了，</p>
+<h3 id="bpftrace"><a href="#bpftrace" class="headerlink" title="bpftrace"></a>bpftrace</h3><p>bpftrace是近几年火起来的工具，也有很多脚本可以直接使用了。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.brendangregg.com/usemethod.html" target="_blank" rel="noopener">The USE Method</a></li>
+<li><a href="https://www.brendangregg.com/tsamethod.html" target="_blank" rel="noopener">The TSA Method</a></li>
+<li><a href="https://lore.kernel.org/lkml/Pine.LNX.4.33.0208011315220.12103-100000@penguin.transmeta.com/" target="_blank" rel="noopener">内核主线讨论为什么要D状态</a></li>
+<li><a href="https://www.brendangregg.com/blog/index.html" target="_blank" rel="noopener">Brendan Gregg’s Blog</a></li>
+<li><a href="https://www.brendangregg.com/blog/2017-08-08/linux-load-averages.html" target="_blank" rel="noopener">Linux Load Averages: Solving the Mystery</a></li>
+<li><a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" target="_blank" rel="noopener">Linux tracing systems &amp; how they fit together</a></li>
+<li><a href="https://www.joyfulbikeshedding.com/blog/2019-01-31-full-system-dynamic-tracing-on-linux-using-ebpf-and-bpftrace.html" target="_blank" rel="noopener">Full-system dynamic tracing on Linux using eBPF and bpftrace</a></li>
+<li><a href="https://blog.csdn.net/dog250/article/details/112387192" target="_blank" rel="noopener">手艺人舍bpftrace而取systemtap的代价和思考</a></li>
+<li><a href="https://blog.csdn.net/dog250/article/details/112058189" target="_blank" rel="noopener">第一次使用Linux内核的Tracepoint的体验</a></li>
+<li><a href="https://oliveryang.net/2017/12/linux-high-loadavg-analysis-1/" target="_blank" rel="noopener">Linux High Loadavg Analysis</a></li>
+<li><a href="https://www.pulpcode.cn/2021/10/04/what-is-uninterrupte-in-cpu-load/" target="_blank" rel="noopener">cpu load中所说的不可中断状态到底是啥？</a></li>
+<li><a href="https://blog.csdn.net/General_zy/article/details/132939514" target="_blank" rel="noopener">容器技术——Cgroup</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/2002941" target="_blank" rel="noopener">Linux 中 D 状态的进程与平均负载</a></li>
+<li><a href="https://zzyongx.github.io/blogs/where-is-process-hang.html" target="_blank" rel="noopener">进程hang在何处</a></li>
+<li><a href="https://tanelpoder.com/psnapper/" target="_blank" rel="noopener">Linux Process Snapper</a></li>
+<li><a href="https://tanelpoder.com/posts/high-system-load-low-cpu-utilization-on-linux/" target="_blank" rel="noopener">High System Load with Low CPU Utilization on Linux?</a></li>
+<li><a href="https://huataihuang.gitbooks.io/cloud-atlas/content/os/linux/process/management/process_in_run_queue.html" target="_blank" rel="noopener">运行状态的进程和线程</a></li>
+<li><a href="https://jasonblog.github.io/note/linux_tools/free.html" target="_blank" rel="noopener">free 查詢可用內存</a></li>
+<li><a href="https://jvns.ca/perf-zine.pdf" target="_blank" rel="noopener">perf zine</a></li>
+<li><a href="https://jvns.ca/perf-cheat-sheet.pdf" target="_blank" rel="noopener">perf cheat sheet</a></li>
+<li><a href="https://oliveryang.net/2016/07/linux-perf-tools-tips/" target="_blank" rel="noopener">Linux Perf Tools Tips</a></li>
+<li><a href="https://www.brendangregg.com/blog/2017-05-04/the-pmcs-of-ec2.html" target="_blank" rel="noopener">The PMCs of EC2: Measuring IPC</a></li>
+<li><a href="https://www.brendangregg.com/offcpuanalysis.html" target="_blank" rel="noopener">Off-CPU Analysis</a></li>
+<li><a href="https://www.cnblogs.com/liushuhe1990/articles/11139776.html" target="_blank" rel="noopener">用 perf 生成火焰图</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/2245316" target="_blank" rel="noopener">perf和火焰图使用方法</a></li>
+<li><a href="https://euro-linux.com/en/blog/load-average-process-states-on-linux/" target="_blank" rel="noopener">Load average, process states on Linux, and some loadavg myths</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kernel/" rel="tag"># kernel</a>
+          
+            <a href="/tags/debug/" rel="tag"># debug</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2023/12/11/pcie-p2p/" rel="next" title="pcie、p2p和ATS分析">
+                <i class="fa fa-chevron-left"></i> pcie、p2p和ATS分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2024/05/10/内存冷热和层级内存/" rel="prev" title="内存冷热和层级内存">
+                内存冷热和层级内存 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2024/01/30/linux-kernel-debug/" data-title="linux kernel调试" data-url="http://joyxu.github.io/2024/01/30/linux-kernel-debug/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#静态调试"><span class="nav-number">2.</span> <span class="nav-text">静态调试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#系统负载"><span class="nav-number">2.1.</span> <span class="nav-text">系统负载</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#R状态和D状态task变化趋势"><span class="nav-number">2.2.</span> <span class="nav-text">R状态和D状态task变化趋势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#top"><span class="nav-number">2.3.</span> <span class="nav-text">top</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#IPC状态"><span class="nav-number">2.3.1.</span> <span class="nav-text">IPC状态</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#理论IPC值"><span class="nav-number">2.3.1.1.</span> <span class="nav-text">理论IPC值</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存观测工具free"><span class="nav-number">2.3.2.</span> <span class="nav-text">内存观测工具free</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#oncpu-分析"><span class="nav-number">2.4.</span> <span class="nav-text">oncpu 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#perf"><span class="nav-number">2.4.1.</span> <span class="nav-text">perf</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#offcpu-分析"><span class="nav-number">2.5.</span> <span class="nav-text">offcpu 分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#cpu-iowait高"><span class="nav-number">2.5.1.</span> <span class="nav-text">cpu iowait高</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动态跟踪调试-tracing"><span class="nav-number">3.</span> <span class="nav-text">动态跟踪调试(tracing)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#systemtap"><span class="nav-number">3.1.</span> <span class="nav-text">systemtap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bpftrace"><span class="nav-number">3.2.</span> <span class="nav-text">bpftrace</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

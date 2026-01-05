@@ -1,0 +1,978 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux kernel,cpu microarchitecture,benchmark,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="引子几年前看到Dougall Johnson写的M1 Apple芯片微架构的材料，就一直想模仿，但是一直没有挤出时间来。 背景本文讲的芯片微架构主要是指流水线(pipeline)，现在芯片pipeline一般会有几个stage，通常包括fetch, decode, execute和commit，如下图所示：  整个软件执行起来似乎如绿色箭头一样是顺序执行的，但现代处理器为了提升指令执行并发度，其实">
+<meta name="keywords" content="linux kernel,cpu microarchitecture,benchmark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="软件探测cpu微架构和性能">
+<meta property="og:url" content="http://joyxu.github.io/2024/08/31/软件探测cpu微架构和性能/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="引子几年前看到Dougall Johnson写的M1 Apple芯片微架构的材料，就一直想模仿，但是一直没有挤出时间来。 背景本文讲的芯片微架构主要是指流水线(pipeline)，现在芯片pipeline一般会有几个stage，通常包括fetch, decode, execute和commit，如下图所示：  整个软件执行起来似乎如绿色箭头一样是顺序执行的，但现代处理器为了提升指令执行并发度，其实">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_ooo.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_ooo2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_neoverse_v1_block_diagram.svg">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_m1_firestorm.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_arm_n2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_arm_n22.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_arm_cache_layer.png">
+<meta property="og:image" content="http://joyxu.github.io/images/uarch_opt_space.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.691Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="软件探测cpu微架构和性能">
+<meta name="twitter:description" content="引子几年前看到Dougall Johnson写的M1 Apple芯片微架构的材料，就一直想模仿，但是一直没有挤出时间来。 背景本文讲的芯片微架构主要是指流水线(pipeline)，现在芯片pipeline一般会有几个stage，通常包括fetch, decode, execute和commit，如下图所示：  整个软件执行起来似乎如绿色箭头一样是顺序执行的，但现代处理器为了提升指令执行并发度，其实">
+<meta name="twitter:image" content="http://joyxu.github.io/images/uarch_ooo.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2024/08/31/软件探测cpu微架构和性能/">
+
+
+
+
+
+  <title> 软件探测cpu微架构和性能 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2024/08/31/软件探测cpu微架构和性能/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                软件探测cpu微架构和性能
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2024-08-31T01:08:46+08:00">
+                2024-08-31
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2024/08/31/软件探测cpu微架构和性能/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2024/08/31/软件探测cpu微架构和性能/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="引子"><a href="#引子" class="headerlink" title="引子"></a>引子</h1><p>几年前看到Dougall Johnson写的M1 Apple芯片微架构的材料，就一直想模仿，但是一直没有挤出时间来。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>本文讲的芯片微架构主要是指流水线(pipeline)，现在芯片pipeline一般会有几个stage，通常包括fetch, decode, execute和commit，如下图所示：</p>
+<p><img src="/images/uarch_ooo.png" alt="典型乱序CPU微架构"></p>
+<p>整个软件执行起来似乎如绿色箭头一样是顺序执行的，但现代处理器为了提升指令执行并发度，其实decode和commit之间是乱序执行的(out of order)。<br>decode后，会把指令顺序的放到reorder buffer中，告诉执行单元尽快干活，干完之后通知reorder buffer这个活干完了。之后由commit单元按照入对顺序把执行完的指令捞出来出队。<br>如果再把front end, back end，预取等概念加进来的话，更类似于下面这个图。</p>
+<p><img src="/images/uarch_ooo2.png" alt="典型乱序CPU微架构2"></p>
+<p>指令在执行过程中，会拆分成更小的单元macro-ops(mops decode单元)和micro-ops(uops dispatch单元)，能拆分成多少个也叫width，或者说解码宽度(pipeline width)。<br>下图是ARM Neoverse V1的微架构，可以观察到每个单元的width，有多少个EU(执行单元)</p>
+<p><img src="/images/uarch_neoverse_v1_block_diagram.svg" alt="ARM Neoverse V1微架构"></p>
+<p>再来一个苹果M1的对比:</p>
+<p><img src="/images/uarch_m1_firestorm.png" alt="Apple M1微架构"></p>
+<p>这里再放一个ARM N1到N2的微架构演进的列表：</p>
+<p><img src="/images/uarch_arm_n2.png" alt="ARM Neoverse N2微架构"></p>
+<p><img src="/images/uarch_arm_n22.png" alt="ARM Neoverse N2微架构2"></p>
+<h1 id="范围"><a href="#范围" class="headerlink" title="范围"></a>范围</h1><p>本文软件探测的范围实际上就是想覆盖上图中所有的单元，包括各个Cache，ROB大小，EUs种类个数，LSU个数。<br>所有代码可以参考 <a href="https://github.com/joyxu/joyxu-linux-toolbox" target="_blank" rel="noopener">我的工具箱</a>。</p>
+<h1 id="Cache探测"><a href="#Cache探测" class="headerlink" title="Cache探测"></a>Cache探测</h1><p>探测之前，先科普下ARM上Cache的组织方式，具体如下图:</p>
+<p><img src="/images/uarch_arm_cache_layer.png" alt="ARM Cache 组织方式"></p>
+<p>Cache探测除了组织方式以外，还包括时延和带宽，主要通过pointer chase这种算法，大部分主流的内存测试套比如lmbench均基于该算法。<br>算法的基本思想是创建一个数组，每个数组元素中保存一个指针，指向下一个要访问的数组元素，设置不同的步长，来遍历这个数组，观察时延的变化。<br>一般L1 Cache都是个位数的Cycle，L2 Cache大概十几个Cycle，L3 Cache大概50以内个Cycle左右，DDR基本都是上百个Cycle。<br>于是呢一旦时延变化较大，则肯定发生cache miss，就可以判断cache的大小了。</p>
+<p>Cache Coherence的机制和实现可以参考<a href="https://www.cs.cmu.edu/afs/cs/academic/class/15418-s21/www/lectures/11_cachecoherence1.pdf" target="_blank" rel="noopener">卡内基梅隆大学的Snooping-Based Cache Coherence</a></p>
+<h2 id="Cache影响"><a href="#Cache影响" class="headerlink" title="Cache影响"></a>Cache影响</h2><p>Cache对软件的影响，主要有cache miss，false sharing(多core同时访问同一个cache line)，cache thrashing(多core同时访问不同way的同一个index的cache line，也就是set冲突)。<br>更多有趣的cache影响软件行为，可以参考陈浩的这篇文章<a href="https://coolshell.cn/articles/20793.html" target="_blank" rel="noopener">与程序员相关的CPU缓存知识</a></p>
+<h1 id="执行单元个数"><a href="#执行单元个数" class="headerlink" title="执行单元个数"></a>执行单元个数</h1><p>主要看不同种类指令的吞吐率，可以参考uarch bench，也就是参考链接中的第一篇文章。</p>
+<h1 id="ROB大小"><a href="#ROB大小" class="headerlink" title="ROB大小"></a>ROB大小</h1><p>主要参考Henry Wang的测试ROB大小的文章，也放在参考链接中了。<br>通过填充NOP指令在两次cache miss的load中，来观察执行时间的变化，由于nop指令执行时间非常短，一旦时间变化很大，那么可以判断第二次cache miss的指令在ROB队列以外了。<br>代码实现可以参考<a href="https://github.com/Veedrac/microarchitecturometer.git" target="_blank" rel="noopener">microarchitecturometer</a>的实现。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>最后放一张为了提升性能的总版图：</p>
+<p><img src="/images/uarch_opt_space.png" alt="opt space"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li><a href="https://travisdowns.github.io/blog/2019/06/11/speed-limits.html" target="_blank" rel="noopener">Performance Speed Limits</a></li>
+<li><a href="https://github.com/travisdowns/uarch-bench/wiki" target="_blank" rel="noopener">uarch bench wiki</a></li>
+<li><a href="https://blog.stuffedcow.net/2018/05/meltdown-microarchitecture/" target="_blank" rel="noopener">The Microarchitecture Behind Meltdown</a></li>
+<li><a href="http://users.atw.hu/instlatx64/" target="_blank" rel="noopener">x86, x64 Instruction Latency, Memory Latency and CPUID dumps</a></li>
+<li><a href="https://www.realworldtech.com/" target="_blank" rel="noopener">realworldtech and its forum</a></li>
+<li><a href="https://uops.info/background.html" target="_blank" rel="noopener">uops info</a></li>
+<li><a href="https://agner.org/optimize/" target="_blank" rel="noopener">The microarchitecture of Intel, AMD and VIA CPUs: An optimization guide for assembly programmers and compiler makers</a></li>
+<li><a href="https://www.cnblogs.com/TaigaCon/p/7678394.html" target="_blank" rel="noopener">Intel Core Microarchitecture Pipeline</a></li>
+<li><a href="https://gamozolabs.github.io/metrology/2019/12/30/load-port-monitor.html" target="_blank" rel="noopener">CPU Introspection: Intel Load Port Snooping</a></li>
+<li><a href="https://chipsandcheese.com/2024/08/29/ampereone-at-hot-chips-2024-maximizing-density/" target="_blank" rel="noopener">AmpereOne at Hot Chips 2024: Maximizing Density</a></li>
+<li><a href="https://blog.csdn.net/wanjia19870902/article/details/108005731" target="_blank" rel="noopener">computer microarchitecture之out-of-order execution</a></li>
+<li><a href="https://dougallj.github.io/applecpu/firestorm.html" target="_blank" rel="noopener">Apple Microarchitecture Research by Dougall Johnson</a></li>
+<li><a href="https://blog.stuffedcow.net/2013/05/measuring-rob-capacity/" target="_blank" rel="noopener">Measuring Reorder Buffer Capacity</a></li>
+<li><a href="https://www.intel.cn/content/www/cn/zh/developer/articles/technical/memory-performance-in-a-nutshell.html?wapkw=memory%20performance%20in%20a%20nutshell" target="_blank" rel="noopener">Memory Performance in a Nutshell</a></li>
+<li><a href="https://www.intel.cn/content/www/cn/zh/developer/articles/technical/finding-your-memory-access-performance-bottlenecks.html?wapkw=memory%20performance%20in%20a%20nutshell" target="_blank" rel="noopener">Finding Your Memory Access Performance Bottlenecks</a></li>
+<li><a href="https://portrait.gitee.com/joey-fudan/cpplinks/blob/master/comparch.micro.channels.md#return-stack-buffer-rsb" target="_blank" rel="noopener">computer architecture - microarchitectural channels</a></li>
+<li><a href="https://portrait.gitee.com/joey-fudan/cpplinks/blob/master/performance.tools.md" target="_blank" rel="noopener">performance tools</a></li>
+<li><a href="https://xueshu.baidu.com/usercenter/paper/show?paperid=cfa7f6ebfda9d6db3ae578b855c50498&amp;site=xueshu_se" target="_blank" rel="noopener">The Validation Buffer Microarchitecture for Multithreaded Processor</a></li>
+<li><a href="https://en.wikichip.org/wiki/arm_holdings/microarchitectures/neoverse_v1" target="_blank" rel="noopener">Neoverse V1 - Microarchitectures - ARM</a></li>
+<li><a href="https://socpk.com/" target="_blank" rel="noopener">移动芯片排行</a></li>
+<li><a href="https://cloud.tencent.com/developer/article/2003298" target="_blank" rel="noopener">Arm’s New Cortex-A78 and Cortex-X1</a></li>
+<li><a href="https://www.anandtech.com/show/16226/apple-silicon-m1-a14-deep-dive" target="_blank" rel="noopener">Apple M1</a></li>
+<li><a href="http://medium.com/vswe/arm-processor-80ac96be881a" target="_blank" rel="noopener">ARM processor</a></li>
+<li><a href="https://sandsoftwaresound.net/rpi-4-tuning-the-code/" target="_blank" rel="noopener">RPi 4 tuning: The code</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/683781147" target="_blank" rel="noopener">《计算机体系结构：量化研究方法》 第1章 量化设计和分析的基础知识（一）</a></li>
+<li><a href="https://carrv.github.io/2020/" target="_blank" rel="noopener">Computer Architecture Research with RISC-V - SonicBOOM: The 3rd Generation Berkeley Out-of-Order Machine</a></li>
+<li><a href="https://martins3.github.io/cpu/arch-design.html" target="_blank" rel="noopener">如何设计一个成功的指令集架构</a></li>
+<li><a href="https://www.bilibili.com/video/BV1yo4dexEeb/?spm_id_from=333.788" target="_blank" rel="noopener">Arm Mali GPU Training Series Ep 1.4 Hardware shader cores</a></li>
+<li><a href="https://www.researchgate.net/publication/338028324_A_Metric-Guided_Method_for_Discovering_Impactful_Features_and_Architectural_Insights_for_Skylake-Based_Processors?_sg=Fd4reHj2JbXbVz1CZCmAIcT3PZLC2T9ttDv96ylqp01DpjSkstBb2LLfwBSlwPfFG7HfWGNq4Zc-jEI&amp;_tp=eyJjb250ZXh0Ijp7ImZpcnN0UGFnZSI6Il9kaXJlY3QiLCJwYWdlIjoiX2RpcmVjdCJ9fQ" target="_blank" rel="noopener">A Metric-Guided Method for Discovering Impactful Features and Architectural Insights for Skylake-Based Processors</a></li>
+<li><a href="https://www.infoq.com/presentations/microarchitecture-modern-cpu/" target="_blank" rel="noopener">Understanding CPU Microarchitecture to Increase Performance</a></li>
+<li><a href="https://chipsandcheese.com/2023/10/08/zen-5s-leaked-slides/" target="_blank" rel="noopener">Zen 5’s Leaked Slides</a></li>
+<li><a href="https://www.cs.uni.edu/~fienup/cs240s05/lectures/lec7_2-1-05.htm" target="_blank" rel="noopener">Lecture 7 (2-1-05) Superpipelining and Superscalar Architecture Overheads</a></li>
+<li><a href="https://www.nextplatform.com/2017/08/04/drilling-xeon-skylake-architecture/" target="_blank" rel="noopener">DRILLING DOWN INTO THE XEON SKYLAKE ARCHITECTURE</a></li>
+<li><a href="https://semiengineering.com/customizing-processors/" target="_blank" rel="noopener">Customizing Processors</a></li>
+<li><a href="http://gamedev.net/tutorials/programming/general-and-gameplay-programming/a-journey-through-the-cpu-pipeline-r3115/" target="_blank" rel="noopener">A Journey Through the CPU Pipeline</a></li>
+<li><a href="https://www.researchgate.net/publication/228824849_Memory_Barriers_a_Hardware_View_for_Software_Hackers" target="_blank" rel="noopener">Memory Barriers: a Hardware View for Software Hackers</a></li>
+<li><a href="https://manybutfinite.com/post/intel-cpu-caches/" target="_blank" rel="noopener">Cache: a place for concealment and safekeeping</a></li>
+<li><a href="https://github.com/carloscn/blog/issues/58" target="_blank" rel="noopener">17_ARMv8_高速缓存（二）ARM cache设计</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/715411484" target="_blank" rel="noopener">从技术角度聊CPU分支预测器</a></li>
+<li><a href="https://www.cs.cmu.edu/afs/cs/academic/class/15418-s24/www/schedule.html" target="_blank" rel="noopener">卡内基梅隆大学的Parallel Computer Architecture and Programming, Spring 2024</a></li>
+<li><a href="https://www.am.ics.keio.ac.jp/comparc/snoop.pdf" target="_blank" rel="noopener">Cache snoop</a></li>
+<li><a href="https://agner.org/optimize/" target="_blank" rel="noopener">The microarchitecture of Intel, AMD and VIA CPUs: An optimization guide for assembly programmers and compiler makers</a></li>
+<li><a href="https://www.cnblogs.com/88223100/p/Comparison-of-CPU-Performance-between-Intel_Haiguang_Kunpeng-920_and-Feiteng-2500.html" target="_blank" rel="noopener">Intel 海光 鲲鹏920 飞腾2500 CPU性能对比</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux-kernel/" rel="tag"># linux kernel</a>
+          
+            <a href="/tags/cpu-microarchitecture/" rel="tag"># cpu microarchitecture</a>
+          
+            <a href="/tags/benchmark/" rel="tag"># benchmark</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2024/05/10/内存冷热和层级内存/" rel="next" title="内存冷热和层级内存">
+                <i class="fa fa-chevron-left"></i> 内存冷热和层级内存
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2025/02/08/QEMU虚拟机热迁移/" rel="prev" title="QEMU虚拟机热迁移">
+                QEMU虚拟机热迁移 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2024/08/31/软件探测cpu微架构和性能/" data-title="软件探测cpu微架构和性能" data-url="http://joyxu.github.io/2024/08/31/软件探测cpu微架构和性能/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#引子"><span class="nav-number">1.</span> <span class="nav-text">引子</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">2.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#范围"><span class="nav-number">3.</span> <span class="nav-text">范围</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Cache探测"><span class="nav-number">4.</span> <span class="nav-text">Cache探测</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Cache影响"><span class="nav-number">4.1.</span> <span class="nav-text">Cache影响</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#执行单元个数"><span class="nav-number">5.</span> <span class="nav-text">执行单元个数</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ROB大小"><span class="nav-number">6.</span> <span class="nav-text">ROB大小</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

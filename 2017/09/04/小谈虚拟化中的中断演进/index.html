@@ -1,0 +1,972 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Linux Kernel,Virtualization,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="目的本文主要跟踪Linux kerenl中断系统虚拟化方向的演进，希望能尽量用少的篇幅把整个虚拟化中断说清楚。 读者本文假设读者已有linux中断的编程经验，熟悉ARM GIC的基本概念和工作原理。 总述QEMU/KVM中，设备虚拟化有3种方法：纯软件模拟，virtio虚拟和SRIOV物理分配。本文先集中解析virtio pci虚拟设备的中断，后续再补充SRIOV设备的中断，不讨论纯软件模拟设备的">
+<meta name="keywords" content="Linux Kernel,Virtualization">
+<meta property="og:type" content="article">
+<meta property="og:title" content="小谈虚拟化中的中断演进">
+<meta property="og:url" content="http://joyxu.github.io/2017/09/04/小谈虚拟化中的中断演进/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="目的本文主要跟踪Linux kerenl中断系统虚拟化方向的演进，希望能尽量用少的篇幅把整个虚拟化中断说清楚。 读者本文假设读者已有linux中断的编程经验，熟悉ARM GIC的基本概念和工作原理。 总述QEMU/KVM中，设备虚拟化有3种方法：纯软件模拟，virtio虚拟和SRIOV物理分配。本文先集中解析virtio pci虚拟设备的中断，后续再补充SRIOV设备的中断，不讨论纯软件模拟设备的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/machine-model.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/QEMU_KVM.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/virtio.gif">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/KVM_QEMU_virtIO_Process.PNG">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/qemu-virtio-pci.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/virtio-net-tx.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/virtio-net-rx.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/The%20programming%20interfaces%20of%20a%20GICv3%20interrupt%20controller.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/An%20ITS%20forwarding%20an%20LPI%20to%20a%20Redistributor.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-arch2.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-arch.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-imp.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/gicv3-arch.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/forwarding_a_physical_interrupt_to_a_vPE_undirectly.png">
+<meta property="og:image" content="http://7vilkn.com1.z0.glb.clouddn.com/VLPI-forward-its.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.691Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="小谈虚拟化中的中断演进">
+<meta name="twitter:description" content="目的本文主要跟踪Linux kerenl中断系统虚拟化方向的演进，希望能尽量用少的篇幅把整个虚拟化中断说清楚。 读者本文假设读者已有linux中断的编程经验，熟悉ARM GIC的基本概念和工作原理。 总述QEMU/KVM中，设备虚拟化有3种方法：纯软件模拟，virtio虚拟和SRIOV物理分配。本文先集中解析virtio pci虚拟设备的中断，后续再补充SRIOV设备的中断，不讨论纯软件模拟设备的">
+<meta name="twitter:image" content="http://7vilkn.com1.z0.glb.clouddn.com/machine-model.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2017/09/04/小谈虚拟化中的中断演进/">
+
+
+
+
+
+  <title> 小谈虚拟化中的中断演进 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2017/09/04/小谈虚拟化中的中断演进/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                小谈虚拟化中的中断演进
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-04T16:11:56+08:00">
+                2017-09-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/09/04/小谈虚拟化中的中断演进/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/09/04/小谈虚拟化中的中断演进/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h1><p>本文主要跟踪Linux kerenl中断系统虚拟化方向的演进，<br>希望能尽量用少的篇幅把整个虚拟化中断说清楚。</p>
+<h1 id="读者"><a href="#读者" class="headerlink" title="读者"></a>读者</h1><p>本文假设读者已有linux中断的编程经验，熟悉ARM GIC的基本概念和工作原理。</p>
+<h1 id="总述"><a href="#总述" class="headerlink" title="总述"></a>总述</h1><p>QEMU/KVM中，设备虚拟化有3种方法：纯软件模拟，virtio虚拟和SRIOV物理分配。<br>本文先集中解析virtio pci虚拟设备的中断，后续再补充SRIOV设备的中断，<br>不讨论纯软件模拟设备的中断过程。其中1到4章节简单介绍下虚拟化和virtio，<br>如果只想了解中断部分，可以从第5章节开始。</p>
+<h1 id="QEMU-KVM软件堆栈和virtio简介"><a href="#QEMU-KVM软件堆栈和virtio简介" class="headerlink" title="QEMU/KVM软件堆栈和virtio简介"></a>QEMU/KVM软件堆栈和virtio简介</h1><p>在介绍中断细节前先介绍下整个系统的组成，再以网络收发包为例介绍中断细节。</p>
+<h2 id="QEMU-KVM软件堆栈"><a href="#QEMU-KVM软件堆栈" class="headerlink" title="QEMU/KVM软件堆栈"></a>QEMU/KVM软件堆栈</h2><p>系统的部署图如下图：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/machine-model.png" alt="QEMU/KVM系统图"></p>
+<p>QEMU中组件关系如下图：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/QEMU_KVM.png" alt="QEMU/KVM组成图"></p>
+<ul>
+<li>QEMU Core: 模拟外设、虚拟硬件平台，实现前端设备模拟</li>
+<li>Event Loop：监听后端fd，一旦fd收到event即调用回调函数</li>
+<li>vCPU Thread： 执行guest代码的</li>
+<li>Worker Thread：执行阻塞代码，完成时通知Event Loop</li>
+</ul>
+<h2 id="VirtIO关键数据结构关系"><a href="#VirtIO关键数据结构关系" class="headerlink" title="VirtIO关键数据结构关系"></a>VirtIO关键数据结构关系</h2><p>VirtIO在guest kernel模拟设备驱动，在qemu中模拟设备。<br>数据通道上借助内存映射做到guest和host的0内存拷贝通信；<br>中断方面通过中断注入或者中断透传实现。</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/virtio.gif" alt="VirtIO关键数据结构图"></p>
+<p>其中virtqueue_ops结构体在2.6内核之后已经被去掉，直接使用函数代替;代码位置请以最新内核为准。<br>vring_virtqueue封装了vring和vritqueue，vring是底层的物理内存实现。<br>已知virtqueue的话，可以通过container_of找到vring_virtqueue.</p>
+<h2 id="VirtIO设备和外界数据交互"><a href="#VirtIO设备和外界数据交互" class="headerlink" title="VirtIO设备和外界数据交互"></a>VirtIO设备和外界数据交互</h2><p>交互的流程图如下：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/KVM_QEMU_virtIO_Process.PNG" alt="VirtIO设备和外界数据交互图"></p>
+<ol>
+<li>虚拟机中，VirtIO设备驱动通过virtqueue的add_buf函数，把request写入到virtqueue中；</li>
+<li>虚拟机中，VirtIO设备驱动通过virtqueue的kick函数写eventfd（vp_notify），该eventfd会和某块内存绑定；</li>
+<li>host中的QEMU Event Loop监听到该eventfd的signal，执行eventfd的回调函数；</li>
+<li>host中回调函数把虚拟机中的request数据转发给真实物理设备；</li>
+<li>host把真实物理设备response数据通过virtqueue的get_buf写入到virtqueue中；</li>
+<li>QEMU中irqfd接口收到请求，调用回调函数，并通过写内存地址产生中断上报给虚拟机（irqfd的底层实现是eventfd，QEMU中虚拟机初始化的时候，会给这个eventfd挂回调函数）；</li>
+<li>虚拟机中的vgic代码产生vIRQ把上报给GICC；</li>
+<li>虚拟机收到中断请求，处理response数据。</li>
+</ol>
+<p>以virtio net为例，细节如下图：</p>
+<p>###组件关系图：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/qemu-virtio-pci.png" alt="virtio pci 组件关系图"></p>
+<h3 id="发包流程："><a href="#发包流程：" class="headerlink" title="发包流程："></a>发包流程：</h3><p><img src="http://7vilkn.com1.z0.glb.clouddn.com/virtio-net-tx.png" alt="virtio net tx流程图"></p>
+<h3 id="收包流程："><a href="#收包流程：" class="headerlink" title="收包流程："></a>收包流程：</h3><p><img src="http://7vilkn.com1.z0.glb.clouddn.com/virtio-net-rx.png" alt="virtio net tx流程图"></p>
+<h1 id="GIC简介"><a href="#GIC简介" class="headerlink" title="GIC简介"></a>GIC简介</h1><p>软件主要控制GIC的GICD、GICR和GICC。</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/The%20programming%20interfaces%20of%20a%20GICv3%20interrupt%20controller.png" alt="GIC编程接口图"></p>
+<p>ITS和GIC的关系如下，注意LPI可以不经过ITS直接发给GICR，非常重要，虚拟化的伏笔。<br><img src="http://7vilkn.com1.z0.glb.clouddn.com/An%20ITS%20forwarding%20an%20LPI%20to%20a%20Redistributor.png" alt="ITS编程接口图"></p>
+<p>GIC虚拟化也是分成GIC和ITS两部分。</p>
+<ul>
+<li>GIC的模拟，并没有模拟全部的GIC部分，只是VGICC部分，当前是在host的kernel中virt/kvm/arm/vgic/vgic-vx.c中实现。</li>
+<li>ITS的模拟，是使用纯软件模拟，当前是在host的kernel中virt/kvm/arm/vgic/vgic-its.c中。</li>
+</ul>
+<h1 id="GICv2时代的虚拟机中断处理机制"><a href="#GICv2时代的虚拟机中断处理机制" class="headerlink" title="GICv2时代的虚拟机中断处理机制"></a>GICv2时代的虚拟机中断处理机制</h1><p>GICv2的硬件拓扑结构如下：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-arch2.png" alt="GICv2控制器架构图"></p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-arch.png" alt="GICv针对虚拟化的扩展图"></p>
+<p>GICv2中断虚拟化实现细节如下：</p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/gicv2-imp.png" alt="GICv2中断虚拟化处理流程图"></p>
+<h1 id="GICv3时代的虚拟机中断处理机制"><a href="#GICv3时代的虚拟机中断处理机制" class="headerlink" title="GICv3时代的虚拟机中断处理机制"></a>GICv3时代的虚拟机中断处理机制</h1><p><img src="http://7vilkn.com1.z0.glb.clouddn.com/gicv3-arch.png" alt="GICv3控制器架构图"></p>
+<p><img src="http://7vilkn.com1.z0.glb.clouddn.com/forwarding_a_physical_interrupt_to_a_vPE_undirectly.png" alt="GICv3中断处理流程图"></p>
+<h1 id="GICv4时代的虚拟机中断处理机制"><a href="#GICv4时代的虚拟机中断处理机制" class="headerlink" title="GICv4时代的虚拟机中断处理机制"></a>GICv4时代的虚拟机中断处理机制</h1><p><img src="http://7vilkn.com1.z0.glb.clouddn.com/VLPI-forward-its.png" alt="GICv4 VLPI直通流程图"></p>
+<h1 id="MSI中断处理"><a href="#MSI中断处理" class="headerlink" title="MSI中断处理"></a>MSI中断处理</h1><p>PCIe设备中MSI 配置空间中保存ITS的地址，</p>
+<ul>
+<li>QEMU中virtio PCI模拟该配置空间和能力</li>
+<li>虚拟机内核PCIe设备初始化的时候，向该配置空间写入ITS或者GICR地址。</li>
+<li>host中QEMU通过向该PCIe设备配置地址写中断消息，从而虚拟机中产生msi中断。</li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Linux-Kernel/" rel="tag"># Linux Kernel</a>
+          
+            <a href="/tags/Virtualization/" rel="tag"># Virtualization</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/22/ARM-Virtualisation/" rel="next" title="ARM Virtualisation">
+                <i class="fa fa-chevron-left"></i> ARM Virtualisation
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/16/integrate-avocado-with-lava-md/" rel="prev" title="integrate avocado with lava">
+                integrate avocado with lava <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2017/09/04/小谈虚拟化中的中断演进/" data-title="小谈虚拟化中的中断演进" data-url="http://joyxu.github.io/2017/09/04/小谈虚拟化中的中断演进/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#目的"><span class="nav-number">1.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#读者"><span class="nav-number">2.</span> <span class="nav-text">读者</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总述"><span class="nav-number">3.</span> <span class="nav-text">总述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#QEMU-KVM软件堆栈和virtio简介"><span class="nav-number">4.</span> <span class="nav-text">QEMU/KVM软件堆栈和virtio简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#QEMU-KVM软件堆栈"><span class="nav-number">4.1.</span> <span class="nav-text">QEMU/KVM软件堆栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#VirtIO关键数据结构关系"><span class="nav-number">4.2.</span> <span class="nav-text">VirtIO关键数据结构关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#VirtIO设备和外界数据交互"><span class="nav-number">4.3.</span> <span class="nav-text">VirtIO设备和外界数据交互</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#发包流程："><span class="nav-number">4.3.1.</span> <span class="nav-text">发包流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#收包流程："><span class="nav-number">4.3.2.</span> <span class="nav-text">收包流程：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GIC简介"><span class="nav-number">5.</span> <span class="nav-text">GIC简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GICv2时代的虚拟机中断处理机制"><span class="nav-number">6.</span> <span class="nav-text">GICv2时代的虚拟机中断处理机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GICv3时代的虚拟机中断处理机制"><span class="nav-number">7.</span> <span class="nav-text">GICv3时代的虚拟机中断处理机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GICv4时代的虚拟机中断处理机制"><span class="nav-number">8.</span> <span class="nav-text">GICv4时代的虚拟机中断处理机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MSI中断处理"><span class="nav-number">9.</span> <span class="nav-text">MSI中断处理</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>

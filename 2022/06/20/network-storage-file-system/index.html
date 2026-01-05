@@ -1,0 +1,1242 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="linux,storage,rdma,file system,">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0">
+
+
+
+
+
+
+<meta name="description" content="作为GPU Direct IO技术的延续，这篇讨论下基于网络的文件系统的底层技术。 综述借用一幅图，基本上把所有网络存储技术都包含了进来  解释下上面涉及到的名词：  ULP: upper layer protocol，上层协议栈 libfabric: open fabric（OFED的维护组织）定义的用户态库 kfabric: open fabric定义的内核模块 srp: scsi rdma">
+<meta name="keywords" content="linux,storage,rdma,file system">
+<meta property="og:type" content="article">
+<meta property="og:title" content="支持网络的文件系统底层技术">
+<meta property="og:url" content="http://joyxu.github.io/2022/06/20/network-storage-file-system/index.html">
+<meta property="og:site_name" content="记录成长的痕迹">
+<meta property="og:description" content="作为GPU Direct IO技术的延续，这篇讨论下基于网络的文件系统的底层技术。 综述借用一幅图，基本上把所有网络存储技术都包含了进来  解释下上面涉及到的名词：  ULP: upper layer protocol，上层协议栈 libfabric: open fabric（OFED的维护组织）定义的用户态库 kfabric: open fabric定义的内核模块 srp: scsi rdma">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_ds_da.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_ds_da_latency.png">
+<meta property="og:image" content="http://joyxu.github.io/images/Linux-storage-stack-diagram_v4.10.svg">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iscsi_packet.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_srp_iser3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_case.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_dataflow.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_kernel.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_initiator.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_targets.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_tgt_tcp.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iscsi.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_target2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_iser_target3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_nvme.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_nvme2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_nvme3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_libfabric.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_libfabric2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_libfabric3.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_kfabric.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_kfabric2.png">
+<meta property="og:image" content="http://joyxu.github.io/images/storage_network_fabric.png">
+<meta property="og:updated_time" content="2026-01-05T12:55:38.690Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="支持网络的文件系统底层技术">
+<meta name="twitter:description" content="作为GPU Direct IO技术的延续，这篇讨论下基于网络的文件系统的底层技术。 综述借用一幅图，基本上把所有网络存储技术都包含了进来  解释下上面涉及到的名词：  ULP: upper layer protocol，上层协议栈 libfabric: open fabric（OFED的维护组织）定义的用户态库 kfabric: open fabric定义的内核模块 srp: scsi rdma">
+<meta name="twitter:image" content="http://joyxu.github.io/images/storage_network.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://joyxu.github.io/2022/06/20/network-storage-file-system/">
+
+
+
+
+
+  <title> 支持网络的文件系统底层技术 | 记录成长的痕迹 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">记录成长的痕迹</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Linux Kernel</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://joyxu.github.io/2022/06/20/network-storage-file-system/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Joy Xu">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/index_header.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="记录成长的痕迹">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                支持网络的文件系统底层技术
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-06-20T02:49:26+08:00">
+                2022-06-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2022/06/20/network-storage-file-system/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2022/06/20/network-storage-file-system/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>作为GPU Direct IO技术的延续，这篇讨论下基于网络的文件系统的底层技术。</p>
+<h2 id="综述"><a href="#综述" class="headerlink" title="综述"></a>综述</h2><p>借用一幅图，基本上把所有网络存储技术都包含了进来</p>
+<p><img src="/images/storage_network.png" alt="storage network introduction"></p>
+<p>解释下上面涉及到的名词：</p>
+<ul>
+<li>ULP: upper layer protocol，上层协议栈</li>
+<li>libfabric: open fabric（OFED的维护组织）定义的用户态库</li>
+<li>kfabric: open fabric定义的内核模块</li>
+<li>srp: scsi rdma protocl over infiniband</li>
+<li>iser: iscsi extension for rdma</li>
+<li>NVMe/F: NVMe over fabric</li>
+<li>NFSoRDMA: NFS over RDMA</li>
+<li>SMB Direct: server message block, Windows服务器上的技术, MS-SMB</li>
+<li>LNET/LND: Lustre networking，分布式文件系统Lustre的网络技术，其它著名的分布式文件系统还有GlusterFS</li>
+<li>iscsi: scsi based on tcp/ip</li>
+</ul>
+<h2 id="DataStorage-和DataAcces的差异"><a href="#DataStorage-和DataAcces的差异" class="headerlink" title="DataStorage 和DataAcces的差异"></a>DataStorage 和DataAcces的差异</h2><p>这里要重点强调下这两个概念，数据的存储和数据的访问是两个不同的概念，<br>存储一般要经过文件系统，而访问是不用的，由于要经过文件系统，他们的延时差异也很大。</p>
+<p><img src="/images/storage_network_ds_da.png" alt="ds vs da"></p>
+<p><img src="/images/storage_network_ds_da_latency.png" alt="ds da latency"></p>
+<p>本文只介绍数据存储，接下来围绕开篇提到的几个技术展开。</p>
+<h2 id="DAS-直连式存储"><a href="#DAS-直连式存储" class="headerlink" title="DAS 直连式存储"></a>DAS 直连式存储</h2><p>讲网络存储之前，还是先介绍下传统的Direct Attached Storage直连式存储。<br>说白了，就是常见的PC或者服务器直接连着硬盘的。<br>以常见的scsi为例子，应用下发的文件访问，在scsi层都转换为scsi命令发给scsi存储控制器处理，<br>对应到kernel中，就是常见的 <a href="https://elixir.bootlin.com/linux/v5.18.8/source/drivers/scsi/mpt3sas" target="_blank" rel="noopener">scsi驱动</a> 了。</p>
+<p>如果对整个层次不清楚的话，可以了解下linux storage的全景图：</p>
+<p><img src="/images/Linux-storage-stack-diagram_v4.10.svg" alt="linux storage stack overview"></p>
+<h2 id="ISCSI"><a href="#ISCSI" class="headerlink" title="ISCSI"></a>ISCSI</h2><p>为了支持网络存储，linux kernel在scsi层下加了一个传输层，把scsi命令通过网络报文发出来。<br>这个发出报文的client,在scsi命名空间中称为initiator, 而接受处理报文的称为target，这两个名词概念后文会税涉及到。</p>
+<p><img src="/images/storage_network_iscsi_packet.png" alt="iscsi packet"></p>
+<h3 id="SRP-amp-ISER"><a href="#SRP-amp-ISER" class="headerlink" title="SRP &amp; ISER"></a>SRP &amp; ISER</h3><p>SRP和ISER均能通过RDMA支持SCSI，且都已经被内核支持。<br>相对来讲，ISER比SRP更好，具体可以从以下几个方面对比：</p>
+<p><img src="/images/storage_network_srp_iser3.png" alt="srp &amp; iser"></p>
+<p>iser典型应用场景如下：</p>
+<p><img src="/images/storage_network_iser_case.png" alt="iser case"></p>
+<p>其中的数据流如下：</p>
+<p><img src="/images/storage_network_iser_dataflow.png" alt="iser dataflow"></p>
+<p>以mlx为例，kernel中的逻辑视图如下：</p>
+<p><img src="/images/storage_network_iser_kernel.png" alt="iser kernel"></p>
+<h3 id="ISER-Initiator"><a href="#ISER-Initiator" class="headerlink" title="ISER Initiator"></a>ISER Initiator</h3><p>按照道理讲，应该先说Target，再说Initiator比较好，但是由于Target比较复杂，所以放在后G面讲。<br>假设Target已经配置好，Initator怎么用呢？主要是以下几步：</p>
+<ul>
+<li>discovery: <code>iscsiadm -m discovery -t st -p target-ip-address</code> </li>
+<li>login: <code>iscsiadm -m node -T iqn.2006-04.com.example:3260 -l</code> </li>
+<li>mkfs &amp; mount： <code>mkfs.ext4 /dev/disk_name; mount /dev/disk_name /mount/point</code></li>
+</ul>
+<p>整个流程如下：</p>
+<pre><code>+--------------------------------------------------------+             
+| Targets &amp; Sessions configuration files and directories |             
++--------------------------------------------------------+             
+
++--------------------------+     +----------------------------------+ 
+| iscsiadm                 |     | iscsid: iSCSI daemon             | 
+|                          |     |                                  | 
+|  * Command line tool     |&lt;---&gt;|  * Implements Session management | 
+|  * Manages database of   |     |  * Communicates with iscsiadm    | 
+|    sessions and targets  |     |    and iscsi kernel modules      | 
++--------------------------+     +---------------+------------------+ 
+|                    
+User space                                       |                    
+- - - - - - - - - - - - - - - - - - - - - - - - - | - - - - - - - - - -
+Kernel                                           v                    
++-----------------------------------------------------------+ 
+| kernel modules: scsi_transport_iscsi, iscsi_tcp, libiscsi | 
++-----------------------------------------------------------+ 
+</code></pre><p>内核中iser intiator位于infiniband/ulp中，它会注册到scsi transport里面，把scsi报文封装到IB报文中。</p>
+<p><img src="/images/storage_network_iser_initiator.png" alt="iser kernel configure"></p>
+<p>调用栈如下（不包括scsi层之上）</p>
+<pre><code>scsi_transport_iscsi.c
+    netlink_kernel_create(&amp;iscsi_if_rx)
+    iscsi_if_rx
+     iscsi_if_recv_msg
+      transport-&gt;create_session
+      transport-&gt;create_conn
+      transport-&gt;bind_conn
+      transport-&gt;create_session
+      transport-&gt;create_session
+
+ib_isert.ko:
+    iser_init
+     iscsi_register_transport(&amp;iscsi_iser_transport)
+
+scsi_lib.c:
+    scsi_dispatch_cmd
+     transport::queuecommand
+      iscsi_queuecommand
+       iscsi_data_xmit
+        xmit_task
+         iser_send_control(registered completed callback iser_ctrl_comp)
+          ib_dma_sync_xxx
+</code></pre><h3 id="ISER-Target"><a href="#ISER-Target" class="headerlink" title="ISER Target"></a>ISER Target</h3><p>Target侧的实现有很多种方案，主流主要有三种：</p>
+<ul>
+<li>LIO/TCMU: LIO后面名字改成了TCM(Target Core Mod), TCMU是TCM的用户态，已经被Linux Kernel主线支持。由linux-iscsi.org运营维护,主要的开发者是Nicholas A.Bellinger。</li>
+<li><a href="http://scst.sourceforge.net/index.html" target="_blank" rel="noopener">SCST</a>: the generic SCSI target subsystem for Linux,名字最官方，可惜一直没合入到Linux社区，且和LIO的作者一直不合。</li>
+<li><a href="https://github.com/fujita/tgt" target="_blank" rel="noopener">STGT(也叫TGT)</a>: 作者是NTT的FUJITA Tomonori和Redhat的Mike Christie，最早的版本是包含内核态的，后面去掉了。</li>
+</ul>
+<p>推荐使用LIO/TCMU方案。<br>其中STGT是纯用户态的，但基本不用了，SCST和LIO/TCMU都有内核模块，但SCST的内核模块并没有合入到内核主线。<br>更详细的对比可以参考 <a href="http://scst.sourceforge.net/comparison.html" target="_blank" rel="noopener">SCST的官网</a>。</p>
+<p><img src="/images/storage_network_iser_targets.png" alt="iser targets"></p>
+<h4 id="STGT-TGT"><a href="#STGT-TGT" class="headerlink" title="STGT(TGT)"></a>STGT(TGT)</h4><p>网上的材料都比较老了，很多图里面都画着它有内核态，最初的版本确实是有，只是后面都去掉了，<br>这个链接的patch是最早在kernel中加入netlink的patch：<a href="https://lwn.net/Articles/172694/" target="_blank" rel="noopener">scsi tgt: scsi target netlink interface</a><br>喜欢考古的兄弟可以结合github上老的tag版本结合一起看看。</p>
+<p>最新的版本是纯用户态的，iser的支持都在user/iscsi/iser.c中，简单的调用流如下:</p>
+<pre><code>iser.c:
+ iser_device_init
+  ibv_create_cq
+  ibv_req_notify_cq
+  tgt_event_add(cq-&gt;fd, &amp;iser_handle_cq_event)
+
+ iser_handle_cq_event(如果ib有cq产生，fd唤醒epoll)
+  iser_poll_cq(ibv_poll_cq)
+   handle_wc
+   iser_queue_task
+    iser_sched_iosubmit
+     iser_scsi_cmd_iosubmit
+      target_cmd_queue
+          cmd_perform
+     sbc_rw
+      bs_cmd_submit
+       bs_rdwr_request
+        pread/pwrite(系统调用，读写)
+
+tgtd.c:
+ main
+  event_loop
+   epoll_wait(cq-&gt;fd)
+    handler
+</code></pre><p>iser的流程图就不画了，和下面这个tcp的图很类似：</p>
+<p><img src="/images/storage_network_iser_tgt_tcp.png" alt="iser tgt tcp"></p>
+<h4 id="SCST"><a href="#SCST" class="headerlink" title="SCST"></a>SCST</h4><p>源码除了从官网下载，也可以从github下载 <a href="https://github.com/SCST-project/scst" target="_blank" rel="noopener">SCST-project</a>, 其实还是很活跃的，<br>从2.6到5.14的内核都可以支持，最新的tag版本是v3.6，发布与2022年1月。</p>
+<p>SCST的作者和LIO的作者似乎有些不同的意见，在其官网中也一直强调它的优势，由于精力实在有限，就不深入挖掘它的用法了。<br><a href="https://davidbutterfield.github.io/SCST-Usermode-Adaptation/docs/SCST_Usermode.html" target="_blank" rel="noopener">David画了一个很漂亮的图</a>:</p>
+<p><img src="/images/storage_network_iscsi.png" alt="iser SCST"></p>
+<h4 id="LIO-TCMU"><a href="#LIO-TCMU" class="headerlink" title="LIO/TCMU"></a>LIO/TCMU</h4><p>中国移动苏研主推这个方案，且在社区中贡献了不少patch。<br>主要配置工具是python做的targetcli，它提供了一个交互shell，步骤如下：</p>
+<ul>
+<li>Creating a Backstore</li>
+<li>Creating an iSCSI Target</li>
+<li>Configuring an iSCSI Portal</li>
+<li>Configuring LUNs</li>
+<li>Configuring ACLs</li>
+</ul>
+<p>TCMU分为kernel和用户态两部分，用户态现在主要是tcmu-runner, 内核部分主要有以下几个ko：</p>
+<ul>
+<li><code>target_core_user</code></li>
+<li><code>target_core_mod</code></li>
+<li><code>iscsi_target_mod</code></li>
+<li><code>ib_isert</code></li>
+</ul>
+<p>他们之间的交互关系如下图：</p>
+<p><img src="/images/storage_network_iser_target2.png" alt="iser tgt tcp"></p>
+<p>在配置iscsi portal时，会通过ib_isert创建QP，通过中断的方式监听IB报文</p>
+<pre><code>lio_target_call_addnptotpg
+ iscsit_add_np
+  iscis_target_setup_login_socket
+   isert_setup_np
+    isert_setup_id
+     isert_connect_request
+      isert_create_qp
+       ib_cq_pool_get(IB_POLL_WORKQUEUE 内核的IB poll线程监听有没有cq事件，如果有则调用isert_recv_done，监听intiator发过来的报文)
+       rdma_create_np(isert_qp_event_callback 中断回调函数， 监听硬件中断)
+</code></pre><p>收到报文</p>
+<pre><code>isert_recv_done
+ isert_rx_opcode
+  isert_handle_scsi_cmd
+   iscsit_setup_scsi_cmd
+    target_cmd_parse_cdb
+     transport-&gt;parse_cdb
+      tcmu_parse_cdb
+       tcmu_queue_cmd
+        uio_event_notify 通知用户态
+</code></pre><p>用户态(tcmu-runner)</p>
+<pre><code>tcmur_cmdproc_thread
+ while(1) {
+    tcmulib_processing_start
+      read() // block等待，直到收到kernel通知
+     tcmulib_getnext_command
+      device_cmd_tail != device_cmd_head //command ringbuffer 中有新的命令
+     tcmur_generic_handle_cmd
+      handle_read/handle_write
+       tcmur_cmd_complete
+        handle_generic_cbk
+         aio_command_finish
+          tcmur_tcmulib_cmd_complete
+          write() //通知kenrel，处理完command, 触发kernel uio的中断处理
+ }
+</code></pre><p>用户态处理完报文通知内核：</p>
+<pre><code>tcmu_irqcontrol
+ tcmu_handle_completions
+  target_complete_cmd
+       target_complete_ok_work
+    queue_data_in
+     lio_queue_data_in
+      iscsit_queue_data_in
+       isert_put_datain
+        isert_rdma_rw_ctx_post
+         rdma_rw_ctx_post
+          ib_post_send  //通知intiator 处理完
+</code></pre><p>完整的处理流程可以参考下面这个图，虽然不太对得上，但逻辑是ok的</p>
+<p><img src="/images/storage_network_iser_target3.png" alt="iser tgt tcp"></p>
+<h2 id="NVMe-F"><a href="#NVMe-F" class="headerlink" title="NVMe/F"></a>NVMe/F</h2><p>nvme软件栈相对于scsi来讲，就简单很多，host和target都在内核的drivers/nvme目录下，<br>而且支持多种传输机制的支持也包含在这个目录中。工作机制如下图：</p>
+<p><img src="/images/storage_network_nvme.png" alt="nvme"></p>
+<p>Target侧，打开来看如下图：</p>
+<p><img src="/images/storage_network_nvme2.png" alt="nvme target"></p>
+<p>详细的流程如下：</p>
+<p>host侧：</p>
+<pre><code>发包
+//大部分代码在drivers/nvme/host/rdma.c
+queue_rq
+ nvme_rdma_queue_rq
+  blk_mq_start_request
+  nvme_rdma_post_send
+   ib_post_send
+
+收包
+nvme_rdma_recv_done
+ nvme_rdma_process_nvme_rsp
+  blk_mq_rq_to_pdu
+</code></pre><p>target侧：</p>
+<pre><code>初始化
+//大部分代码在 drivers/nvme/target/rdma.c
+nvmet_enable_port
+ nvmet_rdma_add_port
+  nvmet_rdma_enable_port
+   rdma_create_id（注册中断回调函数nvmet_rdma_cm_handler， 当RDMA HCA收到RDMA报文时调用）
+
+收到控制面报文
+nvmet_rdma_cm_handler
+ nvmet_rdma_queue_connect
+
+收到数据报文
+nvmet_rdma_recv_done
+ nvmet_rdma_handle_command
+      nvmet_req_init
+   nvmet_parse_io_cmd
+    nmve_cmd_read/nvme_cmd_write （分析命令，针对不同的后端，设置回调函数, nvmet_bdev_execute_rw）
+  nvmet_rdma_execute_command
+    req.execute(调用回调函数)
+     submit_bio
+      blk_mq_submit_bio
+       nvme_queue_rq(又回到本地的nvme host，调用nvme读写)a
+  nvmet_req_complete
+   nvmet_rdma_queue_response
+    ib_post_send（返回请求）
+</code></pre><h3 id="NVME-Target-Offload"><a href="#NVME-Target-Offload" class="headerlink" title="NVME Target Offload"></a>NVME Target Offload</h3><p>观察上面的流程，会发现要回到block层绕一圈，于是MLX提出了直接访问NVME的优化机制，具体如下：</p>
+<p><img src="/images/storage_network_nvme3.png" alt="nvme target offload"></p>
+<p>这个改动软件上主要是rdma-core的改动，控制面上创建好share queue，并把这个传递给硬件，kernel并不需要改动，<br>但是这个RFC并没有合入到rdma-core的主线，具体的RFC patch和实现可以参考下面几个链接：</p>
+<ul>
+<li><a href="https://openfabrics.org/wp-content/uploads/204_TOved.pdf" target="_blank" rel="noopener">NVME OVER FABRICS OFFLOAD</a></li>
+<li><a href="https://patchwork.kernel.org/project/linux-rdma/patch/CADZhsQrncxo9DvD4+bzWNmepf=EpbwysRoU2z=2UQSjp9LXxXQ@mail.gmail.com/" target="_blank" rel="noopener">Introduce verbs API for NVMe-oF target offload</a></li>
+<li><a href="https://openfabrics.org/images/2018workshop/presentations/308_LLiss_NVMfTargetOffload.pdf" target="_blank" rel="noopener">NVMF TARGET OFFLOAD</a></li>
+</ul>
+<h2 id="libfabric"><a href="#libfabric" class="headerlink" title="libfabric"></a>libfabric</h2><p>libfabric一般配合libibverbs(<a href="https://github.com/linux-rdma/rdma-core)使用。" target="_blank" rel="noopener">https://github.com/linux-rdma/rdma-core)使用。</a></p>
+<p><img src="/images/storage_network_libfabric.png" alt="libfabric"></p>
+<p><img src="/images/storage_network_libfabric2.png" alt="libfabric"></p>
+<p>但亚马逊的Elastic Fabric Adapter用法不太一样，EFA直接在linux kernel实现了libfabric的provider驱动。</p>
+<p><img src="/images/storage_network_libfabric3.png" alt="libfabric"></p>
+<h2 id="kfabric"><a href="#kfabric" class="headerlink" title="kfabric"></a>kfabric</h2><p>在linux kernel，由于上层SRP、iSER、NVMe/F、NFSoRDMA要调用ib的verbs，而各个厂家的驱动层也要实现<br>类似的回调函数，OFED组织又做了一层抽象框架命名为kfabric，但是这个模块还一直没有何如到linux kernel主线，<br>最近的一次更新也是在16年了，可以认为已经停止开发了。</p>
+<p><img src="/images/storage_network_kfabric.png" alt="kfabric"></p>
+<p>主要用于用LNET文件系统，可惜从linux kernel 4.18之后，lustre分布式文件系统被移除了内核，<br>但lustre官方仍在维护out of tree的代码，且由于ARM在hpc领域的绽放，linaro也在维护arm的版本，具体可以参考他们的官网。</p>
+<p><img src="/images/storage_network_kfabric2.png" alt="kfabric"></p>
+<h2 id="libfabric和kfabric"><a href="#libfabric和kfabric" class="headerlink" title="libfabric和kfabric"></a>libfabric和kfabric</h2><p>根据上节的介绍，其实libfabric和kfabric并不一定要配合使用，具体差异参考下图</p>
+<p><img src="/images/storage_network_fabric.png" alt="libfabric vs kfabric"></p>
+<h2 id="SMB"><a href="#SMB" class="headerlink" title="SMB"></a>SMB</h2><p>由于是windows上的技术，这里就不介绍了。</p>
+<h2 id="八卦"><a href="#八卦" class="headerlink" title="八卦"></a>八卦</h2><p>以前高端网卡基本都是intel和broadcom的市场，后面微软找MLX在数据中心合作，结果<br>MLX在25G时代一把上位。后面亚马逊又收购了同处于以色列的Annapuna Lab，做了自己的<br>RDMA，也就是后面的EFA(<a href="https://github.com/amzn/amzn-drivers)。" target="_blank" rel="noopener">https://github.com/amzn/amzn-drivers)。</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://www.snia.org/" target="_blank" rel="noopener">Storage Networking Industry Association</a></li>
+<li><a href="https://www.snia.org/sites/default/files/ESF/Evolution_of_iSCSI_Final.pdf" target="_blank" rel="noopener">Evolution of iSCSI</a></li>
+<li><a href="https://www.snia.org/sites/default/files/PM-Summit/2017/presentations/Paul_Grun_Doug_Voigt_PM_over_Fabrics-an-Application-centered_Viewv2.pdf" target="_blank" rel="noopener">Persistent Memory over Fabrics An Application-centric view</a></li>
+<li><a href="https://slideplayer.com/slide/13896886" target="_blank" rel="noopener">Persistent Memory over Fabric Architecture Overview</a></li>
+<li><a href="https://docs.microsoft.com/en-us/azure/virtual-machines/workloads/hpc/setup-mpi" target="_blank" rel="noopener">Set up Message Passing Interface for HPC</a></li>
+<li><a href="https://aws.amazon.com/cn/blogs/aws/now-available-elastic-fabric-adapter-efa-for-tightly-coupled-hpc-workloads/" target="_blank" rel="noopener">Now Available – Elastic Fabric Adapter (EFA) for Tightly-Coupled HPC Workloads</a></li>
+<li><a href="https://openfabrics.org/images/eventpresos/2016presentations/106kfabric.pdf" target="_blank" rel="noopener">Pathfinding a Kernel Storage Fabric Mid-layer</a></li>
+<li><a href="https://www.sohu.com/a/427490498_505795" target="_blank" rel="noopener">云计算三大神器来了！CPU、GPU、DPU</a></li>
+<li><a href="https://blog.csdn.net/fsdev/article/details/7800126" target="_blank" rel="noopener">深入理解Lustre文件系统-第3篇 LNET：Lustre网络</a></li>
+<li><a href="https://patchwork.kernel.org/project/lustre-devel/list/" target="_blank" rel="noopener">lustre patchwork</a></li>
+<li><a href="https://rdlab.cs.upc.edu/wp-content/uploads/2021/05/LUG2021-Triad-based-architecture-rdlab.pdf" target="_blank" rel="noopener">A triad-based architecture for a multipurpose Lustre filesystem at /rdlab</a></li>
+<li><a href="http://linux-nfs.org/wiki/index.php/NFS_over_SoftRoCE_setup" target="_blank" rel="noopener">NFS over SoftRoCE setup</a></li>
+<li><a href="https://kernel.org/doc/Documentation/filesystems/nfs/nfs-rdma.txt" target="_blank" rel="noopener">NFS/RDMA README</a></li>
+<li><a href="https://datatracker.ietf.org/meeting/99/materials/slides-99-nfsv4-nfsrdma-next-steps-chuck-lever-00" target="_blank" rel="noopener">NFS/RDMA Next Steps</a></li>
+<li><a href="https://slidetodoc.com/rdma-in-data-centers-looking-back-and-looking/" target="_blank" rel="noopener">RDMA in Data Centers: Looking Back and Looking Forward</a></li>
+<li><a href="https://kipdf.com/the-role-of-a-infiniband-and-automated-data-tiering-in-achieving-extreme-storage_5aef9bb47f8b9a0f648b4583.html" target="_blank" rel="noopener">The role of a InfiniBand and automated data tiering in achieving extreme storage performance</a></li>
+<li><a href="https://docs.nvidia.com/networking/display/MLNXOFEDv531050/Introduction" target="_blank" rel="noopener">NVIDIA MLNX_OFED Documentation Rev 5.3-1.0.5.0 Introduction</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/RahulFiske_iSER_Accelerator_Software_Defined_Storage_v2.pdf" target="_blank" rel="noopener">iSER as accelerator for Software Defined Storage</a></li>
+<li><a href="https://support.mellanox.com/s/article/what-is-iser-x" target="_blank" rel="noopener">What is ISER?</a></li>
+<li><a href="https://support.mellanox.com/s/article/mellanox-linux-driver-modules-relationship--mlnx-ofed-x" target="_blank" rel="noopener">Mellanox Linux Driver Modules Relationship</a></li>
+<li><a href="https://www.rdmamojo.com/2012/04/25/the-ofed-package/" target="_blank" rel="noopener">The OFED package</a></li>
+<li><a href="https://www.usenix.org/legacy/events/lsf08/tech/IO_bellinger.pdf" target="_blank" rel="noopener">Linux/iSCSI and a Generic Target Mode Storage Engine for Linux v2.6</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDC/2016/presentations/storage_networking/Shterman-Grimberg_Greenberg_Performance%20Implications%20Libiscsi_%20RDMA_V6.pdf" target="_blank" rel="noopener">Performance Implications Libiscsi RDMA support</a></li>
+<li><a href="https://www.snia.org/sites/default/files/ESF/How_Ethernet_RDMA_Protocols_Support_NVMe_over_Fabrics_Final.pdf" target="_blank" rel="noopener">How Ethernet RDMA Protocols iWARP and RoCE Support NVMe over Fabrics</a></li>
+<li><a href="https://www.snia.org/educational-library/ethernet-storage-fabrics-using-rdma-fast-nvme-storage-reduce-latency-and-improve" target="_blank" rel="noopener">Ethernet Storage Fabrics: Using RDMA with Fast NVMe-oF Storage to Reduce latency and Improve Efficiency</a></li>
+<li><a href="https://runsisi.com/2019/10/30/linux-iscsi/" target="_blank" rel="noopener">Linux iSCSI</a></li>
+<li><a href="https://davidbutterfield.github.io/SCST-Usermode-Adaptation/" target="_blank" rel="noopener">SCST-Usermode-Adaptation</a></li>
+<li><a href="https://wxdublin.gitbooks.io/deep-into-linux-and-beyond/content/io.html" target="_blank" rel="noopener">Storage Stack</a></li>
+<li><a href="https://www.thomas-krenn.com/en/wiki/Linux_Storage_Stack_Diagram" target="_blank" rel="noopener">Linux Storage Stack Diagram</a></li>
+<li><a href="http://bos.itdks.com/6267b2df606e482085e35322c7fae55b.pdf" target="_blank" rel="noopener">Linux LIO 与 TCMU 用户空间透传</a></li>
+<li><a href="https://events.static.linuxfound.org/sites/events/files/slides/tcmu-bobw_0.pdf" target="_blank" rel="noopener">LIO and the TCMU Userspace Passthrough</a></li>
+<li><a href="https://blog.csdn.net/tdaajames/article/details/80983309?spm=1001.2014.3001.5502" target="_blank" rel="noopener">tgt服务端流程分析</a></li>
+<li><a href="https://bitset.dev/" target="_blank" rel="noopener">tgt作者 FUJITA Tomonori个人主页</a></li>
+<li><a href="https://blog.csdn.net/scaleqiao/article/details/46761993" target="_blank" rel="noopener">Linux中三种SCSI target的介绍之各个target的优劣</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/storage_administration_guide/osm-create-iscsi-initiator" target="_blank" rel="noopener">Creating an iSCSI Initiator</a></li>
+<li><a href="https://wiki.archlinux.org/title/Open-iSCSI" target="_blank" rel="noopener">Open-iSCSI</a></li>
+<li><a href="https://pkalever.wordpress.com/tag/tcm/" target="_blank" rel="noopener">Elasticsearch with Gluster Block Storage</a></li>
+<li><a href="https://blog.csdn.net/u011013137/article/details/9083547" target="_blank" rel="noopener">open-iscsi/scst 追踪一</a></li>
+<li><a href="https://lwn.net/Articles/545912/" target="_blank" rel="noopener">Add support for iSCSI Extensions for RDMA (ISER) target mode</a></li>
+<li><a href="https://git.kernel.org/pub/scm/linux/kernel/git/nab/target-pending.git/log/?h=iser-target-rfc-v4" target="_blank" rel="noopener">iser-target-rfc-v4</a></li>
+<li><a href="https://blog.shunzi.tech/post/tcmu/" target="_blank" rel="noopener">TCMU学习笔记</a></li>
+<li><a href="https://docsplayer.com/106803585-%E5%B9%BB%E7%81%AF%E7%89%87-1.html" target="_blank" rel="noopener">中秱苏研-存储产品规划和实践经验分享</a></li>
+<li><a href="https://elixir.bootlin.com/linux/v5.18.8/source/Documentation/target/tcmu-design.rst" target="_blank" rel="noopener">TCM Userspace Design</a></li>
+<li><a href="http://aspirer.wang/?p=1295" target="_blank" rel="noopener">Ceph iscsi方案及环境搭建</a></li>
+<li><a href="https://blog.approachai.com/revisting-iscsi-target-hung-issue-with-tcmu-glusterfs-backstore/" target="_blank" rel="noopener">一个iscsi target hung问题的解决过程</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDCIndia/2019/PDF/5%20-%20Mellanox%20SNIA%20Developers%20Conference%20-%20India%20-%20May%202019%20-%20MNVf%20demystified%20v2%20%20-%20%20Read-Only.pdf" target="_blank" rel="noopener">NVMe over Fabrics - Demystified</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDCEMEA/2018/Presentations/Accelerating-Storage-with-RDMA-SNIA-SDC-EMEA-2018.pdf" target="_blank" rel="noopener">Accelerating Storage with RDMA</a></li>
+<li><a href="https://www.snia.org/sites/default/files/SDC/2017/presentations/Solid_State_Stor_NVM_PM_NVDIMM/Idan_BursteinEthernetStorageFabricsUsingRDMAwithFastNVMe-oFStorage.pdf" target="_blank" rel="noopener">Using RDMA with Fast NVMe-oF Storage to Reduce latency and Improve Efficiency</a></li>
+<li><a href="https://www.cnblogs.com/vlhn/p/7727141.html" target="_blank" rel="noopener">SPDK/NVMe存储技术分析001 - SPDK/NVMe概述</a></li>
+<li><a href="https://events.static.linuxfound.org/sites/events/files/slides/nvme-over-fabrics.pdf" target="_blank" rel="noopener">NVMe Over Fabrics Support in Linux</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/164908617" target="_blank" rel="noopener">RDMA杂谈 专栏索引</a></li>
+<li><a href="https://futurewei-cloud.github.io/ARM-Datacenter/qemu/nvme-of-tcp-vms/" target="_blank" rel="noopener">How to setup NVMe/TCP with NVME-oF using KVM and QEMU</a></li>
+<li><a href="https://www.ciscolive.com/c/dam/r/ciscolive/us/docs/2018/pdf/BRKDCN-2494.pdf" target="_blank" rel="noopener">Deep Dive into NVMe™ and NVMe™ over Fabrics</a></li>
+<li><a href="https://spdk.io/doc/nvmf.html" target="_blank" rel="noopener">NVMe over Fabrics Target</a></li>
+<li><a href="https://blogs.oracle.com/linux/post/nfs-over-rdma-community-development" target="_blank" rel="noopener">NFS Over RDMA Community Development</a></li>
+<li><a href="https://blogs.oracle.com/linux/post/using-tracepoints-to-debug-iscsi" target="_blank" rel="noopener">Using Tracepoints to Debug iSCSI</a></li>
+<li><a href="https://blogs.oracle.com/linux/post/nvme-over-tcp" target="_blank" rel="noopener">NVMe over TCP</a></li>
+<li><a href="https://lostjeffle.bitcron.com/" target="_blank" rel="noopener">Block - 1 Base</a></li>
+</ul>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+    <div>知道是不会有人点的，但万一有人呢:)</div>
+    <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+      <span>赏</span>
+    </button>
+    <div id="QR" style="display: none;">
+      
+        <div id="wechat" style="display: inline-block">
+          <img id="wechat_qr" src="/images/87314894.png" alt="Joy Xu WeChat Pay">
+          <p>微信打赏</p>
+        </div>
+      
+      
+        <div id="alipay" style="display: inline-block">
+          <img id="alipay_qr" src="/images/554361081.jpg" alt="Joy Xu Alipay">
+          <p>支付宝打赏</p>
+        </div>
+      
+    </div>
+  </div>
+
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+            <a href="/tags/storage/" rel="tag"># storage</a>
+          
+            <a href="/tags/rdma/" rel="tag"># rdma</a>
+          
+            <a href="/tags/file-system/" rel="tag"># file system</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/06/06/gpu-direct/" rel="next" title="gpu-direct">
+                <i class="fa fa-chevron-left"></i> gpu-direct
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2022/07/12/computational-storage/" rel="prev" title="computational storage计算存储">
+                computational storage计算存储 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+          
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2022/06/20/network-storage-file-system/" data-title="支持网络的文件系统底层技术" data-url="http://joyxu.github.io/2022/06/20/network-storage-file-system/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/index_header.jpg" alt="Joy Xu">
+          <p class="site-author-name" itemprop="name">Joy Xu</p>
+           
+              <p class="site-description motion-element" itemprop="description">技术积累</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">72</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">64</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/joyxu" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-globe"></i>
+              Links
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/resources/" title="1#" target="_blank">1#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.cse.iitb.ac.in/~mythili/" title="2#" target="_blank">2#</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://adam.younglogic.com" title="software dev leadership" target="_blank">software dev leadership</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://remword.com/kps_result/" title="kernel contribution" target="_blank">kernel contribution</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jvns.ca/blog/2017/07/05/linux-tracing-systems/" title="linux tracing" target="_blank">linux tracing</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.brendangregg.com/blog/2015-07-08/choosing-a-linux-tracer.html" title="linux tracing advance" target="_blank">linux tracing advance</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wangchaochao.top" title="wangchao" target="_blank">wangchao</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://tonydeng.github.io/" title="architecure" target="_blank">architecure</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.zhihu.com/people/in-nek" title="Kenneth" target="_blank">Kenneth</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://lujun.org.cn" title="arm verification jun's blog" target="_blank">arm verification jun's blog</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://siguza.github.io" title="hacker" target="_blank">hacker</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://blog.foool.net/" title="useful link" target="_blank">useful link</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://jianshu.com/p/2089af1cdea0" title="good" target="_blank">good</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://gngshn.github.io/" title="arm linux boot" target="_blank">arm linux boot</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://minnie.tuhs.org/CompArch/Tutes/week03.html" title="simple emu soc" target="_blank">simple emu soc</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernel.taobao.org/" title="ali" target="_blank">ali</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://tinylab.org/" title="泰晓" target="_blank">泰晓</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.wowotech.net/" title="蜗窝" target="_blank">蜗窝</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://www.ffutop.com/" title="ffutop" target="_blank">ffutop</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://happypeter.github.io/" title="peter" target="_blank">peter</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://oenhan.com/" title="virt" target="_blank">virt</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://beej.us/guide/bggdb/" title="gdb" target="_blank">gdb</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://plantegg.github.io/" title="性能调优" target="_blank">性能调优</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://www.qdpma.com/ServerSystems/MemoryLatencyII.html" title="memory latency" target="_blank">memory latency</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://norvig.com/" title="peter-at-google" target="_blank">peter-at-google</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://vonoff.com/comics/nano/a-trip-down-memory-lane-1/" title="内存漫画" target="_blank">内存漫画</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://kernelgo.org/" title="kernelgo" target="_blank">kernelgo</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://makelinux.net/" title="makelinux" target="_blank">makelinux</a>
+                </li>
+              
+                <li class="links-of-blogroll-item">
+                  <a href="https://people.kernel.org/read" title="peoplekernel" target="_blank">peoplekernel</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#综述"><span class="nav-number">1.</span> <span class="nav-text">综述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DataStorage-和DataAcces的差异"><span class="nav-number">2.</span> <span class="nav-text">DataStorage 和DataAcces的差异</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DAS-直连式存储"><span class="nav-number">3.</span> <span class="nav-text">DAS 直连式存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ISCSI"><span class="nav-number">4.</span> <span class="nav-text">ISCSI</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SRP-amp-ISER"><span class="nav-number">4.1.</span> <span class="nav-text">SRP &amp; ISER</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ISER-Initiator"><span class="nav-number">4.2.</span> <span class="nav-text">ISER Initiator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ISER-Target"><span class="nav-number">4.3.</span> <span class="nav-text">ISER Target</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#STGT-TGT"><span class="nav-number">4.3.1.</span> <span class="nav-text">STGT(TGT)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SCST"><span class="nav-number">4.3.2.</span> <span class="nav-text">SCST</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LIO-TCMU"><span class="nav-number">4.3.3.</span> <span class="nav-text">LIO/TCMU</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NVMe-F"><span class="nav-number">5.</span> <span class="nav-text">NVMe/F</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NVME-Target-Offload"><span class="nav-number">5.1.</span> <span class="nav-text">NVME Target Offload</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#libfabric"><span class="nav-number">6.</span> <span class="nav-text">libfabric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kfabric"><span class="nav-number">7.</span> <span class="nav-text">kfabric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#libfabric和kfabric"><span class="nav-number">8.</span> <span class="nav-text">libfabric和kfabric</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SMB"><span class="nav-number">9.</span> <span class="nav-text">SMB</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#八卦"><span class="nav-number">10.</span> <span class="nav-text">八卦</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">11.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy;  2017 - 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joy Xu</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+
+   <script src="https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js"></script>
+   <script>
+   if (window.mermaid) {
+	mermaid.initialize("");
+   }
+   </script>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+    
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"joyxu"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+</body>
+</html>
